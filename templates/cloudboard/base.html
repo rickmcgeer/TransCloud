@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style type="text/css">
+.serif {font-family:"Times New Roman",Times,serif;}
+.sansserif {font-family:Arial,Helvetica,sans-serif;}
+form .error  { color: red; font-weight: bold; }
+form .wrong  { color: red; font-weight: bold; }
+form .notify { color: blue; font-weight: bold; }
+TD           {font-size: 14pt; font-family: verdana; }
+TH           {font-size: 16pt; font-weight: bold; font-family: verdana; }
+P            {font-size: 12pt; font-family: verdana; }
+</style>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<Title>
+Cloudboard Dashboard for the Transcoding Application
+</Title>
+<link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+<script type="text/javascript" src="http://code.google.com/apis/gears/gears_init.js"></script>
+<script type="text/javascript">
+
+var initialLocation;
+var siberia = new google.maps.LatLng(60, 105);
+var newyork = new google.maps.LatLng(40.69847032728747, -73.9514422416687);
+var browserSupportFlag =  new Boolean();
+var place_to_center = new google.maps.LatLng(38, -28);
+var map;
+var infowindow = new google.maps.InfoWindow();
+
+var mysites = [
+{% for site in latest_site_list %}
+  [ '{{ site.name }}', {{ site.lat }}, {{ site.lon }}, {{ forloop.counter }}],
+{% endfor %}
+];
+
+var mynetworks = [
+{% for net in latest_net_list %}
+  [{{ net.snet.lat }}, {{ net.snet.lon }}, {{ net.enet.lat }}, {{ net.enet.lon }}, {{ net.weight  }}, {{ forloop.counter }}],
+{% endfor %}
+];
+
+
+function initialize() {
+  var myOptions = {
+    zoom: 2,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+  
+  // Try W3C Geolocation method (Preferred)
+  if(navigator.geolocation) {
+    browserSupportFlag = true;
+    navigator.geolocation.getCurrentPosition(function(position) {
+      initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+      contentString = "This is where you are.";
+      
+      infowindow.setContent(contentString);
+      infowindow.setPosition(initialLocation);
+      infowindow.open(map);
+    }, function() {
+      handleNoGeolocation(browserSupportFlag);
+    });
+  } else if (google.gears) {
+    // Try Google Gears Geolocation
+    browserSupportFlag = true;
+    var geo = google.gears.factory.create('beta.geolocation');
+    geo.getCurrentPosition(function(position) {
+      initialLocation = new google.maps.LatLng(position.latitude,position.longitude);
+      contentString = "Location found using Google Gears";
+      
+      infowindow.setContent(contentString);
+      infowindow.setPosition(initialLocation);
+      infowindow.open(map);
+    }, function() {
+      handleNoGeolocation(browserSupportFlag);
+    });
+  } else {
+    // Browser doesn't support Geolocation
+    browserSupportFlag = false;
+    handleNoGeolocation(browserSupportFlag);
+  }
+
+  map.setCenter(place_to_center);
+
+  for(var i in mysites)
+  {
+      makeMarker(mysites[i]);
+  }
+
+  for(var i in mynetworks)
+  {
+      makeNetwork(mynetworks[i]);
+  }
+ 
+  
+
+
+}
+
+function makeNetwork(network) {
+ 
+// Create a new polyline  
+var polyline = new google.maps.Polyline({clickable:true,
+   geodesic:true,
+   map:map,
+   path:[new google.maps.LatLng(network[0], network[1]),  
+     new google.maps.LatLng(network[2], network[3])  ],
+   strokeColor:"#FFAA00",
+   strokeOpacity:0.5,
+   strokeWeight:network[4],
+   zIndex:10
+});  
+
+}
+
+
+function makeMarker(site) {
+var latandlon = new google.maps.LatLng(site[1], site[2]);
+ marker = new google.maps.Marker({
+    title:site[0],
+    map:map,
+    draggable:false,
+    animation: google.maps.Animation.DROP,
+    position: latandlon
+  });
+  google.maps.event.addListener(marker, 'click', function() {
+    // document.getElementById('DivExample').innerHTML = "<p>"+ site[0] +"</p>";
+    window.location.pathname="/site/" + site[0] + "/"
+  });
+}
+
+function handleNoGeolocation(errorFlag) {
+  if (errorFlag == true) {
+    initialLocation = newyork;
+    contentString = "Error: The Geolocation service failed.";
+  } else {
+    initialLocation = siberia;
+    contentString = "Error: Your browser doesn't support geolocation. Are you in Siberia?";
+  }
+  map.setCenter(initialLocation);
+  infowindow.setContent(contentString);
+  infowindow.setPosition(initialLocation);
+  infowindow.open(map);
+
+}
+</script>
+
+
+</head>
+<body onload="initialize()">
+<center>  
+<H1> TransCloud </H1>
+  <div id="map_canvas" style="width:1024px; height:768px;"></div>
+</center>
+{% block errorBlock %}
+<p>
+{{ errorMessage }}
+</p>
+{% endblock %}
+{% block developerBlock %}
+
+  <H2>Actions</H2>
+<table border="0" width="100%" bgcolor="#E0E0E0"> 
+<tr><td valign="top"><font size="4"><strong>Developer Database Actions</strong></font></td> </tr> 
+</table> 
+
+
+<form method="post" action="/jobs/developer/cleanup/">
+    <input type="radio" name="action" id="cleanup" value="cleanup" checked/>
+    <label for="cleanup">clean up database</label>
+    <input type="radio" name="action" id="deleteAll" value="deleteAll"/>
+    <label for="deleteAll">Delete All</label>
+    <input type="radio" name="action" id="reset" value="reset"/>
+    <label for="reset">Reset</label>
+    <input type="radio" name="action" id="resetToRandom" value="resetToRandom">
+    <label for="resetToRandom">Reset to Random</label>
+    <label for="numJobs">Number Random Jobs: </label>
+    <input type="text" name="numJobs" id="numJobs" value="1000">
+    <label for="numServers">Number Servers (max = 128): </label>
+    <input type="text" name="numServers" id="numServers" value="10">
+    <br>
+    <input type="submit" value="Do Database Action"/>
+    
+</form>
+
+<p>
+{% if latest_job_list %}
+    <table border="1">
+    <caption class="sanserif">Transcoding Jobs</caption>
+    <tr><th>Job name</th><th>User</th><th>Source URL</th><th>Transcoding Server</th><th>Start</th>
+    <th>Duration</th></tr>
+    {% for job in latest_job_list %}
+        <tr><td>{{ job.name }}</td><td>{{ job.user }}</td>
+        <td><a href="{{ job.source }}">{{ job.source }}</a></td><td>{{ job.server }}</td>
+        <td>{{ job.startDate }}</td><td>{% autoescape off %}{{ job.durationEntry }}{% endautoescape %}</td></tr>
+    {% endfor %}
+
+{% else %}
+    <p>No jobs have been entered.</p>
+{% endif %}
+
+
+<p><a href="/jobs/developer/addForm">Add a job?</a></p>
+
+{% endblock %}
+	
+<H2> Cluster Statistics </H2>
+<iframe src="http://66.183.89.113:8080/ganglia/" width="100%" height=1024>
+  <p>Your browser does not support iframes.</p>
+</iframe>
+	
+{% block summaryBlock %}
+	<H2>Statistics</H2>
+{% if server_list %}
+<table border="0" width="100%" bgcolor="#E0E0E0"> 
+<tr><td valign="top"><font size="4"><strong>Server Status</strong></font></td> </tr> 
+</table> 
+
+ 
+  {% autoescape off %}
+ <p>{{ summary_panel }}</p>
+  {% endautoescape %}
+
+ <table border="1">
+  <tr><th>Server</th><th>Performance</th><th>Open Jobs</th><th>History</th></tr>
+    {% autoescape off %}
+    
+    {% for server in server_list %}
+        <tr><td>{{ server.address }}</td><td>{{ server.performanceURL }}</td><td>{{ server.queuedLoadURL }}</td>
+        <td>{{ server.historyURL }}</td></tr>
+    {% endfor %}
+    {% endautoescape %}
+  </table>
+
+{% endif %}
+{% endblock %}
+
+
+    
+</body>
+</html>
+

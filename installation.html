@@ -1,0 +1,30 @@
+<HTML>
+<head>
+<TITLE>
+Installing Cloudboard
+</TITLE>
+</head>
+<body>
+<H1>Installing Cloudboard on Ubuntu using Apache and mod-wsgi</H1>
+<ol>
+<li> Install sqlite3, mod-wsgi and django on the server
+<ul>
+<li> sudo apt-get update
+<li> sudo apt-get install sqlite3
+<li> sudo apt-get install libapache2-mod-wsgi
+<li> sudo apt-get install python-django
+</ul>
+<li> Create a directory for the cloudboard project.  For the rest of this document, I'm assuming this is /usr/local/django/cloudboard
+<li> Copy the cloudboard, template, and apache directories to /usr/local/django/cloudboard
+<li> In /usr/local/django/cloudboard/apache/django.wsgi, set CLOUDBOARD\_ROOT='/usr/local/django/cloudboard'
+<li> In /usr/local/django/cloudboard/cloudboard/settings.py, set PROJECT\_ROOT='/usr/local/django/cloudboard/'
+<li><i>PROJECT\_ROOT requires a trailing /, CLOUDBOARD\_ROOT requires that there be no trailing /</i>
+<li>In /etc/apache2/sites-available/default, add the lines:
+<ul>
+<li>WSGIScriptAlias / /usr/local/django/cloudboard/apache/django.wsgi
+<li>Alias /media /var/www/media/
+</ul>
+<li>restart apache and look at the root web page
+</ol>
+</body>
+</html>

@@ -1,0 +1,26 @@
+		.trigger{
+			cursor:pointer;
+		}		
+		.trigger:hover{
+			cursor:pointer;
+			background:#ddf;
+		}		
+		.expanded{
+			background:#ccf;
+			cursor:pointer;
+		}
+		.expanded:hover{
+			background:#eef;
+			cursor:pointer;
+		}
+		.show{
+     position:static;
+     display: table;
+		}
+		.hide{
+			position:absolute;
+			left:-999em;
+			height:1px;
+			width:100px;
+			overflow:hidden;
+		}
