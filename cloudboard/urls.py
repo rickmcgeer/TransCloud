@@ -14,10 +14,14 @@ urlpatterns = patterns('',
     (r'^jobs/developer/close.*$', 'jobs.views.developerClose'),
     (r'^jobs/developer/errorResult.*$', 'jobs.views.developerErrorResult'),
     (r'^jobs/developer/addForm/$', 'jobs.views.addForm'),
+    (r'^jobs/api/add_hadoop/$', 'jobs.views.api_submit_new_hadoop_job'),
+    (r'^jobs/api/update_hadoop/$', 'jobs.views.api_update_hadoop_job'),
+    (r'^jobs/api/finish_hadoop/$', 'jobs.views.api_finish_hadoop_job'),
     (r'^jobs/add/$', 'jobs.views.add'),                   
     (r'^jobs/close.*$', 'jobs.views.close'),
     (r'^jobs/errorResult.*$', 'jobs.views.errorResult'),
     (r'^jobs/site/(?P<siteName>\w+)/', 'jobs.views.siteDetail'),
     (r'^site/(?P<siteName>\w+)/', 'jobs.views.siteDetail')
+
     # (r'^admin/', include(admin.site.urls)),
 )

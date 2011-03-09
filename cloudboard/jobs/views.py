@@ -417,9 +417,9 @@ def filterJobList(serverSite, job_list):
 #
 
 gangliaURLs = {
-     'HP' : 'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=tcloud-pms',
-     'Northwestern' : 'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=nw-pms',
-     'Kaiserslautern' : 'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=ks-pm'
+     'HP' : 'http://transcloud.dyndns.org/ganglia/?r=hour&s=descending&c=tcloud-pms',
+     'Northwestern' : 'http://transcloud.dyndns.org/ganglia/?r=hour&s=descending&c=nw-pms',
+     'Kaiserslautern' : 'http://transcloud.dyndns.org/ganglia/?r=hour&s=descending&c=ks-pm'
      }
 
 defaultGangliaURL = 'http://66.183.89.113:8080/ganglia/'
@@ -652,3 +652,33 @@ def developerClose(request):
  
 
 
+def api_submit_new_hadoop_job(request):
+     name = request.POST['name']
+     site = request.POST['site']
+     startTime: request.POST['startTime'] 
+     nodes = request.POST['nodes'] 
+     size = request.POST['size'] 
+     description = request.POST['description']
+     
+     # TODO make the job
+
+     return HttpResponse("Created: %s, %s"%(name,site))
+
+def api_update_hadoop_job(request):
+     
+     name = request.POST['name']
+     percent = request.POST['percent']
+     timeInSec = request.POST['timeInSec']
+     
+     # TODO update job here
+
+     return HttpResponse("%s updated to, %s"%(name,percent))
+
+def api_finish_hadoop_job(request):
+
+     name = request.POST['name']
+     timeInSec = request.POST['timeInSec']
+
+     #TODO call finish here
+
+     return HttpResponse("Finished %s"%(request.POST['name']))
