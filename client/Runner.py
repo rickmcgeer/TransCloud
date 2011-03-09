@@ -19,6 +19,7 @@ class RunningProcess(threading.Thread):
         @param callbacks: pass list of new output lines as they come in to these functions.
         @param poll_time:  time in seconds between output polling (floats okay)  """
         self.output = []
+        self.out = ""
         self.callbacks = callbacks
         threading.Thread.__init__(self)
         self.start_time = time.time()
@@ -34,29 +35,29 @@ class RunningProcess(threading.Thread):
        
      
       
-    def _poll_stderr(self):
-        while True:
-            new_out_items = ""
-            try:
-              new_out_items = self.p.stderr.readline()
-            except: 
-              pass
-            self._append_output(new_out_items)
-            if self.is_dead() or self.is_ended():
-              return
-            
-            time.sleep(self.poll_time)  
+#    def _poll_stderr(self):
+#        while True:
+#            new_out_items = ""
+#            try:
+#              new_out_items = self.p.stderr.readline()
+#            except: 
+#              pass
+#            self._append_output(new_out_items)
+#            if self.is_dead() or self.is_ended():
+#              return
+#            
+#            time.sleep(self.poll_time)  
       
     def run(self):
         """Thread Start"""
-        thread = threading.Thread(target=self._poll_stderr())
-        thread.start()
+#        thread = threading.Thread(target=self._poll_stderr())
+#        thread.start()
         while True:
-            print ".",
+#            print ".",
             new_out_items = ""
        
             try:
-              new_out_items = self.p.stdout.readline()      
+              new_out_items = self.p.stderr.readline()      
             except: 
               pass
             self._append_output(new_out_items)
@@ -146,12 +147,14 @@ class RunningProcess(threading.Thread):
 def print_results(new_items):
   print new_items,
 
-def send_to_server(new_items):
+
+
+def parse_and_dispatch(new_items):
   print ">>>>", new_items,
   #TODO this is where you regx the output to get data
 
 if __name__ == '__main__':
-    r = RunningProcess(['/bin/ping','-c', '10', 'localhost'], [print_results, send_to_server])
+    r = RunningProcess(['/usr/bin/ssh',"hadoop@165.124.3.120", "\'./start_pig.sh\'"], [print_results, parse_and_dispatch])
     r.start()
     r.wait() # don't have to do this
     print r.get_out_log()
