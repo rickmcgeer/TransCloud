@@ -655,7 +655,7 @@ def developerClose(request):
 def api_submit_new_hadoop_job(request):
      name = request.POST['name']
      site = request.POST['site']
-     startTime: request.POST['startTime'] 
+     startTime = request.POST['startTime'] 
      nodes = request.POST['nodes'] 
      size = request.POST['size'] 
      description = request.POST['description']
