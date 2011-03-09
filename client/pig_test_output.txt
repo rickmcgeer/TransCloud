@@ -1,0 +1,177 @@
+hadoop@opencirrus-07501:~$ ./pig_test.pig
+2011-03-08 13:22:30,392 [main] INFO  org.apache.pig.Main - Logging error messages to: /usr/local/pig-0.8.0/logs/logfile
+2011-03-08 13:22:30,599 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - Connecting to hadoop file system at: hdfs://opencirrus-07501.hpl.hp.com:54310
+2011-03-08 13:22:30,716 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - Connecting to map-reduce job tracker at: opencirrus-07501.hpl.hp.com:54311
+2011-03-08 13:22:31,069 [main] WARN  org.apache.pig.PigServer - Encountered Warning IMPLICIT_CAST_TO_DOUBLE 1 time(s).
+2011-03-08 13:22:31,071 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig features used in the script: HASH_JOIN,GROUP_BY,UNION
+2011-03-08 13:22:31,071 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - pig.usenewlogicalplan is set to true. New logical plan will be used.
+2011-03-08 13:22:31,404 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - (Name: D2: Store(hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_traffic:org.apache.pig.builtin.PigStorage) - scope-195 Operator Key: scope-195)
+2011-03-08 13:22:31,404 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - (Name: K: Store(hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_traffic_per_known_protocol:org.apache.pig.builtin.PigStorage) - scope-192 Operator Key: scope-192)
+2011-03-08 13:22:31,404 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - (Name: M: Store(hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_known_traffic:org.apache.pig.builtin.PigStorage) - scope-144 Operator Key: scope-144)
+2011-03-08 13:22:31,404 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - (Name: N: Store(hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/traffic_percent_per_protocol:org.apache.pig.builtin.PigStorage) - scope-189 Operator Key: scope-189)
+2011-03-08 13:22:31,404 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - (Name: D2: Store(hdfs://opencirrus-07501.hpl.hp.com:54310/tmp/temp2023791188/tmp-57980328:org.apache.pig.impl.io.InterStorage) - scope-176 Operator Key: scope-176)
+2011-03-08 13:22:31,417 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MRCompiler - File concatenation threshold: 100 optimistic? false
+2011-03-08 13:22:31,434 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MRCompiler - number of input files: 1
+2011-03-08 13:22:31,440 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.CombinerOptimizer - Choosing to move algebraic foreach to combiner
+2011-03-08 13:22:31,446 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.CombinerOptimizer - Choosing to move algebraic foreach to combiner
+2011-03-08 13:22:31,449 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.CombinerOptimizer - Choosing to move algebraic foreach to combiner
+2011-03-08 13:22:31,463 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MRCompiler$LastInputStreamingOptimizer - Rewrite: POPackage->POForEach to POJoinPackage
+2011-03-08 13:22:31,463 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MRCompiler$LastInputStreamingOptimizer - Rewrite: POPackage->POForEach to POJoinPackage
+2011-03-08 13:22:31,474 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - MR plan size before optimization: 12
+2011-03-08 13:22:31,474 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 1 map-only splittees.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 0 map-reduce splittees.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 1 out of total 4 MR operators.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 0 diamond splitter.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 0 out of total 3 MR operators.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 2 map-only splittees.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 2 out of total 3 MR operators.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 1 map-only splittees.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 1 map-reduce splittees.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 2 out of total 3 MR operators.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 0 diamond splitter.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - Merged 0 out of total 3 MR operators.
+2011-03-08 13:22:31,475 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MultiQueryOptimizer - MR plan size after optimization: 7
+2011-03-08 13:22:31,509 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:22:31,524 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:22:33,543 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up multi store job
+2011-03-08 13:22:33,637 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:22:33,638 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:22:35,442 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up single store job
+2011-03-08 13:22:35,449 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 2 map-reduce job(s) waiting for submission.
+2011-03-08 13:22:35,626 [Thread-16] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:22:35,626 [Thread-16] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:22:35,637 [Thread-16] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:22:35,920 [Thread-16] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:22:35,920 [Thread-16] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:22:35,922 [Thread-16] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 2
+2011-03-08 13:22:35,949 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0026
+2011-03-08 13:22:35,949 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0026
+2011-03-08 13:22:35,951 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 0% complete
+2011-03-08 13:22:36,559 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0027
+2011-03-08 13:22:36,560 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0027
+2011-03-08 13:22:46,122 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 7% complete
+2011-03-08 13:22:49,132 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 14% complete
+2011-03-08 13:22:49,633 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 16% complete
+2011-03-08 13:22:52,641 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 17% complete
+2011-03-08 13:22:58,654 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 19% complete
+2011-03-08 13:23:07,673 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 22% complete
+2011-03-08 13:23:25,711 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 28% complete
+2011-03-08 13:23:31,263 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:23:31,264 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:23:32,506 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up single store job
+2011-03-08 13:23:32,513 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - BytesPerReducer=1000000000 maxReducers=999 totalInputFileSize=85193920
+2011-03-08 13:23:32,513 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Neither PARALLEL nor default parallelism is set for this job. Setting number of reducers to 1
+2011-03-08 13:23:32,531 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:23:32,532 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:23:34,288 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up single store job
+2011-03-08 13:23:34,295 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - BytesPerReducer=1000000000 maxReducers=999 totalInputFileSize=85193920
+2011-03-08 13:23:34,295 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Neither PARALLEL nor default parallelism is set for this job. Setting number of reducers to 1
+2011-03-08 13:23:34,303 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 2 map-reduce job(s) waiting for submission.
+2011-03-08 13:23:34,390 [Thread-35] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 2
+2011-03-08 13:23:34,390 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 2
+2011-03-08 13:23:34,392 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 2
+2011-03-08 13:23:34,397 [Thread-35] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:23:34,397 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:23:34,398 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:23:34,612 [Thread-35] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:23:34,612 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:23:34,613 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:23:34,619 [Thread-35] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 2
+2011-03-08 13:23:34,619 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 2
+2011-03-08 13:23:34,620 [Thread-35] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 2
+2011-03-08 13:23:34,804 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0028
+2011-03-08 13:23:34,804 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0028
+2011-03-08 13:23:34,804 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0029
+2011-03-08 13:23:34,804 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0029
+2011-03-08 13:23:43,349 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 30% complete
+2011-03-08 13:23:43,850 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 33% complete
+2011-03-08 13:23:46,363 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 38% complete
+2011-03-08 13:23:49,373 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 40% complete
+2011-03-08 13:23:52,383 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 43% complete
+2011-03-08 13:23:55,894 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 50% complete
+2011-03-08 13:24:04,415 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 57% complete
+2011-03-08 13:24:09,951 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:24:09,952 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:24:11,738 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up multi store job
+2011-03-08 13:24:11,754 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - BytesPerReducer=1000000000 maxReducers=999 totalInputFileSize=18752295
+2011-03-08 13:24:11,754 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Neither PARALLEL nor default parallelism is set for this job. Setting number of reducers to 1
+2011-03-08 13:24:11,767 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 1 map-reduce job(s) waiting for submission.
+2011-03-08 13:24:11,890 [Thread-51] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:24:11,890 [Thread-51] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:24:11,891 [Thread-51] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:24:11,895 [Thread-51] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:24:11,895 [Thread-51] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:24:11,896 [Thread-51] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:24:12,267 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0030
+2011-03-08 13:24:12,267 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0030
+2011-03-08 13:24:19,283 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 60% complete
+2011-03-08 13:24:22,289 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 64% complete
+2011-03-08 13:24:31,307 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 71% complete
+2011-03-08 13:24:37,339 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:24:37,340 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:24:39,101 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up single store job
+2011-03-08 13:24:39,119 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig script settings are added to the job
+2011-03-08 13:24:39,120 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - mapred.job.reduce.markreset.buffer.percent is not set, set to default 0.3
+2011-03-08 13:24:40,893 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler - Setting up single store job
+2011-03-08 13:24:40,907 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 2 map-reduce job(s) waiting for submission.
+2011-03-08 13:24:40,978 [Thread-62] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:24:40,978 [Thread-62] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:24:40,979 [Thread-62] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:24:41,181 [Thread-62] INFO  org.apache.hadoop.mapreduce.lib.input.FileInputFormat - Total input paths to process : 1
+2011-03-08 13:24:41,181 [Thread-62] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths to process : 1
+2011-03-08 13:24:41,182 [Thread-62] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2011-03-08 13:24:41,407 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0031
+2011-03-08 13:24:41,407 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0031
+2011-03-08 13:24:41,407 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - HadoopJobId: job_201103061658_0032
+2011-03-08 13:24:41,407 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - More information at: http://opencirrus-07501.hpl.hp.com:50030/jobdetails.jsp?jobid=job_201103061658_0032
+2011-03-08 13:24:49,437 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 78% complete
+2011-03-08 13:24:52,453 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 85% complete
+2011-03-08 13:24:55,463 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 92% complete
+2011-03-08 13:25:06,498 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - 100% complete
+2011-03-08 13:25:06,501 [main] INFO  org.apache.pig.tools.pigstats.PigStats - Script Statistics:
+
+HadoopVersion   PigVersion      UserId  StartedAt       FinishedAt      Features
+0.20.2  0.8.0   hadoop  2011-03-08 13:22:31     2011-03-08 13:25:06     HASH_JOIN,GROUP_BY,UNION
+
+Success!
+
+Job Stats (time in seconds):
+JobId   Maps    Reduces MaxMapTime      MinMapTIme      AvgMapTime      MaxReduceTime   MinReduceTime   AvgReduceTime   Alias   Feature Outputs
+job_201103061658_0026   1       0       6       6       6       0       0      0B       MAP_ONLY
+job_201103061658_0027   2       1       33      18      25      27      27     27       A,D,D1,D2       MULTI_QUERY,COMBINER    hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_traffic,
+job_201103061658_0028   3       1       12      3       8       21      21     21       E,G     HASH_JOIN
+job_201103061658_0029   3       1       6       3       5       12      12     12       F,H     HASH_JOIN
+job_201103061658_0030   2       1       6       3       4       12      12     12       I,J,K   GROUP_BY,MULTI_QUERY,COMBINER   hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_traffic_per_known_protocol,
+job_201103061658_0031   1       1       3       3       3       12      12     12       L,M     GROUP_BY,COMBINER       hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_known_traffic,
+job_201103061658_0032   1       0       6       6       6       0       0      0N       MAP_ONLY        hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/traffic_percent_per_protocol,
+
+Input(s):
+Successfully read 704646 records (97525331 bytes) from: "hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/data/umass1.txt"
+Successfully read 521 records (8943 bytes) from: "hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/data/services-list.txt"
+
+Output(s):
+Successfully stored 145 records (4146 bytes) in: "hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/traffic_percent_per_protocol"
+Successfully stored 145 records (2112 bytes) in: "hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_traffic_per_known_protocol"
+Successfully stored 1 records (16 bytes) in: "hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_traffic"
+Successfully stored 1 records (16 bytes) in: "hdfs://opencirrus-07501.hpl.hp.com:54310/user/hadoop/results/pig_test/total_known_traffic"
+
+Counters:
+Total records written : 292
+Total bytes written : 6290
+Spillable Memory Manager spill count : 0
+Total bags proactively spilled: 1
+Total records proactively spilled: 3046
+
+Job DAG:
+job_201103061658_0026   ->      job_201103061658_0028,job_201103061658_0029,
+job_201103061658_0027   ->      job_201103061658_0028,job_201103061658_0029,
+job_201103061658_0028   ->      job_201103061658_0030,
+job_201103061658_0029   ->      job_201103061658_0030,
+job_201103061658_0030   ->      job_201103061658_0032,job_201103061658_0031,
+job_201103061658_0032
+job_201103061658_0031
+
+
+2011-03-08 13:25:06,529 [main] WARN  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - Encountered Warning ACCESSING_NON_EXISTENT_FIELD 301456 time(s).
+2011-03-08 13:25:06,529 [main] INFO  org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.MapReduceLauncher - Success!
+hadoop@opencirrus-07501:~$

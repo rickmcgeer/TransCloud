@@ -653,16 +653,16 @@ def developerClose(request):
 
 
 def api_submit_new_hadoop_job(request):
-     name = request.POST['name']
-     site = request.POST['site']
-     startTime = request.POST['startTime'] 
-     nodes = request.POST['nodes'] 
-     size = request.POST['size'] 
-     description = request.POST['description']
-     
-     # TODO make the job
+  name = request.POST['name']
+  site = request.POST['site']
+  startTime = request.POST['startTime'] 
+  nodes = request.POST['nodes'] 
+  size = request.POST['size'] 
+  description = request.POST['description']
 
-     return HttpResponse("Created: %s, %s"%(name,site))
+     # TODO make the job
+     
+  return HttpResponse("Created: %s, %s" % (name, site))
 
 def api_update_hadoop_job(request):
      
@@ -672,7 +672,7 @@ def api_update_hadoop_job(request):
      
      # TODO update job here
 
-     return HttpResponse("%s updated to, %s"%(name,percent))
+     return HttpResponse("%s updated to, %s" % (name, percent))
 
 def api_finish_hadoop_job(request):
 
@@ -681,4 +681,5 @@ def api_finish_hadoop_job(request):
 
      #TODO call finish here
 
-     return HttpResponse("Finished %s"%(request.POST['name']))
+     return HttpResponse("Finished %s" % (request.POST['name']))
+
