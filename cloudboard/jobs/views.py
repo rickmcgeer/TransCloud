@@ -422,7 +422,7 @@ gangliaURLs = {
      'Kaiserslautern' : 'http://transcloud.dyndns.org/ganglia/?r=hour&s=descending&c=ks-pm'
      }
 
-defaultGangliaURL = 'http://66.183.89.113:8080/ganglia/'
+defaultGangliaURL = 'http://transcloud.dyndns.org/ganglia/'
 
 def getContext(serverSite = None):
     job_list = Job.objects.all()
