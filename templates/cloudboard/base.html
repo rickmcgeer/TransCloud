@@ -42,6 +42,26 @@ var mynetworks = [
 {% endfor %}
 ];
 
+var gangliaURL = "http://66.183.89.113:8080/ganglia/";
+
+function setGangliaURL() {
+   var loc = '{{ location }}';
+   if (loc == 'HP') {
+        gangliaURL =
+   'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=tcloud-pms';
+   }
+   else if (loc == 'Northwestern')  {
+        gangliaURL =
+   'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=nw-pms';
+   } else if (loc == 'Kaiserslautern') {
+        gangliaURL =
+   'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=ks-pm';
+   }
+   var gangliaFrame = getElementByID('gangliaFrame');
+   gangliaFrame.location.href = gangliaURL;
+}
+
+
 
 function initialize() {
   var myOptions = {
@@ -150,12 +170,13 @@ function handleNoGeolocation(errorFlag) {
 
 
 </head>
-<body onload="initialize()">
+<body onload="initialize(); setGangliaURL();">
 <center>  
 <H1> TransCloud </H1>
   <div id="map_canvas" style="width:1024px; height:768px;"></div>
 </center>
 {% block errorBlock %}
+
 <p>
 {{ errorMessage }}
 </p>
@@ -206,14 +227,19 @@ function handleNoGeolocation(errorFlag) {
 <p><a href="/jobs/developer/addForm">Add a job?</a></p>
 
 {% endblock %}
-	
+
 <H2> Cluster Statistics </H2>
-<iframe src="http://66.183.89.113:8080/ganglia/" width="100%" height=1024>
+<!--
+<iframe id="gangliaFrame" src="http://66.183.89.113:8080/ganglia/" width="100%" height=1024>
   <p>Your browser does not support iframes.</p>
 </iframe>
+-->
+{% autoescape off %}
+{{ ganglia_frame_code }}
+{% endautoescape %}
 	
 {% block summaryBlock %}
-	<H2>Statistics</H2>
+	<H2>Transcoding Statistics</H2>
 {% if server_list %}
 <table border="0" width="100%" bgcolor="#E0E0E0"> 
 <tr><td valign="top"><font size="4"><strong>Server Status</strong></font></td> </tr> 

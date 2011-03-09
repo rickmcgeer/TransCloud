@@ -415,6 +415,15 @@ def filterJobList(serverSite, job_list):
 #
 # Common body between index and requestResult
 #
+
+gangliaURLs = {
+     'HP' : 'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=tcloud-pms',
+     'Northwestern' : 'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=nw-pms',
+     'Kaiserslautern' : 'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=ks-pm'
+     }
+
+defaultGangliaURL = 'http://66.183.89.113:8080/ganglia/'
+
 def getContext(serverSite = None):
     job_list = Job.objects.all()
     jobList = filterJobList(serverSite, job_list)
@@ -431,12 +440,23 @@ def getContext(serverSite = None):
     paneHTML = statusPane.genHTML()
     latest_site_list = Site.objects.all()
     latest_net_list = Network.objects.all()
+    if serverSite and serverSite in gangliaURLs:
+         gangliaURL = gangliaURLs[serverSite]
+    else: gangliaURL = defaultGangliaURL
+
+    gangliaFrameCode = '<iframe id="gangliaFrame" src="%s" '  % gangliaURL
+    gangliaFrameCode += 'width="100%" height=1024>\n'
+    gangliaFrameCode += '<p>Your browser does not support iframes.</p>\n</iframe>\n'
+         
     c = Context({
         'latest_job_list': latest_job_list,
         'server_list':server_list,
         'summary_panel':paneHTML,
         'latest_site_list': latest_site_list,
         'latest_net_list':latest_net_list,
+        'ganglia_url': gangliaURL,
+         'ganglia_frame_code': gangliaFrameCode,
+        'location' : serverSite
     })
     return c
     
