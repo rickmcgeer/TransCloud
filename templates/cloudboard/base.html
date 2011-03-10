@@ -42,23 +42,25 @@ var mynetworks = [
 {% endfor %}
 ];
 
-var gangliaURL = "http://66.183.89.113:8080/ganglia/";
+var gangliaURLBase = "http://transcloud.dyndns.org/ganglia/";
+var gangliaURL = gangliaURLBase;
+
+function getGangliaURL(loc) {
+	 if (loc == 'HP') {
+	       return gangliaURLBase + '?r=hour&s=descending&c=tcloud-pms';
+	 } else if (loc == 'Northwestern')  {
+		   return gangliaURLBase + '?r=hour&s=descending&c=nw-pms';
+	 } else if (loc == 'Kaiserslautern') {
+		   return gangliaURLBase + '?r=hour&s=descending&c=ks-pm';
+	 }
+	
+}
 
 function setGangliaURL() {
    var loc = '{{ location }}';
-   if (loc == 'HP') {
-        gangliaURL =
-   'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=tcloud-pms';
-   }
-   else if (loc == 'Northwestern')  {
-        gangliaURL =
-   'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=nw-pms';
-   } else if (loc == 'Kaiserslautern') {
-        gangliaURL =
-   'http://66.183.89.113:8080/ganglia/?r=hour&s=descending&c=ks-pm';
-   }
-   var gangliaFrame = getElementByID('gangliaFrame');
-   gangliaFrame.location.href = gangliaURL;
+   gangliaURL = getGangliaURL(loc)
+   var gangliaFrame = document.getElementByID('gangliaFrame');
+   gangliaFrame.location.src = gangliaURL;
 }
 
 
@@ -147,8 +149,7 @@ var latandlon = new google.maps.LatLng(site[1], site[2]);
     position: latandlon
   });
   google.maps.event.addListener(marker, 'click', function() {
-    // document.getElementById('DivExample').innerHTML = "<p>"+ site[0] +"</p>";
-    window.location.pathname="/site/" + site[0] + "/"
+	  document.getElementById("gangliaFrame").src = getGangliaURL(site[0]);
   });
 }
 
