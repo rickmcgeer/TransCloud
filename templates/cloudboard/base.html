@@ -258,6 +258,9 @@ function handleNoGeolocation(errorFlag) {
 <p><a href="/jobs/developer/addForm">Add a job?</a></p>
 
 {% endblock %}
+	
+{% block hadoop_developer_block %}
+{% endblock %}
 
 <H2> Cluster Statistics </H2>
 <!--
@@ -270,6 +273,16 @@ function handleNoGeolocation(errorFlag) {
 {% endautoescape %}
 	
 {% block summaryBlock %}
+	<H2>Hadoop Statistics</H2>
+	<table border="1">
+	  <tr><th>Site</th><th>Current Jobs</th><th>History</th></tr>
+	  {% autoescape off %}
+
+	  {% for site in site_list %}
+	      <tr><td>{{site.siteName}}</td><td>{{site.currentJobsChart}}</td><td>{{site.hadoopHistory}}</td></tr>
+	  {% endfor %}
+	  {% endautoescape %}
+	</table>
 	<H2>Transcoding Statistics</H2>
 {% if server_list %}
 <table border="0" width="100%" bgcolor="#E0E0E0"> 
