@@ -53,8 +53,19 @@ function getGangliaURL(loc) {
 	 } else if (loc == 'Kaiserslautern') {
 		   return gangliaURLBase + '?r=hour&s=descending&c=ks-pm';
 	 }
-	
 }
+
+function getGangliaSmallGrpah(loc) {
+	 if (loc == 'HP') {
+		 //graph.php?g=cpu_report&z=small&c=ks-pm&m=load_one&r=hour&s=descending&hc=4&mc=2
+	       return gangliaURLBase + 'graph.php?g=cpu_report&z=medium&c=tcloud-pms&m=load_one&r=hour&s=descending&hc=4&mc=2';
+	 } else if (loc == 'Northwestern')  {
+		   return gangliaURLBase + 'graph.php?g=cpu_report&z=medium&c=nw-pms&m=load_one&r=hour&s=descending&hc=4&mc=2';
+	 } else if (loc == 'Kaiserslautern') {
+		   return gangliaURLBase + 'graph.php?g=cpu_report&z=medium&c=ks-pm&m=load_one&r=hour&s=descending&hc=4&mc=2';
+	 }
+}
+
 
 function setGangliaURL() {
    var loc = '{{ location }}';
@@ -77,11 +88,7 @@ function initialize() {
     browserSupportFlag = true;
     navigator.geolocation.getCurrentPosition(function(position) {
       initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
-      contentString = "This is where you are.";
-      
-      infowindow.setContent(contentString);
-      infowindow.setPosition(initialLocation);
-      infowindow.open(map);
+     
     }, function() {
       handleNoGeolocation(browserSupportFlag);
     });
@@ -138,9 +145,18 @@ var polyline = new google.maps.Polyline({clickable:true,
 
 }
 
+function getBubbleContents(site) {
+	 if (site == 'HP' || site == 'Northwestern' || site == "Kaiserslautern") {
+		return '<img src="' + getGangliaSmallGrpah(site)  + '" />';
+	 } else {
+		 return '<b>' + site + '</b>'
+	 }
+}
+
+var markers = []
 
 function makeMarker(site) {
-var latandlon = new google.maps.LatLng(site[1], site[2]);
+ var latandlon = new google.maps.LatLng(site[1], site[2]);
  marker = new google.maps.Marker({
     title:site[0],
     map:map,
@@ -148,9 +164,23 @@ var latandlon = new google.maps.LatLng(site[1], site[2]);
     animation: google.maps.Animation.DROP,
     position: latandlon
   });
-  google.maps.event.addListener(marker, 'click', function() {
+ markers[site[0]] = marker
+  google.maps.event.addListener(marker, 'dblclick', function() {
 	  document.getElementById("gangliaFrame").src = getGangliaURL(site[0]);
   });
+  
+  var contentString = getBubbleContents(site[0])
+
+  var infowindow = new google.maps.InfoWindow({
+	    content: contentString
+  });
+
+
+	google.maps.event.addListener(marker, 'click', function() {
+	  infowindow.open(map, markers[site[0]]);
+	});
+	
+	
 }
 
 function handleNoGeolocation(errorFlag) {
