@@ -167,7 +167,7 @@ function makeMarker(site) {
  markers[site[0]] = marker
   google.maps.event.addListener(marker, 'dblclick', function() {
 	  document.getElementById("gangliaFrame").src = getGangliaURL(site[0]);
-          document.getElementById("statsFrame").src = "http://127.0.0.1:8000/site/" + site[0] +"/";
+          document.getElementById("statsFrame").src = "http://"+ window.location.host+"/site/" + site[0] +"/";
   });
   
   var contentString = getBubbleContents(site[0])
@@ -180,6 +180,7 @@ function makeMarker(site) {
 	google.maps.event.addListener(marker, 'click', function() {
 	  infowindow.open(map, markers[site[0]]);
 	});
+	
 	
 	
 }
