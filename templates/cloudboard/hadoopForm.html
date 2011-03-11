@@ -1,0 +1,35 @@
+<html>
+<head>
+<title>
+Hadoop Job Form Entry for Debugging
+</title>
+</head>
+<body>
+<h1>New Job Entry Form</h1>
+<form action="/jobs/api/add_hadoop/" method="post" id="Hadoop Add Job">
+<p>Name: <input type="text" size="40" maxLength="200" name="name"/>
+<p>Site: <input type="radio" name="site" value="UCSD">UCSD</input>
+<input type="radio" name="site" value="HP">HP</input>
+<input type="radio" name="site" value="Northwestern" checked="checked">Northwestern</input>
+<input type="radio" name="site" value="Kaiserslautern">Kaiserslautern</input>
+<p>Start time: <input type="text" size="40" maxLength="200" name="startTime"/>
+<p>Nodes: <input type="text" size="10" maxLength="200" name="nodes"/>
+<p>Size: <input type="text" size="10" maxLength="200" name="size"/>
+<p>description: <input type="text" size="50" maxLength="200" name="description"/>
+<p><input type="submit"/>
+</form>
+<h1>Update  Job Entry form</h1>
+<form action="/jobs/api/update_hadoop/" method="post" id="Hadoop Update Job">
+<p>Name: <input type="text" size="40" maxLength="200" name="name"/>
+<p>Percent: <input type="text" size="10" maxLength="200" name="percent"/>
+<p>Time in seconds: <input type="text" size="10" maxLength="200" name="timeInSec"/>
+<p><input type="submit"/>
+</form>
+<h1>Close Job Entry Form</h1>
+<form action="/jobs/api/finish_hadoop/" method="post" id="Hadoop Close Job">
+<p>Name: <input type="text" size="40" maxLength="200" name="name"/>
+<p>Time in seconds: <input type="text" size="10" maxLength="200" name="timeInSec"/>
+<p><input type="submit"/>
+</form>
+</body>
+</html>
