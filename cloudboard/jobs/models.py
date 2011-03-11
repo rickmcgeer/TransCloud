@@ -756,6 +756,18 @@ class HadoopJob(models.Model):
         else:
             raise CloseCompletedJobError(self.name)
 
+    
+
+    def jobEndedAfterDuration(self, durationInSeconds):
+        if not self.completed:
+            self.completed = True
+            self.duration = durationInSeconds
+            timeDelta = dateTime.timedelta(0, durationInSeconds)
+            self.endTime = self.startTime + timeDelta
+            self.save()
+        else:
+            raise CloseCompletedJobError(self.name) 
+
     def history(self):
         result = []
         timeStamps = self.getTimeStamps()

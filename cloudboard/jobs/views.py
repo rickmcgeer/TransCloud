@@ -1,5 +1,5 @@
 from django.template import Context, loader
-from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob
+from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob, newHadoopJob
 from django.http import HttpResponse, HttpResponseRedirect
 import datetime
 
@@ -654,16 +654,24 @@ def close(request):
 
 def developerClose(request):
      return doClose(request, '/jobs/developer/', '/jobs/developerErrorResult')
+
+def api_clear_hadoop_jobs(request):
+     HadoopJob.objects.all().delete()
+     return HttpResponse('All existing Hadoop Jobs blown away')
  
 
 
 def api_submit_new_hadoop_job(request):
   name = request.POST['name']
   site = request.POST['site']
-  startTime = request.POST['startTime'] 
-  nodes = request.POST['nodes'] 
-  size = request.POST['size'] 
+  startTimeField = request.POST['startTime']
+  startTime = parseDateCatchError(startTimeField)
+  nodestr = request.POST['nodes'] 
+  sizestr = request.POST['size'] 
   description = request.POST['description']
+  nodes = int(nodes)
+  size = int(sizestr)
+  newHadoopJob(name, site, startTime, nodes, size, description)
 
      # TODO make the job
      
@@ -672,8 +680,12 @@ def api_submit_new_hadoop_job(request):
 def api_update_hadoop_job(request):
      
      name = request.POST['name']
-     percent = request.POST['percent']
-     timeInSec = request.POST['timeInSec']
+     percentstr = request.POST['percent']
+     timeInSecStr = request.POST['timeInSec']
+     job = HadoopJob.objects.get(name=name)
+     percentage=int(percentstr)
+     timeInSecs=int(timeInSecStr)
+     job.newTimeStamp(timeInSecs, percentage)
      
      # TODO update job here
 
@@ -683,6 +695,9 @@ def api_finish_hadoop_job(request):
 
      name = request.POST['name']
      timeInSec = request.POST['timeInSec']
+     job = HadoopJob.objects.get(name=name)
+     durationInSeconds = int(timeInSec)
+     job.jobEndedAfterDuration(durationInSeconds)
 
      #TODO call finish here
 
