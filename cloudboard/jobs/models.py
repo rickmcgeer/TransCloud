@@ -762,7 +762,7 @@ class HadoopJob(models.Model):
         if not self.completed:
             self.completed = True
             self.duration = durationInSeconds
-            timeDelta = dateTime.timedelta(0, durationInSeconds)
+            timeDelta = datetime.timedelta(0, durationInSeconds)
             self.endTime = self.startTime + timeDelta
             self.save()
         else:

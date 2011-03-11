@@ -569,11 +569,11 @@ def addForm(request):
     response = response + '</table></form></td></tr></table>'
     return HttpResponse(response)
 
-def parseDate(field):
-     return datetime.datetime.strptime(field, "%a %b %d %H:%M:%S %Y")
+def parseDate(field, format="%a %b %d %H:%M:%S %Y"):
+     return datetime.datetime.strptime(field, format)
    
 
-def parseDateCatchError(field):
+def parseDateCatchError(field, format="%a %b %d %H:%M:%S %Y"):
      if not field: return None
      try:
           return  parseDate(field)
@@ -662,6 +662,11 @@ def developerClose(request):
 def api_clear_hadoop_jobs(request):
      HadoopJob.objects.all().delete()
      return HttpResponse('All existing Hadoop Jobs blown away')
+
+def enterHadoopForm(request):
+    c = getContext()
+    t = loader.get_template('cloudboard/hadoopForm.html')
+    return HttpResponse(t.render(c))
  
 
 
@@ -669,11 +674,12 @@ def api_submit_new_hadoop_job(request):
   name = request.POST['name']
   site = request.POST['site']
   startTimeField = request.POST['startTime']
-  startTime = parseDateCatchError(startTimeField)
+  startTime = parseDateCatchError(startTimeField, "%Y-%m-%d %H:%M:%S.%f")
+  if not startTime: startTime = datetime.datetime.now()
   nodestr = request.POST['nodes'] 
   sizestr = request.POST['size'] 
   description = request.POST['description']
-  nodes = int(nodes)
+  nodes = int(nodestr)
   size = int(sizestr)
   newHadoopJob(name, site, startTime, nodes, size, description)
 
@@ -693,7 +699,7 @@ def api_update_hadoop_job(request):
      
      # TODO update job here
 
-     return HttpResponse("%s updated to, %s" % (name, percent))
+     return HttpResponse("%s updated to %s%s at %d seconds" % (name, percentage, "%", timeInSecs))
 
 def api_finish_hadoop_job(request):
 

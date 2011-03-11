@@ -30,9 +30,10 @@ class RunningProcess():
 		if line.find("%") != -1:
 			tokens = line.split()
 			percent = tokens[len(tokens)-2]
+			pctage = percent[:len(percent)-2] # strip off the % sign
 			now = datetime.datetime.now()
-			elapsed = now - self.jobstuff['startTime']
-			TCSendData.update_job_status(self.jobstuff['name'], str(elapsed), percent )
+			elapsed = (now - self.jobstuff['startTime']).seconds
+			TCSendData.update_job_status(self.jobstuff['name'], str(elapsed), pctage )
 
 		if line.find("MR plan size after optimization:") != -1:
 			tokens = line.split()
@@ -48,7 +49,7 @@ class RunningProcess():
 		if ((line.find("Success") != -1) and (self.jobstuff['finished'] == False)):
 			self.jobstuff['finished'] = True
 			now = datetime.datetime.now()
-			elapsed = now - self.jobstuff['startTime']
+			elapsed = (now - self.jobstuff['startTime']).seconds
 			TCSendData.finish_job(self.jobstuff['name'], str(elapsed) )
 			
 	def print_jobstuff(self):

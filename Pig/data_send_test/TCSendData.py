@@ -36,6 +36,14 @@ def finish_job(job, elapsed_time):
 
 def http_send(interface, params):
     """Send this params dict to the interface on transcloud"""
+    print "#*** NEW REQUEST"
+    print 'params = {'
+    for param in params.keys():
+        print "    '%s' : '%s'," % (param, params[param])
+    print "}"
+    print 'request = ' + interface
+    print "#*** END REQUEST"
+
     params = urllib.urlencode(params)
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     conn = httplib.HTTPConnection(hostname)
@@ -52,9 +60,10 @@ def http_send(interface, params):
 if __name__ == '__main__':
     jobname = "Foodoop"
     send_new_job(jobname, "UVic", datetime.datetime.now(), "800", "123456", "Oink...")
-    update_job_status(jobname, datetime.datetime.now(), "10")
-    update_job_status(jobname, datetime.datetime.now(), "60")
-    update_job_status(jobname, datetime.datetime.now(), "80")
-    update_job_status(jobname, datetime.datetime.now(), "100")
-    finish_job(jobname, datetime.datetime.now())
+    time =  datetime.datetime.now().second
+    update_job_status(jobname, time, "10")
+    update_job_status(jobname, time, "60")
+    update_job_status(jobname, time, "80")
+    update_job_status(jobname, time, "100")
+    finish_job(jobname, time)
     

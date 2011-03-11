@@ -57,7 +57,7 @@ function getGangliaURL(loc) {
          }
 }
 
-function getGangliaSmallGrpah(loc) {
+function getGangliaSmallGraph(loc) {
 	 if (loc == 'HP') {
 		 //graph.php?g=cpu_report&z=small&c=ks-pm&m=load_one&r=hour&s=descending&hc=4&mc=2
 	       return gangliaURLBase + 'graph.php?g=cpu_report&z=medium&c=tcloud-pms&m=load_one&r=hour&s=descending&hc=4&mc=2';
@@ -149,7 +149,7 @@ var polyline = new google.maps.Polyline({clickable:true,
 
 function getBubbleContents(site) {
 	 if (site == 'HP' || site == 'Northwestern' || site == "Kaiserslautern") {
-		return '<img src="' + getGangliaSmallGrpah(site)  + '" />';
+		return '<img src="' + getGangliaSmallGraph(site)  + '" />';
 	 } else {
 		 return '<b>' + site + '</b>'
 	 }

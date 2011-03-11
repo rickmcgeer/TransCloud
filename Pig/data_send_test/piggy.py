@@ -19,8 +19,8 @@ def testc(output):
 	if (match != None):
 		print "C: " + match.group(0)
 
-a_reader = PigOutputReader.RunningProcess("Process_1A", "OpenCirrus", "Processing of an input file")
-b_reader = PigOutputReader.RunningProcess("Process_1B", "Germany", "Processing of an input file")
+a_reader = PigOutputReader.RunningProcess("Process_1A", "HP", "Processing of an input file")
+b_reader = PigOutputReader.RunningProcess("Process_1B", "Kaiserslautern", "Processing of an input file")
 		
 a = Runner.RunningProcess(["/home/hadoop/data_send_test/start1a.sh"], [a_reader.process_lines])
 b = Runner.RunningProcess(["/home/hadoop/data_send_test/start1b.sh"], [b_reader.process_lines])
