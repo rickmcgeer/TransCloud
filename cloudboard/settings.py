@@ -11,7 +11,8 @@ ADMINS = (
 # This should be the only line that needs to be changed for deployment
 #
 
-PROJECT_ROOT = '/Users/rick/Projects/Django/'
+# PROJECT_ROOT = '/Users/rick/Projects/Django/'
+PROJECT_ROOT = '/Users/rick/Projects/TransCloud/'
 
 MANAGERS = ADMINS
 

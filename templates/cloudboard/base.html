@@ -167,6 +167,7 @@ function makeMarker(site) {
  markers[site[0]] = marker
   google.maps.event.addListener(marker, 'dblclick', function() {
 	  document.getElementById("gangliaFrame").src = getGangliaURL(site[0]);
+          document.getElementById("statsFrame").src = "http://127.0.0.1:8000/site/" + site[0] +"/";
   });
   
   var contentString = getBubbleContents(site[0])
@@ -271,42 +272,15 @@ function handleNoGeolocation(errorFlag) {
 {% autoescape off %}
 {{ ganglia_frame_code }}
 {% endautoescape %}
-	
-{% block summaryBlock %}
-	<H2>Hadoop Statistics</H2>
-	<table border="1">
-	  <tr><th>Site</th><th>Current Jobs</th><th>History</th></tr>
-	  {% autoescape off %}
+<p>Foo!</p>
+{% autoescape off %}
+<iframe id="statsFrame"
+	src="http://127.0.0.1:8000/summaryStats/" width="100%"
+	height=1024>
+	<p>Your browser does not support iframes</p>
+</iframe>
+{% endautoescape %}
 
-	  {% for site in site_list %}
-	      <tr><td>{{site.siteName}}</td><td>{{site.currentJobsChart}}</td><td>{{site.hadoopHistory}}</td></tr>
-	  {% endfor %}
-	  {% endautoescape %}
-	</table>
-	<H2>Transcoding Statistics</H2>
-{% if server_list %}
-<table border="0" width="100%" bgcolor="#E0E0E0"> 
-<tr><td valign="top"><font size="4"><strong>Server Status</strong></font></td> </tr> 
-</table> 
-
- 
-  {% autoescape off %}
- <p>{{ summary_panel }}</p>
-  {% endautoescape %}
-
- <table border="1">
-  <tr><th>Server</th><th>Performance</th><th>Open Jobs</th><th>History</th></tr>
-    {% autoescape off %}
-    
-    {% for server in server_list %}
-        <tr><td>{{ server.address }}</td><td>{{ server.performanceURL }}</td><td>{{ server.queuedLoadURL }}</td>
-        <td>{{ server.historyURL }}</td></tr>
-    {% endfor %}
-    {% endautoescape %}
-  </table>
-
-{% endif %}
-{% endblock %}
 
 
     

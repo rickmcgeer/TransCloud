@@ -18,6 +18,7 @@ Installing Cloudboard
 <li> Copy the cloudboard, template, and apache directories to /usr/local/django/cloudboard
 <li> In /usr/local/django/cloudboard/apache/django.wsgi, set CLOUDBOARD\_ROOT='/usr/local/django/cloudboard'
 <li> In /usr/local/django/cloudboard/cloudboard/settings.py, set PROJECT\_ROOT='/usr/local/django/cloudboard/'
+<li> In /usr/local/django/cloudboard/templates/cloudboard/base.html, change 127.0.0.1:8000 to the address of the webserver (when we fix this, we will take out this instruction
 <li><i>PROJECT\_ROOT requires a trailing /, CLOUDBOARD\_ROOT requires that there be no trailing /</i>
 <li>In /etc/apache2/sites-available/default, add the lines:
 <ul>

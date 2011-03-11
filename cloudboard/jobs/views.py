@@ -474,10 +474,14 @@ def index(request):
     t = loader.get_template('cloudboard/index.html')
     return HttpResponse(t.render(c))
 
+def summaryStats(request):
+    c = getContext()
+    t = loader.get_template('cloudboard/summaryStats.html')
+    return HttpResponse(t.render(c))
+
 def siteDetail(request, siteName):
     c = getContext(siteName)
-    # print 'Getting detail for site ' + siteName
-    t = loader.get_template('cloudboard/index.html')
+    t = loader.get_template('cloudboard/summaryStats.html')
     return HttpResponse(t.render(c))
 
 #

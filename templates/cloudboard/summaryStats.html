@@ -1,0 +1,40 @@
+<html>
+<body>
+	
+{% block summaryBlock %}
+	<H2>Hadoop Statistics</H2>
+	<table border="1">
+	  <tr><th>Site</th><th>Current Jobs</th><th>History</th></tr>
+	  {% autoescape off %}
+
+	  {% for site in site_list %}
+	      <tr><td>{{site.siteName}}</td><td>{{site.currentJobsChart}}</td><td>{{site.hadoopHistory}}</td></tr>
+	  {% endfor %}
+	  {% endautoescape %}
+	</table>
+	<H2>Transcoding Statistics</H2>
+{% if server_list %}
+<table border="0" width="100%" bgcolor="#E0E0E0"> 
+<tr><td valign="top"><font size="4"><strong>Server Status</strong></font></td> </tr> 
+</table> 
+
+ 
+  {% autoescape off %}
+ <p>{{ summary_panel }}</p>
+  {% endautoescape %}
+
+ <table border="1">
+  <tr><th>Server</th><th>Performance</th><th>Open Jobs</th><th>History</th></tr>
+    {% autoescape off %}
+    
+    {% for server in server_list %}
+        <tr><td>{{ server.address }}</td><td>{{ server.performanceURL }}</td><td>{{ server.queuedLoadURL }}</td>
+        <td>{{ server.historyURL }}</td></tr>
+    {% endfor %}
+    {% endautoescape %}
+  </table>
+
+{% endif %}
+{% endblock %}
+</body>
+</html>

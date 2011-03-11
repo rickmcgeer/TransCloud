@@ -21,7 +21,8 @@ urlpatterns = patterns('',
     (r'^jobs/close.*$', 'jobs.views.close'),
     (r'^jobs/errorResult.*$', 'jobs.views.errorResult'),
     (r'^jobs/site/(?P<siteName>\w+)/', 'jobs.views.siteDetail'),
-    (r'^site/(?P<siteName>\w+)/', 'jobs.views.siteDetail')
+    (r'^site/(?P<siteName>\w+)/', 'jobs.views.siteDetail'),
+    (r'^summaryStats/$', 'jobs.views.summaryStats')
 
     # (r'^admin/', include(admin.site.urls)),
 )
