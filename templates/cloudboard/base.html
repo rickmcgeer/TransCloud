@@ -52,7 +52,9 @@ function getGangliaURL(loc) {
 		   return gangliaURLBase + '?r=hour&s=descending&c=nw-pms';
 	 } else if (loc == 'Kaiserslautern') {
 		   return gangliaURLBase + '?r=hour&s=descending&c=ks-pm';
-	 }
+	 } else {
+               return gangliaURLBase;
+         }
 }
 
 function getGangliaSmallGrpah(loc) {
