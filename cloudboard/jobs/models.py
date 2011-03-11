@@ -173,7 +173,7 @@ def completeJob(name):
         job.duration = durationInSeconds(job.startTime, job.endTime)
         job.save()
     else:
-        raise CloseCompletedJobError(name)
+        raise CloseCompletedJobError(name) 
 
 # the beginning of time, as far as we're concerned...no job can have a start or end time
 # before this.  hack to avoid figuring out what the min event is, which we can do if
@@ -496,8 +496,8 @@ class RandomJobList:
           return now - timeDelta
       
      @staticmethod
-     def genRandomEndDate(startDate):
-          delta = random.randint(1000,86400)
+     def genRandomEndDate(startDate, minSec = 1000, maxSec = 86400):
+          delta = random.randint(minSec, maxSec)
           timeDelta = datetime.timedelta(0, delta)
           return startDate + timeDelta
       
@@ -667,6 +667,213 @@ def newTransCloudDB():
     jobList = RandomJobList.createRandomJobList(1000, 30)
     deleteAllJobs()
     batchAddJobs(jobList)
+
+#
+# Kludge to get actual values from a CommaSeparatedIntegerField,
+# which turns out to be a comma-separate value string
+#
+def getActualValues(commaSeparatedValueField):
+    if not commaSeparatedValueField: return []
+    if len(commaSeparatedValueField) <= 2: return []
+    lastCharIndex = len(commaSeparatedValueField) - 1
+    strList = commaSeparatedValueField[1:lastCharIndex].split(',')
+    # Now we have a list of strings, each of which is really an int...
+    result = []
+    for intStr in strList:
+        result.append(int(intStr))
+    return result
+
+#
+# And to add a value...oy...this returns a list of values,
+# so use is:
+# foo = addValue(this.csvField, newVal)
+# this.cvsField = foo
+# this.save()
+#
+def addValue(commaSeparatedValueField, newValue):
+    valueList = getActualValues(commaSeparatedValueField)
+    valueList.append(newValue)
+    return valueList
+    
+
+#
+# A Hadoop Job, which looks a little like a transcoding job
+# but, in particular, isn't bound to a single server.  Due to the
+# nature of Hadoop we will only put this in the database when the
+# job is completed
+#
+# Fields as follows:
+# startTime: datetime.datetime: time the job started
+# endTime:  datetime.datetime: time the job ended
+# duration: integer: endTime - startTime, in seconds
+# name: string (max 200): the ID of the job.  NOTE THIS MUST BE UNIQUE!
+# site: string (max 200): name of the site, which must be a site in the database
+# description: string (max 200): description of the job
+# number of nodes: integer: number of nodes used for the job
+# size: total size of the data to be processed
+# Always manipulate timeStamps and percentage through the provide functions!
+#
+
+
+class HadoopJob(models.Model):
+    startTime = models.DateTimeField('Start Time')
+    endTime = models.DateTimeField('End Time')
+    duration = models.IntegerField('Duration')
+    name = models.CharField('hadoop id', max_length = 200)
+    site = models.CharField('site name', max_length = 200)
+    nodes = models.IntegerField('num nodes')
+    size = models.IntegerField('data size')
+    description = models.CharField('description', max_length = 200)
+    completed = models.BooleanField('done')
+    percentage = models.CommaSeparatedIntegerField('percentage', max_length=100)
+    timeStamps = models.CommaSeparatedIntegerField('time stamps', max_length = 100)
+
+    def newTimeStamp(self, timeInSecs, percentage):  # or do we want this with a time, and I compute timeInSecs?
+        self.timeStamps = addValue(self.timeStamps,timeInSecs)
+        self.percentage = addValue(self.percentage, percentage)
+        self.save()
+
+    def resetHistory(self, history):
+        self.timeStamps = []
+        self.percentage = []
+        for (time, percentage) in history:
+            self.timeStamps.append(time)
+            self.percentage.append(percentage)
+        self.save()
+
+    def getTimeStamps(self):
+        return getActualValues(self.timeStamps)
+
+    def getPercentages(self):
+        return getActualValues(self.percentage)
+
+    def completeJob(self, endTime):
+        if not self.completed:
+            self.completed = True
+            self.duration = durationInSeconds(self.startTime, endTime)
+            self.endTime = endTime
+            self.save()
+        else:
+            raise CloseCompletedJobError(self.name)
+
+    
+
+    def jobEndedAfterDuration(self, durationInSeconds):
+        if not self.completed:
+            self.completed = True
+            self.duration = durationInSeconds
+            timeDelta = dateTime.timedelta(0, durationInSeconds)
+            self.endTime = self.startTime + timeDelta
+            self.save()
+        else:
+            raise CloseCompletedJobError(self.name) 
+
+    def history(self):
+        result = []
+        timeStamps = self.getTimeStamps()
+        percentage = self.getPercentages()
+        for i in range(0, len(timeStamps) - 1):
+            result.append((timeStamps[i], percentage[i]))
+        return result
+    
+
+    def __unicode__(self):
+        result =  "Hadoop Job: " + self.name + " at " + self.site + " Nodes %d Size %d start %s "  % (self.nodes, self.size, str(self.startTime))
+        if self.completed:
+            return result + "duration %d" % self.duration
+        else:
+            return result + "history " + str(self.history())
+        
+
+#
+# a convenience function to create a newHadoopJob.  
+#
+
+def newHadoopJob(name, site, startTime, nodes, size, description = None):
+    hadoopJob = HadoopJob(name=name, startTime=startTime, endTime=startTime, duration=0,  site=site, nodes=nodes,
+                              size=size, description=description, percentage=[0], timeStamps=[0], completed=False)
+    hadoopJob.save()
+    return hadoopJob
+
+
+    
+
+
+#
+# Update a hadoop job with a new timestamp
+#
+def updateHadoopJob(name, timeInSecs, percentage): # note I have to change this signature if Chris wants to pass a timestamp
+    hadoopJobs = HadoopJob.objects.get(name=name)
+    for job in hadoopJobs:
+        hadoopJob.newTimeStamp(timeInSecs, percentage)
+   
+
+
+#
+# Complete a hadoop job.  Note it's done and remove it from jobs in progress
+#
+def finishHadoopJob(name, timeStamp):
+    hadoopJobs = HadoopJob.objects.get(name=name)
+    for job in hadoopJobs:
+        hadoopJob.completeJob(timeStamp)
+
+#
+# A random history
+#
+def randomHistory(maxTicks, maxTime):
+    result = [(0, 0)]
+    nextTime = 0
+    nextPct = 0
+    for i in range(1, maxTicks + 1):
+        ticksToGo = maxTicks + 1 - i
+        nextTime = random.randint(nextTime + 1, maxTime - ticksToGo)
+        nextPct = random.randint(nextPct + 1, 100 - ticksToGo)
+        result.append((nextTime, nextPct))
+    return result
+    
+    
+
+
+def generateRandomHadoopJob(name):
+    startTime = RandomJobList.genRandomStartDate()
+    
+    nodes = random.randint(4, 32)
+    size = random.randint(1 << 16, 1 << 24)
+    site = random.choice(['HP', 'Northwestern', 'UCSD', 'Kaiserslautern'])
+    result = newHadoopJob(name, site, startTime, nodes, size, "RandomTestJob")
+    coinToss = random.randint(0, 1000)
+    maxTicks = random.randint(0, 20)
+    maxTime = random.randint(1 << 7, 1 << 16)
+    history = randomHistory(maxTicks, maxTime)
+    result.resetHistory(history)
+    if coinToss >= 5:
+        (lastTime, lastPct) = history[len(history) - 1]
+        endTime = RandomJobList.genRandomEndDate(result.startTime, lastTime, lastTime + 500)
+        result.completeJob(endTime)
+    return result
+
+
+
+#
+#
+# Add some test data
+#
+def batchAddTestJobs(prefix="testHadoop"):
+    for i in range(0, 1000):
+        generateRandomHadoopJob(prefix + str(i))
+
+
+def resetHadoopJobs():
+    HadoopJob.objects.all().delete()
+    batchAddTestJobs()
+
+def tryIt():
+    HadoopJob.objects.all().delete()
+    generateRandomHadoopJob("foo")
+    
+
+    
+        
     
         
     

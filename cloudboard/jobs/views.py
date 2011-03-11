@@ -1,5 +1,5 @@
 from django.template import Context, loader
-from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server
+from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob, newHadoopJob
 from django.http import HttpResponse, HttpResponseRedirect
 import datetime
 
@@ -402,11 +402,11 @@ class ServerViewer:
 
 def filterJobList(serverSite, job_list):
      if not serverSite: return job_list
-     print 'Filtering for site ' + serverSite
+     # print 'Filtering for site ' + serverSite
      result = []
      for job in job_list:
           location = job.getLocation()
-          print 'location of job ' + job.__unicode__() + ' is ' + location
+          # print 'location of job ' + job.__unicode__() + ' is ' + location
           if location == serverSite:
                result.append(job)
      return result
@@ -447,6 +447,10 @@ def getContext(serverSite = None):
     gangliaFrameCode = '<iframe id="gangliaFrame" src="%s" '  % gangliaURL
     gangliaFrameCode += 'width="100%" height=1024>\n'
     gangliaFrameCode += '<p>Your browser does not support iframes.</p>\n</iframe>\n'
+    
+    siteViewers = []
+    for site in latest_site_list:
+        siteViewers.append(HadoopSiteViewer(site))
          
     c = Context({
         'latest_job_list': latest_job_list,
@@ -455,8 +459,9 @@ def getContext(serverSite = None):
         'latest_site_list': latest_site_list,
         'latest_net_list':latest_net_list,
         'ganglia_url': gangliaURL,
-         'ganglia_frame_code': gangliaFrameCode,
-        'location' : serverSite
+        'ganglia_frame_code': gangliaFrameCode,
+        'location' : serverSite,
+        'site_list' : siteViewers
     })
     return c
     
@@ -471,7 +476,7 @@ def index(request):
 
 def siteDetail(request, siteName):
     c = getContext(siteName)
-    print 'Getting detail for site ' + siteName
+    # print 'Getting detail for site ' + siteName
     t = loader.get_template('cloudboard/index.html')
     return HttpResponse(t.render(c))
 
@@ -649,16 +654,24 @@ def close(request):
 
 def developerClose(request):
      return doClose(request, '/jobs/developer/', '/jobs/developerErrorResult')
+
+def api_clear_hadoop_jobs(request):
+     HadoopJob.objects.all().delete()
+     return HttpResponse('All existing Hadoop Jobs blown away')
  
 
 
 def api_submit_new_hadoop_job(request):
   name = request.POST['name']
   site = request.POST['site']
-  startTime = request.POST['startTime'] 
-  nodes = request.POST['nodes'] 
-  size = request.POST['size'] 
+  startTimeField = request.POST['startTime']
+  startTime = parseDateCatchError(startTimeField)
+  nodestr = request.POST['nodes'] 
+  sizestr = request.POST['size'] 
   description = request.POST['description']
+  nodes = int(nodes)
+  size = int(sizestr)
+  newHadoopJob(name, site, startTime, nodes, size, description)
 
      # TODO make the job
      
@@ -667,8 +680,12 @@ def api_submit_new_hadoop_job(request):
 def api_update_hadoop_job(request):
      
      name = request.POST['name']
-     percent = request.POST['percent']
-     timeInSec = request.POST['timeInSec']
+     percentstr = request.POST['percent']
+     timeInSecStr = request.POST['timeInSec']
+     job = HadoopJob.objects.get(name=name)
+     percentage=int(percentstr)
+     timeInSecs=int(timeInSecStr)
+     job.newTimeStamp(timeInSecs, percentage)
      
      # TODO update job here
 
@@ -678,8 +695,150 @@ def api_finish_hadoop_job(request):
 
      name = request.POST['name']
      timeInSec = request.POST['timeInSec']
+     job = HadoopJob.objects.get(name=name)
+     durationInSeconds = int(timeInSec)
+     job.jobEndedAfterDuration(durationInSeconds)
 
      #TODO call finish here
 
      return HttpResponse("Finished %s" % (request.POST['name']))
+
+def listToURLString(pyList):
+     result = str(pyList[0])
+     for i in range(1, len(pyList)):
+          result = result + ',' + str(pyList[i])
+     return result
+
+def normalizeListOfNumbers(numList, multiplyFactor):
+     for i in range(0, len(numList)):
+          numList[i] = numList[i] * multiplyFactor
+
+class XYDataSeries:
+    def __init__(self, xData, yData, color="000000", name="Series"):
+         self.xData = xData
+         self.yData = yData
+         self.color = color
+         self.name = name
+
+    def getDataArgument(self):
+         return listToURLString(self.xData) + "|" + listToURLString(self.yData)
+
+
+
+colors = ["000000", "FF0000", "00FF00", "0000FF", "FFFF00", "00FFFF", "FF00FF", "330000", "003300", "000033"]
+
+class OpenJobsChart(GoogleChart):
+    def __init__(self, siteViewer):
+         self.parameters = ["cht=lxy",
+                            "chtt=Status+of+Open+Jobs+at+site " + siteViewer.siteName,
+                            "chxl=0:|Time|1:|Pct",
+                            "chxt=x,y",
+                            "chxs=0,000000|1,000000",
+                            "chs=440x220"]
+         self.width=500
+         self.height=250
+         self.dataSeries = []
+         maxTime = 0
+         for i in range(0, len(siteViewer.currentJobs)):
+              job = siteViewer.currentJobs[i]
+              timeStamps = job.getTimeStamps()
+              self.dataSeries.append(XYDataSeries(timeStamps, job.getPercentages(), colors[i], job.name))
+              lastTime = timeStamps[len(timeStamps) - 1]
+              if lastTime > maxTime: maxTime = lastTime
+              
+         if maxTime > 100:
+              multiplyFactor = 100.0/maxTime
+              for xySeries in self.dataSeries:
+                   normalizeListOfNumbers(xySeries.xData, multiplyFactor)
+              maxTime = 100
+
+         dataSeriesList = []
+         colorList = []
+         nameList = []
+
+         for xySeries in self.dataSeries:
+              dataSeriesList.append(xySeries.getDataArgument())
+              colorList.append(xySeries.color)
+              nameList.append(xySeries.name)
+
+
+         dataParam = '|'.join(dataSeriesList)
+         colorParam = ','.join(colorList)
+         nameParam = '|'.join(nameList)
+                                
+         self.parameters.append('chd=t:'+ dataParam)
+         self.parameters.append('chdl=' + nameParam)
+         self.parameters.append('chco=' + colorParam)
+         self.parameters.append('chxr=0,0,%d|1,0,100' % maxTime)
+         # self.parameters.append('chds=0,%d,0,100' % maxTime)
+         xLabelPos = maxTime >> 1
+         yLabelPos = 50
+         self.parameters.append('chxp=0,%d|1,%d' % (xLabelPos, yLabelPos))
+
+def normalize(intList):
+     maxList = 100
+     for num in intList: maxList = max(maxList, num)
+     if maxList == 100: return
+     multiplier = 100.0/maxList
+     for i in range(0, len(intList)): intList[i] = intList[i] * multiplier
+     return
+
+class FinishedJobsBarChart(GoogleChart):
+     def __init__(self, viewer):
+          self.parameters = ['chxt=y',
+                             'chbh=a',
+                             'chs=440x220',
+                             'cht=bvs',
+                             'chco=A2C180,3D7930,FF00FF',
+                             'chdl=Nodes|Size|Time',
+                             'chtt=Statistics+For+Closed+Jobs+At+Site+' + viewer.siteName,
+                             ]
+          self.width=500
+          self.height=250
+          nodes = []
+          time = []
+          size = []
+          history = viewer.jobHistory
+          if len(history) > 20:
+               history = history[len(history) - 20:]
+               
+          for job in history:
+               nodes.append(job.nodes)
+               time.append(job.duration)
+               size.append(job.size)
+          normalize(nodes)
+          normalize(size)
+          normalize(time)
+          self.parameters.append('chd=t:'+ dataToURLString(nodes) + '|' + dataToURLString(size) + '|' + dataToURLString(time))
+          
+               
+
+class HadoopSiteViewer:
+    def __init__(self, site):
+        self.siteName = site.name
+        self.currentJobs = []
+        self.jobHistory = []
+        hadoopJobs = HadoopJob.objects.filter(site=self.siteName)
+        for hadoopJob in hadoopJobs:
+            if hadoopJob.completed:
+                self.jobHistory.append(hadoopJob)
+            else:
+                self.currentJobs.append(hadoopJob)
+
+    def currentJobsChart(self):
+        if len(self.currentJobs) == 0:
+            return "<p>No Open Jobs</p>"
+        self.pctComplete = OpenJobsChart(self)
+        return self.pctComplete.genChartURL()
+        
+
+    def hadoopHistory(self):
+        if len(self.jobHistory) == 0:
+            return "<p>No Completed Jobs</p>"
+        self.finishedJobs = FinishedJobsBarChart(self)
+        return self.finishedJobs.genChartURL()
+        
+        
+ 
+
 
