@@ -33,16 +33,21 @@ def finish_job(job, elapsed_time):
             'timeInSec': elapsed_time}
   http_send("/jobs/api/finish_hadoop/",params)
 
+def logPrint(fileObj, strToPrint):
+    if fileObj:
+	print >> fileObj, strToPrint
+    else: print strToPrint
 
-def http_send(interface, params):
+def http_send(interface, params, logFile=None):
     """Send this params dict to the interface on transcloud"""
-    print "#*** NEW REQUEST"
-    print 'params = {'
+    if logFile: fileObj = open(logFile, 'a')
+    logPrint(fileObj, "#*** NEW REQUEST")
+    logPrint(fileObj, 'params = {')
     for param in params.keys():
-        print "    '%s' : '%s'," % (param, params[param])
-    print "}"
-    print 'request = ' + interface
-    print "#*** END REQUEST"
+        logPrint(fileObj, "    '%s' : '%s'," % (param, params[param]))
+    logPrint(fileObj, "}")
+    logPrint(fileObj, 'request = ' + interface)
+    logPrint(fileObj, "#*** END REQUEST")
 
     params = urllib.urlencode(params)
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
@@ -51,9 +56,10 @@ def http_send(interface, params):
     response = conn.getresponse()
 
     if response.status != 200:
-      print "Problem making http request to server: code %d message: %s"%(response.status, response.reason)
+      logPrint(fileObj, "Problem making http request to server: code %d message: %s"%(response.status, response.reason))
     data = response.read()
-    print "web: ", data
+    logPrint(fileObj, "web: " +  data)
+    if fileObj: close(fileObj)
     conn.close()
 
 

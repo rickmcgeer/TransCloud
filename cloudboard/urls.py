@@ -23,7 +23,16 @@ urlpatterns = patterns('',
     (r'^jobs/errorResult.*$', 'jobs.views.errorResult'),
     (r'^jobs/site/(?P<siteName>\w+)/', 'jobs.views.siteDetail'),
     (r'^site/(?P<siteName>\w+)/', 'jobs.views.siteDetail'),
-    (r'^summaryStats/$', 'jobs.views.summaryStats')
+    (r'^summaryStats/$', 'jobs.views.summaryStats'),
+    (r'^hadoop/$', 'jobs.views.hadoopJobTable'),
+    (r'^hadoop/site/(?P<siteName>\w+)/', 'jobs.views.hadoopSiteTable'),
+    (r'^jobs/api/add_hadoop_result/$', 'jobs.views.api_submit_new_hadoop_result'),
+    (r'^jobs/api/add_batch_hadoop_result/$', 'jobs.views.api_batch_hadoop_result'),
+    (r'^jobs/developer/enterHadoopResult/$', 'jobs.views.enterHadoopResultForm'),   
+                       
+                       
+                      
+
 
     # (r'^admin/', include(admin.site.urls)),
 )

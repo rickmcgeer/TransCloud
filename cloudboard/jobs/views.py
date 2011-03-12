@@ -1,5 +1,5 @@
 from django.template import Context, loader
-from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob, newHadoopJob
+from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob, newHadoopJob, topNProtocols, batchAddResults, addAnalysisResult, resultsFiled
 from django.http import HttpResponse, HttpResponseRedirect
 import datetime
 
@@ -735,7 +735,9 @@ class XYDataSeries:
 
 
 
-colors = ["000000", "FF0000", "00FF00", "0000FF", "FFFF00", "00FFFF", "FF00FF", "330000", "003300", "000033"]
+colors = ["FF0000", "00FF00", "0000FF", "FFFF00", "00FFFF", "FF00FF", "330000", "003300", "000033",
+          "333300", "330033", "003333", "770000", "007700", "000077", "770077", "777700", "007777", "0F0000",
+          "000F00", "00000F", "0F0F00", "0F000F", "000F0F", "000000", "FFFFFF"]
 
 class OpenJobsChart(GoogleChart):
     def __init__(self, siteViewer):
@@ -847,8 +849,115 @@ class HadoopSiteViewer:
             return "<p>No Completed Jobs</p>"
         self.finishedJobs = FinishedJobsBarChart(self)
         return self.finishedJobs.genChartURL()
-        
-        
- 
 
+def safeDataJoin(listOfFloats):
+     result = ""
+     for number in listOfFloats:
+          numberAsText = ("%5.2f" % number).strip()
+          result = result + "," + numberAsText
+     result = result[1:] # remove the leading comma
+     return result
+          
+
+class HadoopResultsPieChart(GoogleChart):
+     def __init__(self, hadoopJobViewer):
+          self.parameters = ["cht=p",
+                             "chtt=Results+for+Job+%s" % hadoopJobViewer.name,
+                             "chs=440x220"]
+          (protocols, percentages) = hadoopJobViewer.topJobs
+          dataString = ""
+          total = 0
+          for percentage in percentages:
+               dataString = dataString  + ("%5.2f" % percentage).strip() + ","
+               total = total + percentage
+          remainder = 100.0 - total
+          if remainder > 0:
+               dataString = dataString + ('%5.2f' % remainder).strip()
+               protocols.append('Other')
+          else: dataString = dataString[:len(dataString) - 2]
+          labelString = ('|'.join(protocols)).lstrip()
+          myColors = colors[:len(protocols) - 1]
+          colorString = ('|'.join(myColors)).lstrip()
+          self.parameters.append('chd=t:' + dataString)
+          self.parameters.append('chdl=' + labelString)
+          self.parameters.append('chco=' + colorString)
+          self.width = 440
+          self.height = 220
+          
+          
+     
+
+class HadoopJobViewer:
+     def __init__(self, hadoopJob):
+          self.siteName = hadoopJob.site
+          self.nodes = hadoopJob.nodes
+          self.size = hadoopJob.size
+          self.duration = hadoopJob.duration
+          self.topJobs = topNProtocols(hadoopJob.name, 20)
+          self.name = hadoopJob.name
+          if resultsFiled(self.name):
+               self.resultsChart = HadoopResultsPieChart(self)
+          else: self.resultsChart = None
+          self.resultChartURL = self.genResultChartURL()
+               
+
+     def genResultChartURL(self):
+          if self.resultsChart:
+               return self.resultsChart.genChartURL()
+          else:
+               return "<p>Results not filed!</p>"
+          
+
+def includeHadoopJobInList(hadoopJob, site):
+     if not hadoopJob.completed: return False
+     if not site: return True
+     return hadoopJob.site == site
+
+def getHadoopContext(site = None, entryJobList = None):
+     if entryJobList: jobList = entryJobList
+     else:
+          jobList = []
+          for job in HadoopJob.objects.all():
+               if includeHadoopJobInList(job, site):
+                    jobList.append(HadoopJobViewer(job))
+     c = Context({'hadoop_job_list': jobList})
+     return c
+          
+
+def doHadoopJobTable(request, site=None):
+    c = getHadoopContext(site=site)
+    t = loader.get_template('cloudboard/hadoopTemplate.html')
+    return HttpResponse(t.render(c))
+
+def hadoopJobTable(request):
+     return doHadoopJobTable(request, None)
+
+def hadoopSiteTable(request, siteName):
+     return doHadoopJobTable(request, siteName)
+
+def enterHadoopResultForm(request):
+     t = loader.get_template('cloudboard/hadoopResultForm.html')
+     return HttpResponse(t.render(Context({'message' : None})))
+
+def api_submit_new_hadoop_result(request):
+     jobName = request.POST["name"]
+     protocol = request.POST["protocol"]
+     percentageAsText = request.POST["percentage"]
+     percentage = float(percentageAsText)
+     addAnalysisResult(jobName, protocol, percentage)
+     t = loader.get_template('cloudboard/hadoopResultForm.html')
+     msg = '<p>Result %s:%s added for job %s</p>' % (jobName, protocol, percentage)
+     return HttpResponse(t.render(Context({'message' : msg})))
+
+def api_batch_hadoop_result(request):
+     jobName = request.POST['name']
+     entryListAsStr = request.POST['entries']
+     entries = entryListAsStr.split(',')
+     batchAddResults(jobName, entries)
+     jobs = HadoopJob.objects.filter(name=jobName)
+     c = getHadoopContext(entryJobList = jobs)
+     t = loader.get_template('cloudboard/hadoopTemplate.html')
+     return HttpResponse(t.render(c))
+     
+     
 

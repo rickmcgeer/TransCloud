@@ -870,6 +870,70 @@ def resetHadoopJobs():
 def tryIt():
     HadoopJob.objects.all().delete()
     generateRandomHadoopJob("foo")
+
+#
+# The result of one of Chris Pearson's Pig jobs on protocol traffic
+# fields: jobName: the name of the job that generated the result (text)
+#         protocolName: the name of the protocol
+#         percentage: percentage of traffic of that protocol (float)
+#
+class TrafficAnalysisResult(models.Model):
+    jobName = models.CharField('job id', max_length = 200)
+    protocolName = models.CharField('protocol name', max_length = 200)
+    percentage = models.FloatField('percentage of traffic')
+
+def addAnalysisResult(jobName, protocolName, percentage):
+    result = TrafficAnalysisResult(jobName = jobName, protocolName = protocolName, percentage=percentage)
+    result.save()
+
+#
+# Convenience function to add a bunch of entries at once (I expect this will be the one
+# mostly used, mostly from a POST request).  listOfEntries is a comma-separated dump of
+# values as a string, of the form "protocol:percentage, procotol:percentage)...".  High-level
+# algorithm here is very simple.  split the string at comma to obtain a list, then pull
+# two at a time off the list, parsing each even entry as a float
+#
+
+def batchAddResults(jobName, listOfEntries):
+    for entry   in listOfEntries:
+        entryPair = entry.split(':')
+        protocol = entryPair[0]
+        pctageAsText = entryPair[1]
+        pctAge = float(pctageAsText)
+        addAnalysisResult(jobName, protocol, pctAge)
+
+#
+# Get the top N entries for a specific job.  Returns a pair of lists
+# ([protocolNames], [percentages]) where each protocolName is a text
+# string and percentage is a float.  Of course, if there are fewer than
+# N entries, just returns however many there are
+#
+def topNProtocols(jobName, num=10):
+    results = TrafficAnalysisResult.objects.filter(jobName=jobName).order_by('-percentage')
+    protocols = []
+    pctages = []
+    count = 0
+    for hadoopJob in results:
+        protocols.append(hadoopJob.protocolName)
+        pctages.append(hadoopJob.percentage)
+        count = count + 1
+        if count == num: break
+    return (protocols, pctages)
+
+
+#
+# Are there any entries for this job?
+#
+def resultsFiled(jobName):
+    results = TrafficAnalysisResult.objects.filter(jobName = jobName)
+    if results: return len(results) > 0
+    else: return False
+
+    
+    
+
+
+    
     
 
     
