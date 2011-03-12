@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>
+Summary for Closed Hadoop Jobs
+</title>
+</head>
+<body>
+<H1>
+Summary of Completed Hadoop Jobs
+</H1>
+<table border="1">
+<tr>
+<th>Hadoop Job</th><th>Site</th><th>Nodes</th><th>Size</th><th>Duration</th><th>Results</th></tr>
+{% autoescape off %}
+{% for job in hadoop_job_list %}
+    <tr><td>{{ job.name }}</td><td>{{ job.siteName }}</td><td>{{ job.nodes }}</td><td>{{ job.size }}</td>
+    <td>{{ job.duration }}</td><td>{{ job.resultChartURL }}</td></tr>
+{% endfor %}
+{% endautoescape %}
+</table>
+</body>
+</html>
+
+   

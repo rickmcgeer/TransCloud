@@ -1,0 +1,35 @@
+<html>
+<head>
+<title>
+Hadoop Job Form Entry for Debugging
+</title>
+</head>
+<body>
+{% if message %}
+    {{ message }}
+{% endif %}
+
+<h1> Job Result Entry Form</h1>
+<p> Use this form to enter a single protocol/percentage pair for a
+job.  Protocol is an arbitrary string, percentage is a number between
+0 and 100 -- floats permitted</p>
+<form action="/jobs/api/add_hadoop_result/" method="post" id="Hadoop
+Add Job Result Pair">
+<p>Name: <input type="text" size="40" maxLength="200" name="name"/>
+<p>Protocol Name: <input type="text" size="40" maxLength="200" name="protocol"/>
+<p>Percentage: <input type="text" size="10" maxLength="200" name="percentage"/>
+<p><input type="submit"/>
+</form>
+<h1>Batch Result Entry form</h1>
+<p>Use this form to enter a bunch of protocol/percentage pairs in a
+comma-separated value list of the form protocol: percentage, e.g.
+http:25.2, smtp:23.4, pop3:12.2, snmp:15.5, ftp:23.7
+
+<form action="/jobs/api/add_batch_hadoop_result/" method="post"
+id="Hadoop Job Result Batch input">
+<p>Name: <input type="text" size="40" maxLength="200" name="name"/>
+<p>Entries: <input type="text" size="200" maxLength="1000" name="entries"/>
+<p><input type="submit"/>
+</form>
+</body>
+</html>
