@@ -908,16 +908,25 @@ def batchAddResults(jobName, listOfEntries):
 # string and percentage is a float.  Of course, if there are fewer than
 # N entries, just returns however many there are
 #
-def topNProtocols(jobName, num=10):
+def topNProtocols(jobName, num=10, threshold=0.0, addOther=False):
     results = TrafficAnalysisResult.objects.filter(jobName=jobName).order_by('-percentage')
     protocols = []
     pctages = []
     count = 0
+    total = 0.0
     for hadoopJob in results:
+        if hadoopJob.percentage < threshold: break
         protocols.append(hadoopJob.protocolName)
         pctages.append(hadoopJob.percentage)
+        total = total + hadoopJob.percentage
         count = count + 1
         if count == num: break
+    if addOther:
+        remainder = 100.0 - total
+        if remainder > 0.0:
+            protocols.append('Other')
+            pctages.append(remainder)
+        
     return (protocols, pctages)
 
 

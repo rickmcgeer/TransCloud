@@ -850,34 +850,22 @@ class HadoopSiteViewer:
         self.finishedJobs = FinishedJobsBarChart(self)
         return self.finishedJobs.genChartURL()
 
-def safeDataJoin(listOfFloats):
-     result = ""
-     for number in listOfFloats:
-          numberAsText = ("%5.2f" % number).strip()
-          result = result + "," + numberAsText
-     result = result[1:] # remove the leading comma
-     return result
+
           
 
 class HadoopResultsPieChart(GoogleChart):
      def __init__(self, hadoopJobViewer):
           self.parameters = ["cht=p",
-                             "chtt=Results+for+Job+%s" % hadoopJobViewer.name,
+                             "chtt=Packet+Mix+By+Protocol+Job+%s" % hadoopJobViewer.name,
                              "chs=440x220"]
           (protocols, percentages) = hadoopJobViewer.topJobs
           dataString = ""
-          total = 0
           for percentage in percentages:
                dataString = dataString  + ("%5.2f" % percentage).strip() + ","
-               total = total + percentage
-          remainder = 100.0 - total
-          if remainder > 0:
-               dataString = dataString + ('%5.2f' % remainder).strip()
-               protocols.append('Other')
-          else: dataString = dataString[:len(dataString) - 2]
-          labelString = ('|'.join(protocols)).lstrip()
-          myColors = colors[:len(protocols) - 1]
-          colorString = ('|'.join(myColors)).lstrip()
+          dataString = dataString[:len(dataString)-2]
+          labelString = ('|'.join(protocols)).strip()
+          myColors = colors[:len(protocols) + 1]
+          colorString = (','.join(myColors)).strip()
           self.parameters.append('chd=t:' + dataString)
           self.parameters.append('chdl=' + labelString)
           self.parameters.append('chco=' + colorString)
@@ -893,7 +881,7 @@ class HadoopJobViewer:
           self.nodes = hadoopJob.nodes
           self.size = hadoopJob.size
           self.duration = hadoopJob.duration
-          self.topJobs = topNProtocols(hadoopJob.name, 20)
+          self.topJobs = topNProtocols(hadoopJob.name, 20, 0.5, True)
           self.name = hadoopJob.name
           if resultsFiled(self.name):
                self.resultsChart = HadoopResultsPieChart(self)
