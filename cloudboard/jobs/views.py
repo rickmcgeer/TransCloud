@@ -931,6 +931,7 @@ def api_submit_new_hadoop_result(request):
      jobName = request.POST["name"]
      protocol = request.POST["protocol"]
      percentageAsText = request.POST["percentage"]
+     percentageAsText = percentageAsText.strip("%")
      percentage = float(percentageAsText)
      addAnalysisResult(jobName, protocol, percentage)
      t = loader.get_template('cloudboard/hadoopResultForm.html')
