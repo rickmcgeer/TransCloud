@@ -1,5 +1,5 @@
 from django.template import Context, loader
-from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob, newHadoopJob, topNProtocols, batchAddResults, addAnalysisResult, resultsFiled
+from jobs.models import Job, newJob, completeJob, ServerSummary, SummaryTable, cleanup, deleteAllJobs, reset, batchAddJobs, RandomJobList, Site, Network, Server, HadoopJob, newHadoopJob, topNProtocols, batchAddResults, addAnalysisResult, resultsFiled, cleanOutDatabase
 from django.http import HttpResponse, HttpResponseRedirect
 import datetime
 
@@ -946,6 +946,9 @@ def api_batch_hadoop_result(request):
      c = getHadoopContext(entryJobList = jobs)
      t = loader.get_template('cloudboard/hadoopTemplate.html')
      return HttpResponse(t.render(c))
+
+def api_clean_db(request):
+     cleanOutDatabase()
      
      
 

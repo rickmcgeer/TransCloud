@@ -59,8 +59,9 @@ def http_send(interface, params, logFile=None):
       logPrint(fileObj, "Problem making http request to server: code %d message: %s"%(response.status, response.reason))
     data = response.read()
     logPrint(fileObj, "web: " +  data)
-    if fileObj: close(fileObj)
     conn.close()
+    if fileObj: fileObj.close()
+
 
 
 if __name__ == '__main__':

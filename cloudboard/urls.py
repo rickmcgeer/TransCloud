@@ -28,11 +28,12 @@ urlpatterns = patterns('',
     (r'^hadoop/site/(?P<siteName>\w+)/', 'jobs.views.hadoopSiteTable'),
     (r'^jobs/api/add_hadoop_result/$', 'jobs.views.api_submit_new_hadoop_result'),
     (r'^jobs/api/add_batch_hadoop_result/$', 'jobs.views.api_batch_hadoop_result'),
-    (r'^jobs/developer/enterHadoopResult/$', 'jobs.views.enterHadoopResultForm'),   
+    (r'^jobs/developer/enterHadoopResult/$', 'jobs.views.enterHadoopResultForm'),
+    # (r^'jobs/developer/cleanOutDatabase/$', 'jobs.views.api_clean_db"), #should be done from the admin interface
                        
                        
                       
 
 
-    # (r'^admin/', include(admin.site.urls)),
+     (r'^admin/', include(admin.site.urls)),
 )

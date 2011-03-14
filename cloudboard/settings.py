@@ -4,7 +4,12 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
+    ('Rick McGeer', 'rick.mcgeer@hp.com'),
+    ('Chris Matthews', 'chris4000@gmail.com'),
+    ('Chris Pearson', 'ctpearson#gmail.com'),
+    ('Marco Yuen', 'marcoy@gmail.com'),
+    ('Alvin Au Young', 'alvin.auyoung@gmail.com')
+    
 )
 
 #
@@ -70,6 +75,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.csrf.CsrfMiddleware'
 )
 
 ROOT_URLCONF = 'cloudboard.urls'

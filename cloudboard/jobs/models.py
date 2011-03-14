@@ -938,6 +938,15 @@ def resultsFiled(jobName):
     if results: return len(results) > 0
     else: return False
 
+#
+# clean out the database
+#
+
+def cleanOutDatabase():
+    HadoopJob.objects.all().delete()
+    Job.objects.all().delete()
+    TrafficAnalysisResult.objects.all().delete()
+
     
     
 
