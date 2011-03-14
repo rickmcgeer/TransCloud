@@ -18,6 +18,7 @@ ADMINS = (
 
 # PROJECT_ROOT = '/Users/rick/Projects/Django/'
 PROJECT_ROOT = '/Users/rick/Projects/TransCloud/'
+#PROJECT_ROOT = '/usr/local/django/cloudboard/'
 
 MANAGERS = ADMINS
 
