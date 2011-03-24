@@ -671,31 +671,42 @@ def enterHadoopForm(request):
 
 
 def api_submit_new_hadoop_job(request):
-  name = request.POST['name']
-  site = request.POST['site']
-  startTimeField = request.POST['startTime']
-  startTime = parseDateCatchError(startTimeField, "%Y-%m-%d %H:%M:%S.%f")
-  if not startTime: startTime = datetime.datetime.now()
-  nodestr = request.POST['nodes'] 
-  sizestr = request.POST['size'] 
-  description = request.POST['description']
-  nodes = int(nodestr)
-  size = int(sizestr)
-  newHadoopJob(name, site, startTime, nodes, size, description)
+     try:
+       name = request.POST['name']
+       site = request.POST['site']
+       startTimeField = request.POST['startTime']
+       startTime = parseDateCatchError(startTimeField, "%Y-%m-%d %H:%M:%S.%f")
+       if not startTime: startTime = datetime.datetime.now()
+       nodestr = request.POST['nodes'] 
+       sizestr = request.POST['size'] 
+       description = request.POST['description']
+       nodes = int(nodestr)
+       size = int(sizestr)
+       newHadoopJob(name, site, startTime, nodes, size, description)
+       return HttpResponse("Created: %s, %s" % (name, site))
+     except Exception, e:
+       errorMessage = "Error occured on submitting job " + name  + ": " + e.message
+       print errorMessage
+       return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
+  
 
      # TODO make the job
      
-  return HttpResponse("Created: %s, %s" % (name, site))
+  
 
 def api_update_hadoop_job(request):
-     
-     name = request.POST['name']
-     percentstr = request.POST['percent']
-     timeInSecStr = request.POST['timeInSec']
-     job = HadoopJob.objects.get(name=name)
-     percentage=int(percentstr)
-     timeInSecs=int(timeInSecStr)
-     job.newTimeStamp(timeInSecs, percentage)
+     try:
+        name = request.POST['name']
+        percentstr = request.POST['percent']
+        timeInSecStr = request.POST['timeInSec']
+        job = HadoopJob.objects.get(name=name)
+        percentage=int(percentstr)
+        timeInSecs=int(timeInSecStr)
+        job.newTimeStamp(timeInSecs, percentage)
+     except Exception, e:
+        errorMessage = "Error occured on updating job " + name  + ": " + e.message
+        print errorMessage
+        return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
      
      # TODO update job here
 
@@ -703,11 +714,16 @@ def api_update_hadoop_job(request):
 
 def api_finish_hadoop_job(request):
 
-     name = request.POST['name']
-     timeInSec = request.POST['timeInSec']
-     job = HadoopJob.objects.get(name=name)
-     durationInSeconds = int(timeInSec)
-     job.jobEndedAfterDuration(durationInSeconds)
+     try:
+        name = request.POST['name']
+        timeInSec = request.POST['timeInSec']
+        job = HadoopJob.objects.get(name=name)
+        durationInSeconds = int(timeInSec)
+        job.jobEndedAfterDuration(durationInSeconds)
+     except Exception, e:
+        errorMessage = "Error occured on finishing Hadoop job " + name  + ": " + e.message
+        print errorMessage
+        return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
 
      #TODO call finish here
 
@@ -744,7 +760,7 @@ class OpenJobsChart(GoogleChart):
          self.parameters = ["cht=lxy",
                             "chtt=Status+of+Open+Jobs+at+site " + siteViewer.siteName,
                             "chxl=0:|Time|1:|Pct",
-                            "chxt=x,y",
+                            "chxt=x,y,r",
                             "chxs=0,000000|1,000000",
                             "chs=440x220"]
          self.width=500
@@ -757,6 +773,7 @@ class OpenJobsChart(GoogleChart):
               self.dataSeries.append(XYDataSeries(timeStamps, job.getPercentages(), colors[i], job.name))
               lastTime = timeStamps[len(timeStamps) - 1]
               if lastTime > maxTime: maxTime = lastTime
+         absMaxTime = maxTime
               
          if maxTime > 100:
               multiplyFactor = 100.0/maxTime
@@ -782,6 +799,7 @@ class OpenJobsChart(GoogleChart):
          self.parameters.append('chdl=' + nameParam)
          self.parameters.append('chco=' + colorParam)
          self.parameters.append('chxr=0,0,%d|1,0,100' % maxTime)
+         self.parameters.append("chxl=0:|Time (Max = %d)|1:|Pct" % absMaxTime)
          # self.parameters.append('chds=0,%d,0,100' % maxTime)
          xLabelPos = maxTime >> 1
          yLabelPos = 50
@@ -836,6 +854,9 @@ class HadoopSiteViewer:
                 self.jobHistory.append(hadoopJob)
             else:
                 self.currentJobs.append(hadoopJob)
+        if len(self.currentJobs) == 0:
+             if len(self.jobHistory) > 0:
+                  self.currentJobs.append(self.jobHistory[len(self.jobHistory) - 1])
 
     def currentJobsChart(self):
         if len(self.currentJobs) == 0:
@@ -849,6 +870,12 @@ class HadoopSiteViewer:
             return "<p>No Completed Jobs</p>"
         self.finishedJobs = FinishedJobsBarChart(self)
         return self.finishedJobs.genChartURL()
+
+    def lastJobResults(self): 
+        if len(self.jobHistory) == 0: return ""
+        lastJob = self.jobHistory[len(self.jobHistory) - 1]
+        viewer = HadoopJobViewer(lastJob)
+        return viewer.resultChartURL
 
 
           
@@ -950,6 +977,10 @@ def api_batch_hadoop_result(request):
 
 def api_clean_db(request):
      cleanOutDatabase()
+     c = getContext()
+     t = loader.get_template('cloudboard/index.html')
+     return HttpResponse(t.render(c))
+     
      
      
 

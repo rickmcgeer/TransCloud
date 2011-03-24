@@ -1,14 +1,20 @@
 <html>
+<head>
+<title>
+Summary Statistics
+</title>
+<meta http-equiv="refresh" content="5"/>
+</head>
 <body>
 	
 {% block summaryBlock %}
 	<H2>Hadoop Statistics</H2>
 	<table border="1">
-	  <tr><th>Site</th><th>Current Jobs</th><th>History</th></tr>
+	  <tr><th>Site</th><th>Current Jobs</th><th>Last Job Result</th></tr>
 	  {% autoescape off %}
 
 	  {% for site in site_list %}
-	      <tr><td>{{site.siteName}}</td><td>{{site.currentJobsChart}}</td><td>{{site.hadoopHistory}}</td></tr>
+	      <tr><td>{{site.siteName}}</td><td>{{site.currentJobsChart}}</td><td>{{site.lastJobResults}}</td></tr>
 	  {% endfor %}
 	  {% endautoescape %}
 	</table>

@@ -29,7 +29,7 @@ urlpatterns = patterns('',
     (r'^jobs/api/add_hadoop_result/$', 'jobs.views.api_submit_new_hadoop_result'),
     (r'^jobs/api/add_batch_hadoop_result/$', 'jobs.views.api_batch_hadoop_result'),
     (r'^jobs/developer/enterHadoopResult/$', 'jobs.views.enterHadoopResultForm'),
-    # (r^'jobs/developer/cleanOutDatabase/$', 'jobs.views.api_clean_db"), #should be done from the admin interface
+    (r'^jobs/api/cleanupDatabase/$', 'jobs.views.api_clean_db'), #should be done from the admin interface
                        
                        
                       

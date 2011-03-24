@@ -944,7 +944,6 @@ def resultsFiled(jobName):
 
 def cleanOutDatabase():
     HadoopJob.objects.all().delete()
-    Job.objects.all().delete()
     TrafficAnalysisResult.objects.all().delete()
 
     
