@@ -599,7 +599,7 @@ def doAdd(request, redirect, errorRedirect):
         else: newJob(name, server, user, source, options)
         return HttpResponseRedirect(redirect)
     except Exception, e:
-        errorMessage = "Error occured on adding job " + name  + ": " + e.message
+        errorMessage = "Error occured on adding job " + name  + ": " + str(e)
         return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
 
 def add(request):
@@ -641,7 +641,7 @@ def developerBatchAdd(request):
           batchAddJobs(jobTuples)
           return HttpResponseRedirect('/jobs/developer')
      except Exception, e:
-          errorMessage = "Error occured on batch add:  " + e.message
+          errorMessage = "Error occured on batch add:  " + str(e)
           return HttpResponseRedirect('/jobs/developer/errorResult?msg="' + errorMessage + '"')
 
 def doClose(request, redirect, errorRedirect):
@@ -650,7 +650,7 @@ def doClose(request, redirect, errorRedirect):
         completeJob(name)
         return HttpResponseRedirect(redirect)
     except Exception, e:
-        errorMessage = "Error occured on adding job " + name  + ": " + e.message
+        errorMessage = "Error occured on adding job " + name  + ": " + str(e)
         return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
 
 def close(request):
@@ -685,9 +685,9 @@ def api_submit_new_hadoop_job(request):
        newHadoopJob(name, site, startTime, nodes, size, description)
        return HttpResponse("Created: %s, %s" % (name, site))
      except Exception, e:
-       errorMessage = "Error occured on submitting job " + name  + ": " + e.message
+       errorMessage = "Error occured on submitting job " + name  + ": " + str(e)
        print errorMessage
-       return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
+       return HttpResponseRedirect('/jobs/errorResult?msg="' + errorMessage + '"')
   
 
      # TODO make the job
@@ -704,9 +704,9 @@ def api_update_hadoop_job(request):
         timeInSecs=int(timeInSecStr)
         job.newTimeStamp(timeInSecs, percentage)
      except Exception, e:
-        errorMessage = "Error occured on updating job " + name  + ": " + e.message
+        errorMessage = "Error occured on updating job " + name  + ": " + str(e)
         print errorMessage
-        return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
+        return HttpResponseRedirect('/jobs/errorResult?msg="' + errorMessage + '"')
      
      # TODO update job here
 
@@ -720,14 +720,14 @@ def api_finish_hadoop_job(request):
         job = HadoopJob.objects.get(name=name)
         durationInSeconds = int(timeInSec)
         job.jobEndedAfterDuration(durationInSeconds)
+        return HttpResponse("Finished %s" % (request.POST['name']))
      except Exception, e:
-        errorMessage = "Error occured on finishing Hadoop job " + name  + ": " + e.message
+        errorMessage = "Error occured on finishing Hadoop job " + name  + ": " + str(e)
         print errorMessage
-        return HttpResponseRedirect(errorRedirect + '?msg="' + errorMessage + '"')
+        return HttpResponseRedirect('/jobs/errorResult?msg="' + errorMessage + '"')
 
      #TODO call finish here
 
-     return HttpResponse("Finished %s" % (request.POST['name']))
 
 def listToURLString(pyList):
      result = str(pyList[0])
