@@ -54,7 +54,7 @@ class GoogleChart:
         lastParm = parms.pop()
         for parm in parms:
             result = result + parm + '&'
-        result = result + 'chf=c,s,CCCCCC|bg,s,CCCCCC&'
+        result = result + 'chf=c,s,CCCCCC|bg,s,FFFFFF&'
         sizeString = 'width="%d" height="%d"' % (self.width, self.height)
         result = result + lastParm + '" ' + sizeString + ' alt="No image!"/>'
         return result
@@ -976,11 +976,86 @@ def api_batch_hadoop_result(request):
      return HttpResponse(t.render(c))
 
 def api_clean_db(request):
+     name = open("/tmp/switch.txt",'w')
+     name.write('0')
+     name.close()
+
      cleanOutDatabase()
      c = getContext()
      t = loader.get_template('cloudboard/index.html')
      return HttpResponse(t.render(c))
      
-     
-     
 
+clusters = {'ucsd':["opencirrus-07506.hpl.hp.com", "greenlight144.sysnet.ucsd.edu", "greenlight145.sysnet.ucsd.edu", "greenlight146.sysnet.ucsd.edu", "greenlight148.sysnet.ucsd.edu"],
+            'oc1':["opencirrus-07501.hpl.hp.com", "opencirrus-07502.hpl.hp.com", "opencirrus-07503.hpl.hp.com", "opencirrus-07504.hpl.hp.com", "opencirrus-07505.hpl.hp.com"],
+            'oc2':[ "opencirrus-07507.hpl.hp.com", "opencirrus-07508.hpl.hp.com", "opencirrus-07509.hpl.hp.com", "opencirrus-07510.hpl.hp.com", "opencirrus-07511.hpl.hp.com"]}
+
+def get_load_averages():
+
+    import subprocess
+
+    results = subprocess.Popen(['/usr/bin/gstat', '--gmond_ip=198.55.32.84','-a' ], stdout=subprocess.PIPE).communicate()[0]
+
+    results =  results.split("\n")[11:-1]
+    loads = []
+    for i in range(0,len(results),2):
+
+        name = results[i]
+        data = results[i+1].split(' ')
+        data = [i for i in data if i!='']
+        load = data[9]
+        cpu = data[0]
+        loads.append((name, load, cpu,))
+
+
+    ucsd = [i for i in loads if i[0] in clusters['ucsd']]
+    ucsdtotal = 0
+    ucsdcpu = 0
+    for nodes in ucsd:
+        ucsdcpu += int(nodes[2])
+        load = nodes[1][:-1]
+        ucsdtotal += float(load)
+
+    oc1 = [i for i in loads if i[0] in clusters['oc1']]
+
+    oc1total = 0
+    oc1cpu = 0
+    for nodes in oc1:
+        oc1cpu += int(nodes[2])
+        load = nodes[1][:-1]
+        oc1total += float(load)
+    oc2 = [i for i in loads if i[0] in clusters['oc2']]
+    oc2total = 0
+    oc2cpu = 0
+    for nodes in oc2:
+        oc2cpu += int(nodes[2])
+        load = nodes[1][:-1]
+        oc2total += float(load)
+
+        
+    return "ucsd " + str(ucsdtotal*4) + "\n" + "oc1 " + str(oc1total) + "\n" + "oc2 " + str(oc2total) + "\n"
+
+
+def clusterInfo(request): 
+      
+      return HttpResponse(get_load_averages(), mimetype="text/plain")
+
+
+def clusterSwitch(request): 
+      name = open("/tmp/switch.txt",'w')
+      name.write('1')
+      name.close()
+      return HttpResponse("Switch Triggered", mimetype="text/plain")
+
+def switch_status():
+     try:
+          name = open("/tmp/switch.txt",'r')
+     except:
+          return str(0)
+     trigger = name.readlines()
+     name.close()
+     return str(trigger[0])
+
+
+def clusterSwitchStatus(request): 
+     return HttpResponse(switch_status(), mimetype="text/plain")
