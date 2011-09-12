@@ -26,7 +26,7 @@ Cloudboard Dashboard for the Transcoding Application
 
 var initialLocation;
 var siberia = new google.maps.LatLng(60, 105);
-var newyork = new google.maps.LatLng(40.69847032728747, -73.9514422416687);
+var newyork = new google.maps.LatLng(37.00,-122);
 var browserSupportFlag =  new Boolean();
 var place_to_center = new google.maps.LatLng(38, -28);
 var map;
@@ -38,13 +38,16 @@ var mysites = [
 {% endfor %}
 ];
 
+
+var switched = {{ switched }};
+
 var mynetworks = [
 {% for net in latest_net_list %}
   [{{ net.snet.lat }}, {{ net.snet.lon }}, {{ net.enet.lat }}, {{ net.enet.lon }}, {{ net.weight  }}, {{ forloop.counter }}],
 {% endfor %}
 ];
 
-var gangliaURLBase = "http://transcloud.dyndns.org/ganglia/";
+var gangliaURLBase = "http:///ganglia.trans-cloud.net/ganglia/";
 var gangliaURL = gangliaURLBase;
 
 function getGangliaURL(loc) {
@@ -163,12 +166,33 @@ var markers = []
 
 function makeMarker(site) {
  var latandlon = new google.maps.LatLng(site[1], site[2]);
+ var color = "FFFF00";
+ var ani = google.maps.Animation.DROP;
+ var image = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=ok|" + color +"|000000";
+
+
+ if (site[0]=="UCSD" && switched==1) {
+    color = "FF0000";
+    image = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=X|" + color +"|FFFFFF";
+    ani = google.maps.Animation.BOUNCE;
+    /* makeNetwork([ 48.460911, -123.311711, 32.877491, -117.235276, 10, 7]); */
+    makeNetwork([ 48.460911, -123.311711,  37.41274366798126, -122.15129613876343 ,12, 8]);
+ }
+ if (site[0]=="UVic" && switched==1) {
+      color = "33FF00";
+    image = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=ok|" + color +"|FFFFFF";
+ 
+
+ }
+
+
  marker = new google.maps.Marker({
     title:site[0],
     map:map,
     draggable:false,
-    animation: google.maps.Animation.DROP,
-    position: latandlon
+    animation: ani,
+    position: latandlon,
+    icon: image
   });
  markers[site[0]] = marker
   google.maps.event.addListener(marker, 'dblclick', function() {
@@ -192,13 +216,9 @@ function makeMarker(site) {
 }
 
 function handleNoGeolocation(errorFlag) {
-  if (errorFlag == true) {
+ 
     initialLocation = newyork;
-    contentString = "Error: The Geolocation service failed.";
-  } else {
-    initialLocation = siberia;
-    contentString = "Error: Your browser doesn't support geolocation. Are you in Siberia?";
-  }
+ 
   map.setCenter(initialLocation);
   infowindow.setContent(contentString);
   infowindow.setPosition(initialLocation);

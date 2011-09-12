@@ -422,7 +422,7 @@ gangliaURLs = {
      'Kaiserslautern' : 'http://transcloud.dyndns.org/ganglia/?r=hour&s=descending&c=ks-pm'
      }
 
-defaultGangliaURL = 'http://transcloud.dyndns.org/ganglia/'
+defaultGangliaURL = 'http://ganglia.trans-cloud.net/ganglia/'
 
 def getContext(serverSite = None):
     job_list = Job.objects.all()
@@ -440,6 +440,7 @@ def getContext(serverSite = None):
     paneHTML = statusPane.genHTML()
     latest_site_list = Site.objects.all()
     latest_net_list = Network.objects.all()
+    switched = switch_status();
     if serverSite and serverSite in gangliaURLs:
          gangliaURL = gangliaURLs[serverSite]
     else: gangliaURL = defaultGangliaURL
@@ -461,7 +462,8 @@ def getContext(serverSite = None):
         'ganglia_url': gangliaURL,
         'ganglia_frame_code': gangliaFrameCode,
         'location' : serverSite,
-        'site_list' : siteViewers
+        'site_list' : siteViewers,
+        'switched' : switched
     })
     return c
     
@@ -986,9 +988,9 @@ def api_clean_db(request):
      return HttpResponse(t.render(c))
      
 
-clusters = {'ucsd':["opencirrus-07506.hpl.hp.com", "greenlight144.sysnet.ucsd.edu", "greenlight145.sysnet.ucsd.edu", "greenlight146.sysnet.ucsd.edu", "greenlight148.sysnet.ucsd.edu"],
+clusters = {'ucsd':[ "greenlight144.sysnet.ucsd.edu", "greenlight145.sysnet.ucsd.edu", "greenlight146.sysnet.ucsd.edu", "greenlight148.sysnet.ucsd.edu"],
             'oc1':["opencirrus-07501.hpl.hp.com", "opencirrus-07502.hpl.hp.com", "opencirrus-07503.hpl.hp.com", "opencirrus-07504.hpl.hp.com", "opencirrus-07505.hpl.hp.com"],
-            'oc2':[ "opencirrus-07507.hpl.hp.com", "opencirrus-07508.hpl.hp.com", "opencirrus-07509.hpl.hp.com", "opencirrus-07510.hpl.hp.com", "opencirrus-07511.hpl.hp.com"]}
+            'oc2':["opencirrus-07506.hpl.hp.com", "opencirrus-07507.hpl.hp.com", "opencirrus-07508.hpl.hp.com", "opencirrus-07509.hpl.hp.com", "opencirrus-07510.hpl.hp.com", "opencirrus-07511.hpl.hp.com"]}
 
 def get_load_averages():
 
@@ -1033,7 +1035,7 @@ def get_load_averages():
         oc2total += float(load)
 
         
-    return "ucsd " + str(ucsdtotal*4) + "\n" + "oc1 " + str(oc1total) + "\n" + "oc2 " + str(oc2total) + "\n"
+    return "ucsd " + str(ucsdtotal) + "\n" + "oc1 " + str(oc1total) + "\n" + "oc2 " + str(oc2total) + "\n"
 
 
 def clusterInfo(request): 
@@ -1046,6 +1048,13 @@ def clusterSwitch(request):
       name.write('1')
       name.close()
       return HttpResponse("Switch Triggered", mimetype="text/plain")
+
+def clusterReset(request): 
+      name = open("/tmp/switch.txt",'w')
+      name.write('2')
+      name.close()
+      return HttpResponse("Reset Triggered", mimetype="text/plain")
+
 
 def switch_status():
      try:

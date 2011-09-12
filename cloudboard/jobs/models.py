@@ -560,8 +560,8 @@ class Site(models.Model):
 class Network(models.Model):
     snet = models.ForeignKey(Site, related_name='startSite')
     enet = models.ForeignKey(Site, related_name='endSite')
-    weight = models.CharField(max_length=3);
-
+    weight = models.CharField(max_length=3)
+    # color = models.CharField(max_length=9)
     def __unicode__(self):
         return self.snet.name + "->" + self.enet.name + ": " + self.weight
 
@@ -584,9 +584,10 @@ def buildTransCloud():
     makeSite(name="Northwestern", lat= "41.89480235167352", lon="-87.6160740852356")
     makeSite(name="Amsterdam", lat="52.368649", lon="4.890201")
     makeLink("UCSD", "HP", 5)
-    makeLink("HP", "Northwestern", 5)
-    makeLink("Northwestern", "Amsterdam", 5)
-    makeLink("Amsterdam", "Kaiserslautern", 5)
+    makeLink("Kaiserslautern", "HP", 5)
+    makeLink("HP", "Northwestern", 2)
+    makeLink("Northwestern", "Amsterdam", 2)
+    makeLink("Amsterdam", "Kaiserslautern", 2)
 
 def restartSiteDB():
     Network.objects.all().delete()
