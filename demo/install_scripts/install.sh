@@ -2,8 +2,6 @@
 set -u 
 set -e
 set -x
-
-                                                                   
                                              
 # Create hadoop accounts
 # Put install.tar.gz on all machines. 
@@ -33,22 +31,15 @@ set -x
 # *** format the HDFS on all nodes
 # hadoop namenode -format
 
-
-
-
 #identity="-i /home/cmatthew/.ssh/transcloud"
 identity=""
 
 skip_check="-o StrictHostKeyChecking=no"
 
+echo "Seting up DNS entries"
+cat hosts | ssh root@dns.trans-cloud.net python TransCloud/dns/bind9.py
 
-
-
-ssh root@ns.trans-cloud.net TransCloud/dns/bind9.py
-
-
-
-hd_master="198.55.37.134"
+hd_master="master.hp.trans-cloud.net"
 
 hosts="198.55.37.134 198.55.37.133 198.55.37.138"
 
@@ -70,7 +61,6 @@ do
     scp $identity $skip_check $install_file root@$target:/home/hadoop/ 
     scp $identity $skip_check $jre_file root@$target:/home/hadoop/ 
     scp $identity $skip_check .bashrc root@$target:/home/hadoop/ 
-
 
     echo "Unzip Files"
     $tcssh "cd /home/hadoop; tar xzf $install_file"
@@ -94,8 +84,6 @@ do
     $tcssh chown -R hadoop:hadoop /home/hadoop
     echo "Done on $target" 
 done
-
-
 
 echo "Finished preping $hosts"
 
