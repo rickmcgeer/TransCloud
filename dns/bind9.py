@@ -68,7 +68,7 @@ def pull_dns_list():
     try:
         os.remove(NAMESLIST_FILENAME)
     except OSError:
-        log("Did not find" + NAMESLIST_FILENAME + "to remove.")
+        log("Did not find " + NAMESLIST_PATH + " to remove.")
 
     # this assumes the ssh_config user file is setup with an oc1 entry
     command = "scp oc1:" + \
@@ -120,6 +120,7 @@ def write_out(mapping):
 
 
 if __name__ == "__main__":
+    log("Starting GENICloud DNS refresh.")
     try:
         pull_dns_list()
         mappings = make_names_list()
