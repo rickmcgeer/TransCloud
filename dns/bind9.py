@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 #write out new zone db
 import subprocess
 import time
@@ -8,6 +10,7 @@ import syslog
 # some functions to help us log to syslog
 # then if stuff doesnt work we have a log!
 LOG_PREFIX = "[GENICloud DNS] "
+
 
 def _syslog(level, message):
     """Print a message to syslog and screen"""
@@ -65,7 +68,7 @@ def pull_dns_list():
     try:
         os.remove(NAMESLIST_FILENAME)
     except OSError:
-        log("Did not find" +  NAMESLIST_FILENAME + "to remove.")
+        log("Did not find" + NAMESLIST_FILENAME + "to remove.")
 
     # this assumes the ssh_config user file is setup with an oc1 entry
     command = "scp oc1:" + \
@@ -76,6 +79,7 @@ def pull_dns_list():
         raise Exception("Something went wrong scping the names file.")
     else:
         print "Got file", NAMESLIST_FILENAME
+
 
 def make_names_list():
     """ take the names list file and make a the names list out of it"""
@@ -114,6 +118,7 @@ def write_out(mapping):
     if rc != 0:
         raise Exception("rndc failed with: " + str(rc))
 
+
 if __name__ == "__main__":
     try:
         pull_dns_list()
@@ -121,4 +126,3 @@ if __name__ == "__main__":
         write_out(mappings)
     except Exception, e:
         error("program failed: " + str(e))
-        
