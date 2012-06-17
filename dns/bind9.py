@@ -10,20 +10,24 @@ import syslog
 LOG_PREFIX = "[GENICloud DNS] "
 
 def _syslog(level, message):
+    """Print a message to syslog and screen"""
     message = str(message)
     print message
     syslog.syslog(level, LOG_PREFIX + message)
 
 
 def log(message):
+    """Print a info level log message."""
     _syslog(syslog.LOG_INFO, message)
 
 
 def warning(msg):
+    """Print a warning level log message."""
     _syslog(syslog.LOG_WARN, msg)
 
 
 def error(msg):
+    """Print an Error level log message"""
     _syslog(syslog.LOG_ERR, msg)
 
 
