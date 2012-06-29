@@ -1,13 +1,27 @@
 from owslib.wms import WebMapService
 import png
+import psycopg2
+
+conn = psycopg2.connect(database="gisdemo", user="postgres", password="")
+cur = conn.cursor()
+
+cur.execute("SELECT gid, name, ST_AsText(ST_ConvexHull(the_geom)) FROM cities WHERE name LIKE 'VICTORIA';")
+data = cur.fetchall()
+conn.commit()
+
+print data
+
+cur.close()
+conn.close()
+
 box = (-123.57411,48.3106147, -123.20006,48.6980295)
 wms = WebMapService('http://ows.geobase.ca/wms/geobase_en', version='1.1.1')
-print wms.identification.type
-print wms.identification.version
-print wms.identification.title
+#print wms.identification.type
+#print wms.identification.version
+#print wms.identification.title
 wms.identification.abstract
-print list(wms.contents)
-print wms['imagery:landsat7'].styles
+#print list(wms.contents)
+#print wms['imagery:landsat7'].styles
 
 img = wms.getmap(   layers=['imagery:landsat7'],
                     styles=[],
