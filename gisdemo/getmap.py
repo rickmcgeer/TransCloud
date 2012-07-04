@@ -2,6 +2,7 @@ from owslib.wms import WebMapService
 from owslib.wms import ServiceException
 import png
 import psycopg2
+import math
 
 # these correspond to the selected column num in the SQL statement
 GID = 0
@@ -12,30 +13,46 @@ YMIN = 4
 XMAX = 5
 YMAX = 6
 
+# database constants
 CITY_TABLE = "cities"
 GIS_DATABASE = "gisdemo"
 DB_USER = "postgres"
 DB_PASS = ""
 
+# coordinate system constants in meters
+M_PER_LONG_AT_EQ = 111300
+M_PER_LAT_AVG = 111200
+M_PER_PIXEL = 30
 
-# Debug, will print images to /tmp when True
-PRINT_IMG = True
+# Debug stuff
+PRINT_IMG = True # print to /tmp/ when True
+PRINT_DBG_STR = True # print to stdout
 
+
+def get_m_per_long(lat):
+    assert(abs(lat) <= 90)
+    return abs(M_PER_LONG_AT_EQ * math.cos(lat))
+
+def get_m_per_lat():
+    return M_PER_LAT_AVG
+    
 
 
 def query_database():
+
     conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
     cur = conn.cursor()
 
     select = "gid, name, ST_AsText(ST_ConvexHull(the_geom)),"\
         "ST_XMin(the_geom), ST_YMin(the_geom), ST_XMax(the_geom), ST_YMax(the_geom)"
 
-    where = "name LIKE 'VIC%'"
+    where = "name LIKE 'VIC%' OR name LIKE 'VAN%'"
 
     query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
 
     cur.execute(query)
 
+    # i think this throws an exception if no records are returned
     records = cur.fetchall()
 
     cur.close()
@@ -114,7 +131,7 @@ def _isPointInPolygon(r, P):
 
 
 
-def calc_greenspace(img, box, polygon, gid):
+def calc_greenspace(img, box, polygon, gid=0):
 
     bytes_of_png = img.read()
     image = png.Reader(bytes=bytes_of_png)
@@ -182,6 +199,22 @@ def wkt_to_list(wkt):
 
 
 
+def get_img_size(long_min, lat_min, long_max, lat_max):
+
+    avg_lat = (lat_min + lat_max) / 2
+    m_per_lat = get_m_per_lat()
+    m_per_long = get_m_per_long(avg_lat)
+
+    x_meters = (long_max - long_min) * m_per_long
+    y_meters = (lat_max - lat_min) * m_per_lat
+
+    x_pixels = int(math.ceil(x_meters / M_PER_PIXEL))
+    y_pixels = int(math.ceil(y_meters / M_PER_PIXEL))
+
+    return (x_pixels, y_pixels)
+    
+
+
 def main():
     records = query_database()
 
@@ -194,24 +227,32 @@ def main():
 #print wms['imagery:landsat7'].styles
 
     for record in records:
+
         # box is floats: [xmin, ymin, xmax, ymax]
         box = record[XMIN:]
         serv = get_wms_server(box)
         if serv:
+            img_size = get_img_size(box[0], box[1], box[2], box[3])
+
             try:
                 # TODO: Make sure the projections are the same as the database!!
                 img = wms.getmap(layers=['imagery:landsat7'],
                                  styles=[],
                                  srs='EPSG:4326',
                                  bbox=box,
-                                 size=(300, 250),
+                                 size=img_size,
                                  format='image/png',
                                  transparent=True
                                  )
+
                 polygon = wkt_to_list(record[CV_HULL])
-                #print polygon
+                
                 greenspace = calc_greenspace(img, box, polygon, record[GID])
+
                 update_database(greenspace, record[GID])
+
+                if PRINT_DBG_STR:
+                    print record[GID], record[CITY_NAME], img_size, greenspace
 
             except ServiceException as e:
                 print e
