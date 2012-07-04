@@ -12,16 +12,31 @@ YMIN = 4
 XMAX = 5
 YMAX = 6
 
+CITY_TABLE = "cities"
+GIS_DATABASE = "gisdemo"
+DB_USER = "postgres"
+DB_PASS = ""
+
+
+# Debug, will print images to /tmp when True
+PRINT_IMG = True
+
+
+
 def query_database():
-    conn = psycopg2.connect(database="gisdemo", user="postgres", password="")
+    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
     cur = conn.cursor()
 
-    cur.execute("SELECT gid, name, ST_AsText(ST_ConvexHull(the_geom)), ST_XMin(the_geom), ST_YMin(the_geom), ST_XMax(the_geom), ST_YMax(the_geom) FROM cities where name LIKE 'V%';")
+    select = "gid, name, ST_AsText(ST_ConvexHull(the_geom)),"\
+        "ST_XMin(the_geom), ST_YMin(the_geom), ST_XMax(the_geom), ST_YMax(the_geom)"
+
+    where = "name LIKE 'VIC%'"
+
+    query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
+
+    cur.execute(query)
 
     records = cur.fetchall()
-
-#for record in records:
-#    print record
 
     cur.close()
     conn.close()
@@ -29,14 +44,17 @@ def query_database():
     return records
 
 
-def insert_into_database(greenspace, gid):
 
-    sql = "UPDATE cities SET greenspace=" + greenspace + "WHERE gid=" + gid + ";"
+def update_database(greenspace, gid):
 
-    conn = psycopg2.connect(database="gisdemo", user="postgres", password="")
+    query = "UPDATE cities SET greenspace=" + str(greenspace) + "WHERE gid=" + str(gid) + ";"
+
+    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
     cur = conn.cursor()
 
-    cur.execute(sql)
+    cur.execute(query)
+    # we must commit our transaction
+    conn.commit()
 
     cur.close()
     conn.close()
@@ -50,10 +68,10 @@ def get_wms_server(bbox):
         return 0
     return 1
 
-# --------------------
+
+
 # The following three functions are from http://python.net/~gherman/convexhull.html 
 # by Dinu C. Gherman 
-
 def _myDet(p, q, r): # this is really just the cross prod
     """Calc. determinant of a special matrix with three 2D points.
 
@@ -70,6 +88,7 @@ def _myDet(p, q, r): # this is really just the cross prod
     return sum1 - sum2
 
 
+
 def _isRightTurn((p, q, r)):
     "Do the vectors pq:qr form a right turn, or not?"
 
@@ -79,6 +98,7 @@ def _isRightTurn((p, q, r)):
 	return 1
     else:
         return 0
+
 
 
 def _isPointInPolygon(r, P):
@@ -91,45 +111,63 @@ def _isPointInPolygon(r, P):
             return 0 # Out!        
 
     return 1 # It's within!
-# ------------------
 
-def calc_greenspace(img, box, polygon):
+
+
+def calc_greenspace(img, box, polygon, gid):
 
     bytes_of_png = img.read()
     image = png.Reader(bytes=bytes_of_png)
 
+    px_width, px_height, rgbs, metadata = image.read() # image.asRGBA()
+    rgbs = list(rgbs)
+
     # for placing the pixels in the coord system
     min_x = box[0]
-    min_y = box[1]
-    len_x = box[2] - box[0]
-    len_y = box[3] - box[1]
+    max_y = box[3]
+    # increment = length x|y / width|height
+    x_incr = (box[2] - box[0]) / px_width
+    y_incr = (box[3] - box[1]) / px_height
     
-    #print min_x, min_y, len_x, len_y
-
-    rgbs = list(image.asRGBA()[2])
-    pixels = 0
-    rs = 0
-    bs = 0
     gs = 0
-    for row in rgbs:
-        for pixel in row[0::4]:
-            pixels += 1
-            if pixel > 128:
-                rs += 1
-        for pixel in row[1::4]:
-            pixels += 1
-            if pixel > 128:
-                gs += 1
-        for pixel in row[2::4]:
-            pixels += 1
-            if pixel > 128:
-                bs += 1
+    y_pos = 0
+    while y_pos < px_height:
 
+        red = rgbs[y_pos][0::4]
+        green = rgbs[y_pos][1::4]
+        blue = rgbs[y_pos][2::4]
 
-    return pixels, rs, bs, gs
+        x_pos = 0
+        while x_pos < px_width:
+            # place pixel in bounding box
+            px_x = min_x + (x_pos * x_incr)
+            px_y = max_y - (y_pos * y_incr)
+        
+            if _isPointInPolygon([px_x, px_y], polygon):
+                if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
+                    gs+=1
+                
+                # debug, make the image white under the polygon
+                if PRINT_IMG: 
+                    rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = 255
+
+            x_pos+=1
+        y_pos+=1
+
+    # debug, write the image to /tmp/<gid>.png
+    if PRINT_IMG:
+        fname = "/tmp/" + str(gid) + ".png"
+        f = open(fname, 'wb')
+        wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
+        wt.write(f, rgbs)
+
+    return gs
+
 
 
 def wkt_to_list(wkt):
+    """ convert wkt polygon string to a list of x,y points as floats """
+
     # get rid of all the brackets and split into a list of strings
     str_point_list = wkt.split('((')[1].split('))')[0]\
         .replace('(', '').replace(')', '')\
@@ -141,6 +179,7 @@ def wkt_to_list(wkt):
     # convert each coord into a float
     point_list = [ [float(coord) for coord in pt] for pt in points]
     return point_list
+
 
 
 def main():
@@ -155,12 +194,12 @@ def main():
 #print wms['imagery:landsat7'].styles
 
     for record in records:
-    #box = (-123.57411,48.3106147, -123.20006,48.6980295)
+        # box is floats: [xmin, ymin, xmax, ymax]
         box = record[XMIN:]
-        #print box
         serv = get_wms_server(box)
         if serv:
             try:
+                # TODO: Make sure the projections are the same as the database!!
                 img = wms.getmap(layers=['imagery:landsat7'],
                                  styles=[],
                                  srs='EPSG:4326',
@@ -171,11 +210,14 @@ def main():
                                  )
                 polygon = wkt_to_list(record[CV_HULL])
                 #print polygon
-                print record[CITY_NAME], calc_greenspace(img, box, polygon)
+                greenspace = calc_greenspace(img, box, polygon, record[GID])
+                update_database(greenspace, record[GID])
+
             except ServiceException as e:
                 print e
         
         #print record[CITY_NAME], box, "not within our data range!"
+
 
 
 if __name__ == '__main__':
