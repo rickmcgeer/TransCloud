@@ -15,31 +15,25 @@ XMAX = 5
 YMAX = 6
 
 # database constants
-CITY_TABLE = "cities"
-GIS_DATABASE = "gisdemo"
-DB_USER = "postgres"
-DB_PASS = ""
+CITY_TABLE = "cities"#"map"#"cities"
+GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
+DB_USER = "postgres"#"gisdemo"#"postgres"
+DB_PASS = ""#"123456"#""
 
-# coordinate system constants in meters
-M_PER_LONG_AT_EQ = 111300
-M_PER_LAT_AVG = 111200
+# number of pixels per meter
 M_PER_PIXEL = 30
 
 # projection SRID
 WSG84 = "4326"
+GEOG = WSG84
 
 # Debug stuff
 PRINT_IMG = True # print to /tmp/ when True
 PRINT_DBG_STR = True # print to stdout
 
+# dict for worldwide wms servers
+WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':None}
 
-def get_m_per_long(lat):
-    assert(abs(lat) <= 90)
-    return abs(M_PER_LONG_AT_EQ * math.cos(lat))
-
-def get_m_per_lat():
-    return M_PER_LAT_AVG
-    
 
 
 def query_database():
@@ -47,12 +41,12 @@ def query_database():
     conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
     cur = conn.cursor()
 
-    select = "gid, name, ST_AsText(ST_ConvexHull(ST_Transform(the_geom,"+WSG84+"))),"\
-        "ST_XMin(ST_Transform(the_geom,"+WSG84+")), ST_YMin(ST_Transform(the_geom,"+WSG84+\
-        ")), ST_XMax(ST_Transform(the_geom,"+WSG84+")), ST_YMax(ST_Transform(the_geom,"+WSG84+"))"
+    select = "gid, name, ST_AsText(ST_ConvexHull(ST_Transform(the_geom,"+GEOG+"))),"\
+        "ST_XMin(ST_Transform(the_geom,"+GEOG+")), ST_YMin(ST_Transform(the_geom,"+GEOG+\
+        ")), ST_XMax(ST_Transform(the_geom,"+GEOG+")), ST_YMax(ST_Transform(the_geom,"+GEOG+"))"
 
-    #where = "name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%' OR name LIKE 'CAL%' OR name LIKE 'TOR%'"
-    where = "name LIKE 'HOPE'"
+    where = "name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%' OR name LIKE 'CAL%' OR name LIKE 'TOR%'"
+    #where = "name LIKE 'HOPE'"
 
     query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
 
@@ -75,7 +69,7 @@ def create_update_statement(greenspace, gid):
 
 def update_database(query):
 
-    #print query
+    #print "UPDATING DATABSE: ", query
 
     try:
         conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
@@ -87,16 +81,19 @@ def update_database(query):
 
         cur.close()
         conn.close()
+
     except psycopg2.ProgrammingError as e:
         print e
+
 
 
 def get_wms_server(bbox):
 
     # bbox[0] is min x, [1] is min y, [2] max x, [3] max y
-    if bbox[0] < -140 or bbox[1] < 42 or bbox[2] > -50 or bbox[3] > 70:
-        return 0
-    return 1
+    if bbox[0] > -140 and bbox[1] > 42 and bbox[2] < -50 and bbox[3] < 70:
+        return WMS_SERVER['canada']
+
+    return None
 
 
 
@@ -146,13 +143,21 @@ def _isPointInPolygon(r, P):
 
 
 
-def calc_greenspace(img, box, polygon, gid=0):
+def calc_greenspace(img, box, polygon, gid=0, city=""):
 
     bytes_of_png = img.read()
     image = png.Reader(bytes=bytes_of_png)
 
     px_width, px_height, rgbs, metadata = image.read() # image.asRGBA()
     rgbs = list(rgbs)
+
+    # debug, write image /tmp/<gid>-org.png
+    if PRINT_IMG:
+        fname = "/tmp/" + city + str(gid) 
+        wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
+        orgf = open(fname+"-org.png", 'wb')
+        wt.write(orgf, rgbs)
+        orgf.close()
 
     # for placing the pixels in the coord system
     min_x = box[0]
@@ -162,7 +167,7 @@ def calc_greenspace(img, box, polygon, gid=0):
     y_incr = (box[3] - box[1]) / px_height
     
     gs = 0
-    pix = 0
+    px = 0
     y_pos = 0
     while y_pos < px_height:
 
@@ -177,7 +182,7 @@ def calc_greenspace(img, box, polygon, gid=0):
             px_y = max_y - (y_pos * y_incr)
         
             if _isPointInPolygon([px_x, px_y], polygon):
-                pix+=1
+                px+=1
                 if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
                     gs+=1
                 
@@ -188,14 +193,13 @@ def calc_greenspace(img, box, polygon, gid=0):
             x_pos+=1
         y_pos+=1
 
-    # debug, write the image to /tmp/<gid>.png
+    # debug, write modified image /tmp/<gid>-mod.png
     if PRINT_IMG:
-        fname = "/tmp/" + str(gid) + ".png"
-        f = open(fname, 'wb')
-        wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
-        wt.write(f, rgbs)
+        modf = open(fname+"-mod.png", 'wb')
+        wt.write(modf, rgbs)
+        modf.close()
 
-    return float(gs) / float(pix)
+    return float(gs) / float(px)
 
 
 
@@ -215,49 +219,41 @@ def wkt_to_list(wkt):
     return point_list
 
 
-"""
-def transform_wgs84_to_utm(lon, lat):    
-    def get_utm_zone(longitude):
-        return (int(1+(longitude+180.0)/6.0))
-
-    def is_northern(latitude):
-        ""
-        Determines if given latitude is a northern for UTM
-        ""
-        if (latitude < 0.0):
-            return 0
-        else:
-            return 1
-
-    utm_coordinate_system = osr.SpatialReference()
-    utm_coordinate_system.SetWellKnownGeogCS("WGS84") # Set geographic coordinate system to handle lat/lon  
-    utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
-
-    wgs84_coordinate_system = utm_coordinate_system.CloneGeogCS() # Clone ONLY the geographic coordinate system 
-
-    # create transform component
-    wgs84_to_utm_transform = osr.CoordinateTransformation(wgs84_coordinate_system, utm_coordinate_system) # (<from>, <to>)
-    return wgs84_to_utm_transform.TransformPoint(lon, lat, 0) # returns easting, northing, altitude   """
-
-
 
 def get_img_size(long_min, lat_min, long_max, lat_max):
     """ Given a bounding box of lat and long coords calculates
-    the image size in pixels required to encompass the area"""
+    the image size in pixels required to encompass the area """
 
-    avg_lat = (lat_min + lat_max) / 2
-    m_per_lat = get_m_per_lat()
-    m_per_long = get_m_per_long(avg_lat)
+    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+    cur = conn.cursor()
+
+    def get_dist_from_pts(a, b):
+        """ Queries the database to ge the distance in m between 
+        2 lat long points """
+        
+        a_wkt = "POINT(" + str(a[0]) + " " + str(a[1]) + ")"
+        b_wkt = "POINT(" + str(b[0]) + " " + str(b[1]) + ")"
+ 
+        query = "SELECT ST_Distance(ST_GeogFromText('SRID="\
+            +GEOG+";"+a_wkt+"'),ST_GeogFromText('SRID="+GEOG+";"+b_wkt+"'));"
+        cur.execute(query)
+        records = cur.fetchall()
+
+        return float(records[0][0])
 
     # get the x and y length of our bounding box in meters
-    x_meters = (long_max - long_min) * m_per_long
-    y_meters = (lat_max - lat_min) * m_per_lat
+    x_meters = get_dist_from_pts((long_min, lat_min), (long_max, lat_min))
+    y_meters = get_dist_from_pts((long_min, lat_min), (long_min, lat_max))
 
-    print "width, height:", x_meters, y_meters
+    if PRINT_DBG_STR:
+        print "width:", x_meters, " height:", y_meters
 
     # get the width and height of image in pixels
     x_pixels = int(math.ceil(x_meters / M_PER_PIXEL))
     y_pixels = int(math.ceil(y_meters / M_PER_PIXEL))
+
+    cur.close()
+    conn.close()
 
     return (x_pixels, y_pixels)
     
@@ -284,10 +280,13 @@ def main():
         box = record[XMIN:]
         serv = get_wms_server(box)
         if serv:
+            #print serv
+            #wms = WebMapService(serv, version='1.1.1')
+            #wms.identification.abstract
+
             img_size = get_img_size(box[0], box[1], box[2], box[3])
-            coord_sys = "EPSG:" + WSG84
+            coord_sys = "EPSG:" + GEOG
             try:
-                # TODO: Make sure the projections are the same as the database!!
                 img = wms.getmap(layers=['imagery:landsat7'],
                                  styles=[],
                                  srs=coord_sys,
@@ -299,7 +298,7 @@ def main():
 
                 polygon = wkt_to_list(record[CV_HULL])
                 #print polygon
-                greenspace = calc_greenspace(img, box, polygon, record[GID])
+                greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
                 update_stmnt += create_update_statement(greenspace, record[GID])
                 num_updates+=1
 
@@ -314,8 +313,8 @@ def main():
 
             except ServiceException as e:
                 print e
-        
-        #print record[CITY_NAME], box, "not within our data range!"
+        #else:
+            #print record[CITY_NAME], box, "not within our data range!"
 
     if len(update_stmnt):
         update_database(update_stmnt)
