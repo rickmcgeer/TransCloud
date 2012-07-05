@@ -24,6 +24,9 @@ M_PER_LONG_AT_EQ = 111300
 M_PER_LAT_AVG = 111200
 M_PER_PIXEL = 30
 
+# projection SRID
+WSG84 = "4326"
+
 # Debug stuff
 PRINT_IMG = True # print to /tmp/ when True
 PRINT_DBG_STR = True # print to stdout
@@ -43,16 +46,17 @@ def query_database():
     conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
     cur = conn.cursor()
 
-    select = "gid, name, ST_AsText(ST_ConvexHull(the_geom)),"\
-        "ST_XMin(the_geom), ST_YMin(the_geom), ST_XMax(the_geom), ST_YMax(the_geom)"
+    select = "gid, name, ST_AsText(ST_ConvexHull(ST_Transform(the_geom,"+WSG84+"))),"\
+        "ST_XMin(ST_Transform(the_geom,"+WSG84+")), ST_YMin(ST_Transform(the_geom,"+WSG84+\
+        ")), ST_XMax(ST_Transform(the_geom,"+WSG84+")), ST_YMax(ST_Transform(the_geom,"+WSG84+"))"
 
-    where = "name LIKE 'VIC%' OR name LIKE 'VAN%'"
+    #where = "name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%' OR name LIKE 'CAL%' OR name LIKE 'TOR%'"
+    where = "name LIKE 'HOPE'"
 
     query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
 
     cur.execute(query)
 
-    # i think this throws an exception if no records are returned
     records = cur.fetchall()
 
     cur.close()
@@ -62,20 +66,28 @@ def query_database():
 
 
 
-def update_database(greenspace, gid):
+def create_update_statement(greenspace, gid):
 
-    query = "UPDATE cities SET greenspace=" + str(greenspace) + "WHERE gid=" + str(gid) + ";"
+    return "UPDATE cities SET greenspace=" + str(greenspace) + " WHERE gid=" + str(gid) + ";"
 
-    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
-    cur = conn.cursor()
 
-    cur.execute(query)
-    # we must commit our transaction
-    conn.commit()
 
-    cur.close()
-    conn.close()
+def update_database(query):
 
+    #print query
+
+    try:
+        conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+        cur = conn.cursor()
+
+        cur.execute(query)
+        # we must commit our transaction
+        conn.commit()
+
+        cur.close()
+        conn.close()
+    except psycopg2.ProgrammingError as e:
+        print e
 
 
 def get_wms_server(bbox):
@@ -109,7 +121,9 @@ def _myDet(p, q, r): # this is really just the cross prod
 def _isRightTurn((p, q, r)):
     "Do the vectors pq:qr form a right turn, or not?"
 
-    assert p != q and q != r and p != r
+    # this is not a valid assertion for us, 
+    #  as some points may be directly on the polygon
+    #assert p != q and q != r and p != r
             
     if _myDet(p, q, r) < 0:
 	return 1
@@ -147,6 +161,7 @@ def calc_greenspace(img, box, polygon, gid=0):
     y_incr = (box[3] - box[1]) / px_height
     
     gs = 0
+    pix = 0
     y_pos = 0
     while y_pos < px_height:
 
@@ -161,11 +176,12 @@ def calc_greenspace(img, box, polygon, gid=0):
             px_y = max_y - (y_pos * y_incr)
         
             if _isPointInPolygon([px_x, px_y], polygon):
+                pix+=1
                 if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
                     gs+=1
                 
                 # debug, make the image white under the polygon
-                if PRINT_IMG: 
+                if PRINT_IMG:
                     rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = 255
 
             x_pos+=1
@@ -178,7 +194,7 @@ def calc_greenspace(img, box, polygon, gid=0):
         wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
         wt.write(f, rgbs)
 
-    return gs
+    return float(gs) / float(pix)
 
 
 
@@ -200,14 +216,20 @@ def wkt_to_list(wkt):
 
 
 def get_img_size(long_min, lat_min, long_max, lat_max):
+    """ Given a bounding box of lat and long coords calculates
+    the image size in pixels required to encompass the area"""
 
     avg_lat = (lat_min + lat_max) / 2
     m_per_lat = get_m_per_lat()
     m_per_long = get_m_per_long(avg_lat)
 
+    # get the x and y length of our bounding box in meters
     x_meters = (long_max - long_min) * m_per_long
     y_meters = (lat_max - lat_min) * m_per_lat
 
+    print "width, height:", x_meters, y_meters
+
+    # get the width and height of image in pixels
     x_pixels = int(math.ceil(x_meters / M_PER_PIXEL))
     y_pixels = int(math.ceil(y_meters / M_PER_PIXEL))
 
@@ -217,6 +239,10 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
 
 def main():
     records = query_database()
+
+    batch_size = 5 # could make fn of len(records) when that works
+    num_updates = 0
+    update_stmnt = ""
 
     wms = WebMapService('http://ows.geobase.ca/wms/geobase_en', version='1.1.1')
 #print wms.identification.type
@@ -233,12 +259,12 @@ def main():
         serv = get_wms_server(box)
         if serv:
             img_size = get_img_size(box[0], box[1], box[2], box[3])
-
+            coord_sys = "EPSG:" + WSG84
             try:
                 # TODO: Make sure the projections are the same as the database!!
                 img = wms.getmap(layers=['imagery:landsat7'],
                                  styles=[],
-                                 srs='EPSG:4326',
+                                 srs=coord_sys,
                                  bbox=box,
                                  size=img_size,
                                  format='image/png',
@@ -246,10 +272,16 @@ def main():
                                  )
 
                 polygon = wkt_to_list(record[CV_HULL])
-                
+                #print polygon
                 greenspace = calc_greenspace(img, box, polygon, record[GID])
+                update_stmnt += create_update_statement(greenspace, record[GID])
+                num_updates+=1
 
-                update_database(greenspace, record[GID])
+                # batch updates to the database to avoid creating many connections
+                if num_updates >= batch_size:
+                    update_database(update_stmnt)
+                    update_stmnt = ""
+                    num_updates = 0
 
                 if PRINT_DBG_STR:
                     print record[GID], record[CITY_NAME], img_size, greenspace
@@ -259,6 +291,8 @@ def main():
         
         #print record[CITY_NAME], box, "not within our data range!"
 
+    if len(update_stmnt):
+        update_database(update_stmnt)
 
 
 if __name__ == '__main__':
