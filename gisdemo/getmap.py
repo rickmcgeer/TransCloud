@@ -4,6 +4,7 @@ import png
 import psycopg2
 import math
 
+
 # these correspond to the selected column num in the SQL statement
 GID = 0
 CITY_NAME = 1
@@ -212,6 +213,31 @@ def wkt_to_list(wkt):
     # convert each coord into a float
     point_list = [ [float(coord) for coord in pt] for pt in points]
     return point_list
+
+
+"""
+def transform_wgs84_to_utm(lon, lat):    
+    def get_utm_zone(longitude):
+        return (int(1+(longitude+180.0)/6.0))
+
+    def is_northern(latitude):
+        ""
+        Determines if given latitude is a northern for UTM
+        ""
+        if (latitude < 0.0):
+            return 0
+        else:
+            return 1
+
+    utm_coordinate_system = osr.SpatialReference()
+    utm_coordinate_system.SetWellKnownGeogCS("WGS84") # Set geographic coordinate system to handle lat/lon  
+    utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
+
+    wgs84_coordinate_system = utm_coordinate_system.CloneGeogCS() # Clone ONLY the geographic coordinate system 
+
+    # create transform component
+    wgs84_to_utm_transform = osr.CoordinateTransformation(wgs84_coordinate_system, utm_coordinate_system) # (<from>, <to>)
+    return wgs84_to_utm_transform.TransformPoint(lon, lat, 0) # returns easting, northing, altitude   """
 
 
 
