@@ -7,6 +7,15 @@ import datetime
 import sys
 
 
+
+# CRITICAL TODO's:
+#  - Insert timestamps, image name, and all that jazz to correct table
+#
+#  - Make initial query pull only correct data
+#     . After that we make get_wms_server() behave better as it checks if around canada right now
+#
+
+
 # these correspond to the selected column num in the SQL statement
 GID = 0
 CITY_NAME = 1
@@ -16,19 +25,28 @@ YMIN = 4
 XMAX = 5
 YMAX = 6
 
-# colour we want the space around the polygon to be
-MASK_COLOUR = 255
+# val of all pixels we want the space around the polygon to be
+MASK_COLOUR = 0
 
 
 # database constants
 DB_USER = "postgres"#"gisdemo"#"postgres"
 DB_PASS = ""#"123456"#""
 GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
+PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
+
 CITY_TABLE = "cities"#"map"#"cities"
 ID_COL = "gid"
 NAME_COL = "name"
 GEOM_COL = "the_geom"
 GREEN_COL = "greenspace"
+
+IMAGE_TBL = "cities"
+IMAGE_NAME_COL = "file_path"
+START_T_COL = "process_start_time"
+END_T_COL = "process_end_time"
+
+
 
 # number of pixels per meter
 M_PER_PIXEL = 30
@@ -73,6 +91,7 @@ def query_database(region=""):
     query, we simply return an empty list.
     """
 
+    records = []
     try:
         conn = psycopg2.connect(database=GIS_DATABASE,
                                 user=DB_USER,
@@ -108,13 +127,26 @@ def query_database(region=""):
 
 
 
-def create_update_statement(greenspace, gid):
+def create_update_statement(greenspace, gid, name, start, end):
     """ Returns an sql update statement as a string which sets
-    the record with the matching gid's greenspace value
+    the record with the matching gid's greenspace value, image 
+    name, and timestamps
     """
 
-    return "UPDATE "+CITY_TABLE+" SET "+GREEN_COL+"="\
-        + str(greenspace) + " WHERE "+ID_COL+"=" + str(gid) + ";"
+    st_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
+    end_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
+
+    city_tbl = "UPDATE "+CITY_TABLE\
+        +" SET "+GREEN_COL+"=" + str(greenspace)\
+        + " WHERE "+ID_COL+"=" + str(gid) + ";"
+
+    #image_tbl = "UPDATE "+IMG_TABLE\
+    #    +" SET "+IMG_NAME_COL+"='" + str(gid) + name + "-mod.png', "\
+    #    +START_T_COL+"="+st_time+", "\
+    #    +END_T_COL+"="+end_time\
+    #    +" WHERE "+ID_COL+"=" + str(gid) + ";"
+
+    return city_tbl #+ image_tbl
 
 
 
@@ -124,7 +156,6 @@ def update_database(query):
     for any reason we log the error but continue execution.
     """
 
-    #print "UPDATING DATABSE: ", query
     try:
         conn = psycopg2.connect(database=GIS_DATABASE,
                                 user=DB_USER,
@@ -183,7 +214,9 @@ def _isPointInPolygon(r, P):
     return 1 # It's within!
 
 
+
 def write_image(fname, w, h, pixels):
+    """ Writes a png image to the filesystem """
 
     try:
         wt = png.Writer(width=w, height=h, alpha=True, bitdepth=8)
@@ -192,6 +225,7 @@ def write_image(fname, w, h, pixels):
         f.close()
     except IOError as e:
         log(e)
+
 
 
 def calc_greenspace(img, box, polygon, gid=0, city=""):
@@ -207,7 +241,7 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
     # we get lists of arrays of pixels, one list ele to a row
     rgbs = list(rgbs) 
 
-    # debug, write image /tmp/<gid>-org.png
+    # write original image
     if PRINT_IMG:
         write_image("/tmp/"+city+str(gid)+"-org.png",\
                         px_width, px_height, rgbs)
@@ -246,7 +280,7 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
             x_pos+=1
         y_pos+=1
 
-    # debug, write modified image /tmp/<gid>-mod.png
+    # write modified image
     if PRINT_IMG:
         write_image("/tmp/"+city+str(gid)+"-mod.png",\
                         px_width, px_height, rgbs)
@@ -266,7 +300,7 @@ def wkt_to_list(wkt):
     # split the list into a list of lists holding coords
     points = [pt_str.split(',') for pt_str in str_point_list]
 
-    # convert each coord into a float
+    # convert each point into a pair of floats
     point_list = [ [float(coord) for coord in pt] for pt in points]
     return point_list
 
@@ -335,11 +369,11 @@ def print_wms_stuff(wms):
 
 def main():
 
-    records = query_database()
-
-    batch_size = 5 # could make fn of len(records) when that works
+    batch_size = 1 # could make fn of len(records) when that works
     num_updates = 0
     update_stmnt = ""
+
+    records = query_database()
 
     for record in records:
 
@@ -348,6 +382,8 @@ def main():
             box = record[XMIN:]
             serv = get_wms_server(box)
             if serv:
+
+                start_t = datetime.datetime.now()
                 
                 wms = WebMapService(serv, version='1.1.1')
                 wms.identification.abstract
@@ -369,9 +405,15 @@ def main():
                 
                 # do greenspace calc on image
                 greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
+                
+                end_t = datetime.datetime.now()
 
                 # append update statement to string
-                update_stmnt += create_update_statement(greenspace, record[GID])
+                update_stmnt += create_update_statement(greenspace,
+                                                        record[GID],
+                                                        record[CITY_NAME],
+                                                        start_t,
+                                                        end_t)
                 num_updates+=1
 
                 # batch updates to the database to avoid creating many connections
