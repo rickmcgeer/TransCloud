@@ -3,6 +3,8 @@ from owslib.wms import ServiceException
 import png
 import psycopg2
 import math
+import datetime
+import sys
 
 
 # these correspond to the selected column num in the SQL statement
@@ -34,30 +36,54 @@ PRINT_DBG_STR = True # print to stdout
 # dict for worldwide wms servers
 WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':None}
 
+# 
+LOG_FILE = None
+LOG_NAME = "getmap.log"
+
+
+def log(*args):
+    
+    if LOG_FILE:
+        lf = LOG_FILE
+    else:
+        lf = sys.stderr
+
+    msg = str(datetime.datetime.now()) + ": "
+    for arg in args:
+        msg += str(arg) + " "
+    #if LOG_FILE:
+    #    LOG_FILE.write(msg)
+    #else:
+    #    sys.stderr.write(msg)
+    lf.write(msg+'\n')
 
 
 def query_database():
 
-    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
-    cur = conn.cursor()
+    try:
+        conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+        cur = conn.cursor()
 
-    select = "gid, name, ST_AsText(ST_ConvexHull(ST_Transform(the_geom,"+GEOG+"))),"\
-        "ST_XMin(ST_Transform(the_geom,"+GEOG+")), ST_YMin(ST_Transform(the_geom,"+GEOG+\
-        ")), ST_XMax(ST_Transform(the_geom,"+GEOG+")), ST_YMax(ST_Transform(the_geom,"+GEOG+"))"
+        select = "gid, name, ST_AsText(ST_ConvexHull(ST_Transform(the_geom,"+GEOG+"))),"\
+            "ST_XMin(ST_Transform(the_geom,"+GEOG+")), ST_YMin(ST_Transform(the_geom,"+GEOG+\
+            ")), ST_XMax(ST_Transform(the_geom,"+GEOG+")), ST_YMax(ST_Transform(the_geom,"+GEOG+"))"
 
-    where = "name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%' OR name LIKE 'CAL%' OR name LIKE 'TOR%'"
-    #where = "name LIKE 'HOPE'"
+        where = "name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%' OR name LIKE 'CAL%' OR name LIKE 'TOR%'"
+        #where = "name LIKE 'HOPE'"
 
-    query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
+        query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
 
-    cur.execute(query)
+        cur.execute(query)
 
-    records = cur.fetchall()
+        records = cur.fetchall()
 
-    cur.close()
-    conn.close()
+        cur.close()
+        conn.close()
 
-    return records
+        return records
+
+    except psycopg2.ProgrammingError as e:
+        log(e)
 
 
 
@@ -70,7 +96,6 @@ def create_update_statement(greenspace, gid):
 def update_database(query):
 
     #print "UPDATING DATABSE: ", query
-
     try:
         conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
         cur = conn.cursor()
@@ -83,55 +108,40 @@ def update_database(query):
         conn.close()
 
     except psycopg2.ProgrammingError as e:
-        print e
+        log(e)
 
 
 
-def get_wms_server(bbox):
-
-    # bbox[0] is min x, [1] is min y, [2] max x, [3] max y
-    if bbox[0] > -140 and bbox[1] > 42 and bbox[2] < -50 and bbox[3] < 70:
-        return WMS_SERVER['canada']
-
-    return None
-
-
-
-# The following three functions are from http://python.net/~gherman/convexhull.html 
+# The following is from http://python.net/~gherman/convexhull.html 
 # by Dinu C. Gherman 
-def _myDet(p, q, r): # this is really just the cross prod
-    """Calc. determinant of a special matrix with three 2D points.
-
-    The sign, "-" or "+", determines the side, right or left,
-    respectivly, on which the point r lies, when measured against
-    a directed vector from p to q.
-    """
-
-    # We use Sarrus' Rule to calculate the determinant.
-    # (could also use the Numeric package...)
-    sum1 = q[0]*r[1] + p[0]*q[1] + r[0]*p[1]
-    sum2 = q[0]*p[1] + r[0]*q[1] + p[0]*r[1]
-
-    return sum1 - sum2
-
-
-
-def _isRightTurn((p, q, r)):
-    "Do the vectors pq:qr form a right turn, or not?"
-
-    # this is not a valid assertion for us, 
-    #  as some points may be directly on the polygon
-    #assert p != q and q != r and p != r
-            
-    if _myDet(p, q, r) < 0:
-	return 1
-    else:
-        return 0
-
-
-
 def _isPointInPolygon(r, P):
     "Is point r inside a given polygon P?"
+
+    def _myDet(p, q, r): # this is really just the cross prod
+        """Calc. determinant of a special matrix with three 2D points.
+
+        The sign, "-" or "+", determines the side, right or left,
+        respectivly, on which the point r lies, when measured against
+        a directed vector from p to q.
+        """
+
+        # We use Sarrus' Rule to calculate the determinant.
+        sum1 = q[0]*r[1] + p[0]*q[1] + r[0]*p[1]
+        sum2 = q[0]*p[1] + r[0]*q[1] + p[0]*r[1]
+
+        return sum1 - sum2
+
+    def _isRightTurn((p, q, r)):
+        "Do the vectors pq:qr form a right turn, or not?"
+
+        # this is not a valid assertion for us, 
+        #  as some points may be directly on the polygon
+        #assert p != q and q != r and p != r
+
+        if _myDet(p, q, r) < 0:
+            return 1
+        else:
+            return 0
 
     # We assume the polygon is a list of points, listed clockwise!
     for i in xrange(len(P[:-1])):
@@ -259,20 +269,31 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
     
 
 
+def get_wms_server(bbox):
+
+    # bbox[0] is min x, [1] is min y, [2] max x, [3] max y
+    if bbox[0] > -140 and bbox[1] > 42 and bbox[2] < -50 and bbox[3] < 70:
+        return WMS_SERVER['canada']
+
+    return None
+
+
+
+def print_wms_stuff(wms):
+    print wms.identification.type
+    print wms.identification.version
+    print wms.identification.title
+    print list(wms.contents)
+    print wms['imagery:landsat7'].styles
+
+
+
 def main():
     records = query_database()
 
     batch_size = 5 # could make fn of len(records) when that works
     num_updates = 0
     update_stmnt = ""
-
-    wms = WebMapService('http://ows.geobase.ca/wms/geobase_en', version='1.1.1')
-#print wms.identification.type
-#print wms.identification.version
-#print wms.identification.title
-    wms.identification.abstract
-#print list(wms.contents)
-#print wms['imagery:landsat7'].styles
 
     for record in records:
 
@@ -281,8 +302,8 @@ def main():
         serv = get_wms_server(box)
         if serv:
             #print serv
-            #wms = WebMapService(serv, version='1.1.1')
-            #wms.identification.abstract
+            wms = WebMapService(serv, version='1.1.1')
+            wms.identification.abstract
 
             img_size = get_img_size(box[0], box[1], box[2], box[3])
             coord_sys = "EPSG:" + GEOG
@@ -312,7 +333,7 @@ def main():
                     print record[GID], record[CITY_NAME], img_size, greenspace
 
             except ServiceException as e:
-                print e
+                log(e)
         #else:
             #print record[CITY_NAME], box, "not within our data range!"
 
@@ -321,4 +342,15 @@ def main():
 
 
 if __name__ == '__main__':
+
+    try:
+        LOG_FILE = open(LOG_NAME, 'a')
+    except IOError as e:
+        print "Failed to open Log:", e, "\nLogging to stderr"
+
+    log("Started")
     main()
+    log("Stopped")
+
+    if LOG_FILE:
+        LOG_FILE.close()
