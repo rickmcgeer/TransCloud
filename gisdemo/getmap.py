@@ -49,6 +49,7 @@ LOG_FILE = None
 LOG_NAME = "getmap.log"
 
 
+
 def log(*args):
     """ Write a timestamp and the args passed to the log. 
     If there is no log file we treat stderr as our log
@@ -73,16 +74,17 @@ def query_database(region=""):
     """
 
     try:
-        conn = psycopg2.connect(database=GIS_DATABASE,\
-                                    user=DB_USER, password=DB_PASS)
+        conn = psycopg2.connect(database=GIS_DATABASE,
+                                user=DB_USER,
+                                password=DB_PASS)
         cur = conn.cursor()
 
         select = ID_COL+", "+NAME_COL+", "\
-            "ST_AsText(ST_ConvexHull(ST_Transform("GEOM_COL","+GEOG+"))),"\
-            "ST_XMin(ST_Transform("GEOM_COL","+GEOG+")),"\
-            "ST_YMin(ST_Transform("GEOM_COL","+GEOG+")),"\
-            "ST_XMax(ST_Transform("GEOM_COL","+GEOG+")),"\
-            "ST_YMax(ST_Transform("GEOM_COL","+GEOG+"))"
+            "ST_AsText(ST_ConvexHull(ST_Transform("+GEOM_COL+","+GEOG+"))),"\
+            "ST_XMin(ST_Transform("+GEOM_COL+","+GEOG+")),"\
+            "ST_YMin(ST_Transform("+GEOM_COL+","+GEOG+")),"\
+            "ST_XMax(ST_Transform("+GEOM_COL+","+GEOG+")),"\
+            "ST_YMax(ST_Transform("+GEOM_COL+","+GEOG+"))"
 
         # keep WHERE in here incase we dont want a where clause
         where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
@@ -98,7 +100,7 @@ def query_database(region=""):
         conn.close()
 
     except psycopg2.ProgrammingError as e:
-        log(e)
+        log("Failed to fetch from database:", e)
 
     # we always want to return a list
     finally:
@@ -124,8 +126,9 @@ def update_database(query):
 
     #print "UPDATING DATABSE: ", query
     try:
-        conn = psycopg2.connect(database=GIS_DATABASE,\ 
-                                user=DB_USER, password=DB_PASS)
+        conn = psycopg2.connect(database=GIS_DATABASE,
+                                user=DB_USER,
+                                password=DB_PASS)
         cur = conn.cursor()
         cur.execute(query)
 
@@ -136,7 +139,7 @@ def update_database(query):
         conn.close()
 
     except psycopg2.ProgrammingError as e:
-        log(e)
+        log("Failed to update database:", e)
 
 
 
@@ -180,12 +183,12 @@ def _isPointInPolygon(r, P):
     return 1 # It's within!
 
 
-def write_image(fname, w, h, pixel_list):
+def write_image(fname, w, h, pixels):
 
     try:
-        wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
+        wt = png.Writer(width=w, height=h, alpha=True, bitdepth=8)
         f = open(fname, 'wb')
-        wt.write(orgf, rgbs)
+        wt.write(f, pixels)
         f.close()
     except IOError as e:
         log(e)
@@ -208,12 +211,6 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
     if PRINT_IMG:
         write_image("/tmp/"+city+str(gid)+"-org.png",\
                         px_width, px_height, rgbs)
-
-        #fname = "/tmp/" + city + str(gid) 
-        #wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
-        #orgf = open(fname+"-org.png", 'wb')
-        #wt.write(orgf, rgbs)
-        #orgf.close()
 
     # for placing the pixels in the coord system
     min_x = box[0]
@@ -254,10 +251,6 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
         write_image("/tmp/"+city+str(gid)+"-mod.png",\
                         px_width, px_height, rgbs)
 
-        #modf = open(fname+"-mod.png", 'wb')
-        #wt.write(modf, rgbs)
-        #modf.close()
-
     return float(gs) / float(px)
 
 
@@ -283,7 +276,9 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
     """ Given a bounding box of lat and long coords calculates
     the image size in pixels required to encompass the area """
 
-    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+    conn = psycopg2.connect(database=GIS_DATABASE,
+                            user=DB_USER,
+                            password=DB_PASS)
     cur = conn.cursor()
 
     def get_dist_from_pts(a, b):
@@ -329,6 +324,7 @@ def get_wms_server(bbox):
 
 
 def print_wms_stuff(wms):
+
     print wms.identification.type
     print wms.identification.version
     print wms.identification.title
@@ -338,6 +334,7 @@ def print_wms_stuff(wms):
 
 
 def main():
+
     records = query_database()
 
     batch_size = 5 # could make fn of len(records) when that works
@@ -346,17 +343,18 @@ def main():
 
     for record in records:
 
-        # box is floats: [xmin, ymin, xmax, ymax]
-        box = record[XMIN:]
-        serv = get_wms_server(box)
-        if serv:
-            #print serv
-            wms = WebMapService(serv, version='1.1.1')
-            wms.identification.abstract
+        try:
+            # box is floats: [xmin, ymin, xmax, ymax]
+            box = record[XMIN:]
+            serv = get_wms_server(box)
+            if serv:
+                
+                wms = WebMapService(serv, version='1.1.1')
+                wms.identification.abstract
 
-            img_size = get_img_size(box[0], box[1], box[2], box[3])
-            coord_sys = "EPSG:" + GEOG
-            try:
+                img_size = get_img_size(box[0], box[1], box[2], box[3])
+                coord_sys = "EPSG:" + GEOG
+
                 img = wms.getmap(layers=['imagery:landsat7'],
                                  styles=[],
                                  srs=coord_sys,
@@ -366,9 +364,13 @@ def main():
                                  transparent=True
                                  )
 
+                # get polygon as list of points (ie, not a string)
                 polygon = wkt_to_list(record[CV_HULL])
-                #print polygon
+                
+                # do greenspace calc on image
                 greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
+
+                # append update statement to string
                 update_stmnt += create_update_statement(greenspace, record[GID])
                 num_updates+=1
 
@@ -381,10 +383,13 @@ def main():
                 if PRINT_DBG_STR:
                     print record[GID], record[CITY_NAME], img_size, greenspace
 
-            except ServiceException as e:
-                log(e)
-        #else:
-            #print record[CITY_NAME], box, "not within our data range!"
+            #else:
+                #print record[CITY_NAME], box, "not within our data range!"
+
+        # catch all the errors and send to the log... is this a good idea???
+        except Exception as e:
+            log("Unexpected exception, process failed:", e)
+            raise
 
     if len(update_stmnt):
         update_database(update_stmnt)
