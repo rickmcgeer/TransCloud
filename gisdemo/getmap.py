@@ -7,12 +7,12 @@ import datetime
 import sys
 
 
-
 # CRITICAL TODO's:
-#  - Insert timestamps, image name, and all that jazz to correct table
 #
-#  - Make initial query pull only correct data
-#     . After that we make get_wms_server() behave better as it checks if around canada right now
+#  - Make initial query pull only correct data, we must modify either 
+#      the table or where clause in query_database()
+#     After that we must make get_wms_server() behave better as it checks
+#      if around canada right now
 #
 
 
@@ -41,8 +41,8 @@ NAME_COL = "name"
 GEOM_COL = "the_geom"
 GREEN_COL = "greenspace"
 
-IMAGE_TBL = "cities"
-IMAGE_NAME_COL = "file_path"
+IMG_TABLE = "times"
+IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
 
@@ -55,8 +55,8 @@ M_PER_PIXEL = 30
 WSG84 = "4326"
 GEOG = WSG84
 
-
-PRINT_IMG = True # print to /tmp/ when True
+# do we, and if so where do we want to print images
+PRINT_IMG = True
 IMG_LOC = "/tmp/"
 
 PRINT_DBG_STR = True # print to stdout
@@ -142,13 +142,13 @@ def create_update_statement(greenspace, gid, name, start, end):
         +" SET "+GREEN_COL+"=" + str(greenspace)\
         + " WHERE "+ID_COL+"=" + str(gid) + ";"
 
-    #image_tbl = "UPDATE "+IMG_TABLE\
-    #    +" SET "+IMG_NAME_COL+"='" + str(gid) + name + "-mod.png', "\
-    #    +START_T_COL+"="+st_time+", "\
-    #    +END_T_COL+"="+end_time\
-    #    +" WHERE "+ID_COL+"=" + str(gid) + ";"
+    image_tbl = "UPDATE "+IMG_TABLE\
+        +" SET "+IMG_NAME_COL+"='" + str(gid) + name + "-mod.png', "\
+        +START_T_COL+"="+st_time+", "\
+        +END_T_COL+"="+end_time\
+        +" WHERE "+ID_COL+"=" + str(gid) + ";"
 
-    return city_tbl #+ image_tbl
+    return city_tbl + image_tbl
 
 
 
