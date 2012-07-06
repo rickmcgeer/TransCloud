@@ -16,11 +16,19 @@ YMIN = 4
 XMAX = 5
 YMAX = 6
 
+# colour we want the space around the polygon to be
+MASK_COLOUR = 255
+
+
 # database constants
-CITY_TABLE = "cities"#"map"#"cities"
-GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
 DB_USER = "postgres"#"gisdemo"#"postgres"
 DB_PASS = ""#"123456"#""
+GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
+CITY_TABLE = "cities"#"map"#"cities"
+ID_COL = "gid"
+NAME_COL = "name"
+GEOM_COL = "the_geom"
+GREEN_COL = "greenspace"
 
 # number of pixels per meter
 M_PER_PIXEL = 30
@@ -42,6 +50,9 @@ LOG_NAME = "getmap.log"
 
 
 def log(*args):
+    """ Write a timestamp and the args passed to the log. 
+    If there is no log file we treat stderr as our log
+    """
     
     if LOG_FILE:
         lf = LOG_FILE
@@ -51,27 +62,33 @@ def log(*args):
     msg = str(datetime.datetime.now()) + ": "
     for arg in args:
         msg += str(arg) + " "
-    #if LOG_FILE:
-    #    LOG_FILE.write(msg)
-    #else:
-    #    sys.stderr.write(msg)
     lf.write(msg+'\n')
 
 
-def query_database():
+
+def query_database(region=""):
+    """ Selects data from the database, and returns a list of records. 
+    If an error occurs connecting to the database, or executing the 
+    query, we simply return an empty list.
+    """
 
     try:
-        conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+        conn = psycopg2.connect(database=GIS_DATABASE,\
+                                    user=DB_USER, password=DB_PASS)
         cur = conn.cursor()
 
-        select = "gid, name, ST_AsText(ST_ConvexHull(ST_Transform(the_geom,"+GEOG+"))),"\
-            "ST_XMin(ST_Transform(the_geom,"+GEOG+")), ST_YMin(ST_Transform(the_geom,"+GEOG+\
-            ")), ST_XMax(ST_Transform(the_geom,"+GEOG+")), ST_YMax(ST_Transform(the_geom,"+GEOG+"))"
+        select = ID_COL+", "+NAME_COL+", "\
+            "ST_AsText(ST_ConvexHull(ST_Transform("GEOM_COL","+GEOG+"))),"\
+            "ST_XMin(ST_Transform("GEOM_COL","+GEOG+")),"\
+            "ST_YMin(ST_Transform("GEOM_COL","+GEOG+")),"\
+            "ST_XMax(ST_Transform("GEOM_COL","+GEOG+")),"\
+            "ST_YMax(ST_Transform("GEOM_COL","+GEOG+"))"
 
-        where = "name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%' OR name LIKE 'CAL%' OR name LIKE 'TOR%'"
-        #where = "name LIKE 'HOPE'"
+        # keep WHERE in here incase we dont want a where clause
+        where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
+        #where = " WHERE name LIKE 'HOPE'"
 
-        query = "SELECT " + select + " FROM " + CITY_TABLE + " WHERE " + where + ";"
+        query = "SELECT " + select + " FROM " + CITY_TABLE + where + ";"
 
         cur.execute(query)
 
@@ -80,27 +97,38 @@ def query_database():
         cur.close()
         conn.close()
 
-        return records
-
     except psycopg2.ProgrammingError as e:
         log(e)
+
+    # we always want to return a list
+    finally:
+        return records
 
 
 
 def create_update_statement(greenspace, gid):
+    """ Returns an sql update statement as a string which sets
+    the record with the matching gid's greenspace value
+    """
 
-    return "UPDATE cities SET greenspace=" + str(greenspace) + " WHERE gid=" + str(gid) + ";"
+    return "UPDATE "+CITY_TABLE+" SET "+GREEN_COL+"="\
+        + str(greenspace) + " WHERE "+ID_COL+"=" + str(gid) + ";"
 
 
 
 def update_database(query):
+    """ Given a string continging sql, will connect to the
+    database and perform the sql query, if the query fails 
+    for any reason we log the error but continue execution.
+    """
 
     #print "UPDATING DATABSE: ", query
     try:
-        conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+        conn = psycopg2.connect(database=GIS_DATABASE,\ 
+                                user=DB_USER, password=DB_PASS)
         cur = conn.cursor()
-
         cur.execute(query)
+
         # we must commit our transaction
         conn.commit()
 
@@ -152,22 +180,40 @@ def _isPointInPolygon(r, P):
     return 1 # It's within!
 
 
+def write_image(fname, w, h, pixel_list):
+
+    try:
+        wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
+        f = open(fname, 'wb')
+        wt.write(orgf, rgbs)
+        f.close()
+    except IOError as e:
+        log(e)
+
 
 def calc_greenspace(img, box, polygon, gid=0, city=""):
+    """ given a png image, bounding box, and polygon will count the 
+    amount of greenspace contained within the image, and return it
+    """
 
     bytes_of_png = img.read()
     image = png.Reader(bytes=bytes_of_png)
 
-    px_width, px_height, rgbs, metadata = image.read() # image.asRGBA()
-    rgbs = list(rgbs)
+    # extract image data
+    px_width, px_height, rgbs, metadata = image.read()
+    # we get lists of arrays of pixels, one list ele to a row
+    rgbs = list(rgbs) 
 
     # debug, write image /tmp/<gid>-org.png
     if PRINT_IMG:
-        fname = "/tmp/" + city + str(gid) 
-        wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
-        orgf = open(fname+"-org.png", 'wb')
-        wt.write(orgf, rgbs)
-        orgf.close()
+        write_image("/tmp/"+city+str(gid)+"-org.png",\
+                        px_width, px_height, rgbs)
+
+        #fname = "/tmp/" + city + str(gid) 
+        #wt = png.Writer(width=px_width, height=px_height, alpha=True, bitdepth=8)
+        #orgf = open(fname+"-org.png", 'wb')
+        #wt.write(orgf, rgbs)
+        #orgf.close()
 
     # for placing the pixels in the coord system
     min_x = box[0]
@@ -196,18 +242,21 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
                 if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
                     gs+=1
                 
-                # debug, make the image white under the polygon
-                if PRINT_IMG:
-                    rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = 255
+                # debug, make the image white around the polygon
+            elif PRINT_IMG:
+                rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
 
             x_pos+=1
         y_pos+=1
 
     # debug, write modified image /tmp/<gid>-mod.png
     if PRINT_IMG:
-        modf = open(fname+"-mod.png", 'wb')
-        wt.write(modf, rgbs)
-        modf.close()
+        write_image("/tmp/"+city+str(gid)+"-mod.png",\
+                        px_width, px_height, rgbs)
+
+        #modf = open(fname+"-mod.png", 'wb')
+        #wt.write(modf, rgbs)
+        #modf.close()
 
     return float(gs) / float(px)
 
