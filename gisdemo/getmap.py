@@ -25,6 +25,7 @@ YMIN = 4
 XMAX = 5
 YMAX = 6
 
+
 # val of all pixels we want the space around the polygon to be
 MASK_COLOUR = 0
 
@@ -45,7 +46,7 @@ IMG_TABLE = "times"
 IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
-
+SERV_NAME_COL = "server_name"
 
 
 # number of pixels per meter
@@ -108,8 +109,8 @@ def query_database(region=""):
             "ST_YMax(ST_Transform("+GEOM_COL+","+GEOG+"))"
 
         # keep WHERE in here incase we dont want a where clause
-        where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
-        #where = " WHERE name LIKE 'HOPE'"
+        #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
+        where = " WHERE name LIKE 'HOPE'"
 
         query = "SELECT " + select + " FROM " + CITY_TABLE + where + ";"
 
@@ -129,12 +130,13 @@ def query_database(region=""):
 
 
 
-def create_update_statement(greenspace, gid, name, start, end):
+def create_update_statement(greenspace, gid, name, start, end, serv_name):
     """ Returns an sql update statement as a string which sets
     the record with the matching gid's greenspace value, image 
     name, and timestamps
     """
 
+    # format the python timestamps into something postgres can understand
     st_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
     end_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
 
@@ -145,7 +147,8 @@ def create_update_statement(greenspace, gid, name, start, end):
     image_tbl = "UPDATE "+IMG_TABLE\
         +" SET "+IMG_NAME_COL+"='" + str(gid) + name + "-mod.png', "\
         +START_T_COL+"="+st_time+", "\
-        +END_T_COL+"="+end_time\
+        +END_T_COL+"="+end_time+", "\
+        +SERV_NAME_COL+"='"+serv_name+"'"\
         +" WHERE "+ID_COL+"=" + str(gid) + ";"
 
     return city_tbl + image_tbl
@@ -232,7 +235,7 @@ def write_image(fname, w, h, pixels):
 
 def calc_greenspace(img, box, polygon, gid=0, city=""):
     """ given a png image, bounding box, and polygon will count the 
-    amount of greenspace contained within the image, and return it
+    percentage of greenspace contained in the image within the polygon
     """
 
     bytes_of_png = img.read()
@@ -363,6 +366,7 @@ def get_wms_server(bbox):
 
 
 def print_wms_stuff(wms):
+    """ used for debugging if we need """
 
     print wms.identification.type
     print wms.identification.version
@@ -385,12 +389,12 @@ def main():
         try:
             # box is floats: [xmin, ymin, xmax, ymax]
             box = record[XMIN:]
-            serv = get_wms_server(box)
-            if serv:
+            wms_serv = get_wms_server(box)
+            if wms_serv:
 
                 start_t = datetime.datetime.now()
                 
-                wms = WebMapService(serv, version='1.1.1')
+                wms = WebMapService(wms_serv, version='1.1.1')
                 wms.identification.abstract
 
                 img_size = get_img_size(box[0], box[1], box[2], box[3])
@@ -418,7 +422,8 @@ def main():
                                                         record[GID],
                                                         record[CITY_NAME],
                                                         start_t,
-                                                        end_t)
+                                                        end_t,
+                                                        wms_serv)
                 num_updates+=1
 
                 # batch updates to the database to avoid creating many connections
