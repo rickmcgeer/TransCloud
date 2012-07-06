@@ -55,8 +55,10 @@ M_PER_PIXEL = 30
 WSG84 = "4326"
 GEOG = WSG84
 
-# Debug stuff
+
 PRINT_IMG = True # print to /tmp/ when True
+IMG_LOC = "/tmp/"
+
 PRINT_DBG_STR = True # print to stdout
 
 # dict for worldwide wms servers
@@ -220,7 +222,7 @@ def write_image(fname, w, h, pixels):
 
     try:
         wt = png.Writer(width=w, height=h, alpha=True, bitdepth=8)
-        f = open(fname, 'wb')
+        f = open(IMG_LOC+fname, 'wb')
         wt.write(f, pixels)
         f.close()
     except IOError as e:
@@ -243,8 +245,8 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
 
     # write original image
     if PRINT_IMG:
-        write_image("/tmp/"+city+str(gid)+"-org.png",\
-                        px_width, px_height, rgbs)
+        write_image(city+str(gid)+"-org.png",
+                    px_width, px_height, rgbs)
 
     # for placing the pixels in the coord system
     min_x = box[0]
@@ -270,21 +272,24 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
         
             if _isPointInPolygon([px_x, px_y], polygon):
                 px+=1
+                # if green is the most promemant colour, we count as greenspace
                 if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
                     gs+=1
                 
-                # debug, make the image white around the polygon
+            # change pixels not in the polygon
             elif PRINT_IMG:
-                rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
+                #rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
+                rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
 
             x_pos+=1
         y_pos+=1
 
     # write modified image
     if PRINT_IMG:
-        write_image("/tmp/"+city+str(gid)+"-mod.png",\
-                        px_width, px_height, rgbs)
+        write_image(city+str(gid)+"-mod.png",
+                    px_width, px_height, rgbs)
 
+    # return num of greenspace pixels / pixels in polygon
     return float(gs) / float(px)
 
 
