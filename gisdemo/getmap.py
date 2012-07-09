@@ -440,6 +440,7 @@ def main():
                 else:
                     greenspace = 0
 				
+				# dont insert if we have no greenspace
                 if greenspace:
 				
                     end_t = datetime.datetime.now()
