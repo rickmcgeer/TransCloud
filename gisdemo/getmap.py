@@ -29,20 +29,21 @@ YMAX = 6
 # val of all pixels we want the space around the polygon to be
 MASK_COLOUR = 0
 
+LOW_GREEN_VAL = 0.0001
 
 # database constants
 DB_USER = "postgres"#"gisdemo"#"postgres"
 DB_PASS = ""#"123456"#""
-GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
+GIS_DATABASE = "world"#"gisdemo"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
-CITY_TABLE = "cities"#"map"#"cities"
+CITY_TABLE = {'canada':"ca_cities", 'us':"us_cities", 'all':"map"}
 ID_COL = "gid"
 NAME_COL = "name"
 GEOM_COL = "the_geom"
 GREEN_COL = "greenspace"
 
-IMG_TABLE = "times"
+IMG_TABLE = "processed"
 IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
@@ -64,6 +65,7 @@ PRINT_DBG_STR = True # print to stdout
 
 # dict for worldwide wms servers
 WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':None}
+WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[]}
 
 # 
 LOG_FILE = None
@@ -88,18 +90,19 @@ def log(*args):
 
 
 
-def query_database(region=""):
+def query_database(region):
     """ Selects data from the database, and returns a list of records. 
     If an error occurs connecting to the database, or executing the 
     query, we simply return an empty list.
     """
-
-    records = []
+	
+    #records = []
     try:
         conn = psycopg2.connect(database=GIS_DATABASE,
                                 user=DB_USER,
                                 password=DB_PASS)
         cur = conn.cursor()
+        #print "con=", conn, "cur=", cur	
 
         select = ID_COL+", "+NAME_COL+", "\
             "ST_AsText(ST_ConvexHull(ST_Transform("+GEOM_COL+","+GEOG+"))),"\
@@ -110,48 +113,59 @@ def query_database(region=""):
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
-        where = " WHERE name LIKE 'HOPE'"
+        #where = " WHERE name LIKE 'HOPE'"
+        where = " WHERE "+GREEN_COL+"=0"
+		
+        #limit = " LIMIT 50"
+        limit = ""
 
-        query = "SELECT " + select + " FROM " + CITY_TABLE + where + ";"
+        query = "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
 
         cur.execute(query)
 
         records = cur.fetchall()
+        print len(records)
 
         cur.close()
         conn.close()
+		
+        return records
 
     except psycopg2.ProgrammingError as e:
         log("Failed to fetch from database:", e)
+        return []
 
     # we always want to return a list
-    finally:
-        return records
+    #finally:
+    #    return records
 
 
 
-def create_update_statement(greenspace, gid, name, start, end, serv_name):
+def create_update_statement(greenspace, gid, name, start, end, serv_name, location):
     """ Returns an sql update statement as a string which sets
     the record with the matching gid's greenspace value, image 
     name, and timestamps
     """
 
+    if name is None:
+        name = ""
+
     # format the python timestamps into something postgres can understand
     st_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
     end_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
 
-    city_tbl = "UPDATE "+CITY_TABLE\
+    green_tbl = "UPDATE "+CITY_TABLE[location]\
         +" SET "+GREEN_COL+"=" + str(greenspace)\
         + " WHERE "+ID_COL+"=" + str(gid) + ";"
 
     image_tbl = "UPDATE "+IMG_TABLE\
-        +" SET "+IMG_NAME_COL+"='" + str(gid) + name + "-mod.png', "\
+        +" SET "+IMG_NAME_COL+"='" + name + str(gid) + "-mod.png', "\
         +START_T_COL+"="+st_time+", "\
         +END_T_COL+"="+end_time+", "\
         +SERV_NAME_COL+"='"+serv_name+"'"\
         +" WHERE "+ID_COL+"=" + str(gid) + ";"
 
-    return city_tbl + image_tbl
+    return green_tbl + image_tbl
 
 
 
@@ -161,6 +175,7 @@ def update_database(query):
     for any reason we log the error but continue execution.
     """
 
+    #print query
     try:
         conn = psycopg2.connect(database=GIS_DATABASE,
                                 user=DB_USER,
@@ -233,10 +248,13 @@ def write_image(fname, w, h, pixels):
 
 
 
-def calc_greenspace(img, box, polygon, gid=0, city=""):
+def calc_greenspace(img, box, polygon, gid, city):
     """ given a png image, bounding box, and polygon will count the 
     percentage of greenspace contained in the image within the polygon
     """
+	
+    if not city:
+        city = ""
 
     bytes_of_png = img.read()
     image = png.Reader(bytes=bytes_of_png)
@@ -247,9 +265,9 @@ def calc_greenspace(img, box, polygon, gid=0, city=""):
     rgbs = list(rgbs) 
 
     # write original image
-    if PRINT_IMG:
-        write_image(city+str(gid)+"-org.png",
-                    px_width, px_height, rgbs)
+#    if PRINT_IMG:
+#        write_image(city+str(gid)+"-org.png",
+#                    px_width, px_height, rgbs)
 
     # for placing the pixels in the coord system
     min_x = box[0]
@@ -343,6 +361,9 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
 
     if PRINT_DBG_STR:
         print "width:", x_meters, " height:", y_meters
+		
+    if x_meters < M_PER_PIXEL or y_meters < M_PER_PIXEL:
+        return (0,0)
 
     # get the width and height of image in pixels
     x_pixels = int(math.ceil(x_meters / M_PER_PIXEL))
@@ -355,24 +376,12 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
     
 
 
-def get_wms_server(bbox):
+def get_wms_server(loc):
 
     # bbox[0] is min x, [1] is min y, [2] max x, [3] max y
-    if bbox[0] > -140 and bbox[1] > 42 and bbox[2] < -50 and bbox[3] < 70:
-        return WMS_SERVER['canada']
+    #if bbox[0] > -140 and bbox[1] > 42 and bbox[2] < -50 and bbox[3] < 70:
+    return WMS_SERVER[loc], WMS_LAYER[loc]
 
-    return None
-
-
-
-def print_wms_stuff(wms):
-    """ used for debugging if we need """
-
-    print wms.identification.type
-    print wms.identification.version
-    print wms.identification.title
-    print list(wms.contents)
-    print wms['imagery:landsat7'].styles
 
 
 
@@ -382,14 +391,22 @@ def main():
     num_updates = 0
     update_stmnt = ""
 
-    records = query_database()
+    location = 'canada'
+
+    records = query_database(location)
+	
+    #print len(records)
 
     for record in records:
-
+	
+        if record[GID] is None:	
+            log("Null GID")
+            continue
+				
         try:
             # box is floats: [xmin, ymin, xmax, ymax]
             box = record[XMIN:]
-            wms_serv = get_wms_server(box)
+            wms_serv, layer = get_wms_server(location)
             if wms_serv:
 
                 start_t = datetime.datetime.now()
@@ -399,8 +416,11 @@ def main():
 
                 img_size = get_img_size(box[0], box[1], box[2], box[3])
                 coord_sys = "EPSG:" + GEOG
+				
+				# must check if the image size is valid
+                if img_size[0] and img_size[1]:
 
-                img = wms.getmap(layers=['imagery:landsat7'],
+                     img = wms.getmap(layers=layer,
                                  styles=[],
                                  srs=coord_sys,
                                  bbox=box,
@@ -409,31 +429,40 @@ def main():
                                  transparent=True
                                  )
 
-                # get polygon as list of points (ie, not a string)
-                polygon = wkt_to_list(record[CV_HULL])
+                     # get polygon as list of points (ie, not a string)
+                     polygon = wkt_to_list(record[CV_HULL])
                 
-                # do greenspace calc on image
-                greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
-                
-                end_t = datetime.datetime.now()
+                     # do greenspace calc on image
+                     greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
+					 
+			    # we should not insert something into the database if the image 
+				# is invalid as there is nothing for ricks stuff to read
+                else:
+                    greenspace = 0
+				
+                if greenspace:
+				
+                    end_t = datetime.datetime.now()
 
-                # append update statement to string
-                update_stmnt += create_update_statement(greenspace,
+                    # append update statement to string
+                    update_stmnt += create_update_statement(greenspace,
                                                         record[GID],
                                                         record[CITY_NAME],
                                                         start_t,
                                                         end_t,
-                                                        wms_serv)
-                num_updates+=1
+                                                        wms_serv,
+                                                        location)
+                    num_updates+=1
 
-                # batch updates to the database to avoid creating many connections
-                if num_updates >= batch_size:
-                    update_database(update_stmnt)
-                    update_stmnt = ""
-                    num_updates = 0
+                    # batch updates to the database to avoid creating many connections
+                    if num_updates >= batch_size:
+                        update_database(update_stmnt)
+                        update_stmnt = ""
+                        num_updates = 0
 
                 if PRINT_DBG_STR:
                     print record[GID], record[CITY_NAME], img_size, greenspace
+                log(record[GID], record[CITY_NAME], img_size, greenspace)
 
             #else:
                 #print record[CITY_NAME], box, "not within our data range!"
@@ -445,6 +474,8 @@ def main():
 
     if len(update_stmnt):
         update_database(update_stmnt)
+		
+    return len(records)
 
 
 if __name__ == '__main__':
@@ -455,7 +486,9 @@ if __name__ == '__main__':
         print "Failed to open Log:", e, "\nLogging to stderr"
 
     log("Started")
-    main()
+    proc = main()
+    while(proc):
+        proc = main()
     log("Stopped")
 
     if LOG_FILE:
