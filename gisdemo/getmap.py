@@ -32,8 +32,8 @@ MASK_COLOUR = 0
 LOW_GREEN_VAL = 0.0001
 
 # database constants
-DB_USER = "postgres"#"gisdemo"#"postgres"
-DB_PASS = ""#"123456"#""
+DB_USER = "root"#"gisdemo"#"postgres"
+DB_PASS = "root"#"123456"#""
 GIS_DATABASE = "world"#"gisdemo"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
@@ -64,8 +64,8 @@ IMG_LOC = "/tmp/"
 PRINT_DBG_STR = True # print to stdout
 
 # dict for worldwide wms servers
-WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':None}
-WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[]}
+WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://198.55.37.8:8080/geoserver/opengeo/wms"}
+WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['Landsat7:L7-US-70-UTM11N'],[''],['']]}
 
 # 
 LOG_FILE = None
@@ -77,16 +77,19 @@ def log(*args):
     """ Write a timestamp and the args passed to the log. 
     If there is no log file we treat stderr as our log
     """
-    
+    logs = []
+	
     if LOG_FILE:
-        lf = LOG_FILE
-    else:
-        lf = sys.stderr
+        logs.append(LOG_FILE)
+    #else:
+	logs.append(sys.stderr)
 
-    msg = str(datetime.datetime.now()) + ": "
-    for arg in args:
-        msg += str(arg) + " "
-    lf.write(msg+'\n')
+
+    for lf in logs:
+        msg = str(datetime.datetime.now()) + ": "
+        for arg in args:
+            msg += str(arg) + " "
+        lf.write(msg+'\n')
 
 
 
@@ -113,7 +116,7 @@ def query_database(region):
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
-        #where = " WHERE name LIKE 'HOPE'"
+        #where = " WHERE name LIKE 'BOISE CITY'"
         where = " WHERE "+GREEN_COL+"=0"
 		
         #limit = " LIMIT 50"
@@ -383,7 +386,56 @@ def get_wms_server(loc):
     return WMS_SERVER[loc], WMS_LAYER[loc]
 
 
+def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
 
+    def combine_rgb(red, green, blue):
+		None
+
+    if location == 'canada':
+					
+	    img = wms.getmap(layers=layer,
+						styles=[],
+						srs=coord_sys,
+                        bbox=box,
+                        size=img_size,
+                        format='image/png',
+                        transparent=True
+                        )
+						
+    elif location == 'us':
+        red = wms.getmap(layers=layer[0],
+						styles=[],
+						srs=coord_sys,
+                        bbox=box,
+                        size=img_size,
+                        format='image/png',
+                        transparent=True
+                        )
+        green = wms.getmap(layers=layer[1],
+						styles=[],
+						srs=coord_sys,
+                        bbox=box,
+                        size=img_size,
+                        format='image/png',
+                        transparent=True
+                        )						
+        blue = wms.getmap(layers=layer[2],
+						styles=[],
+						srs=coord_sys,
+                        bbox=box,
+                        size=img_size,
+                        format='image/png',
+                        transparent=True
+                        )
+						
+        img = combine_rgb(red, green, blue)
+		
+    else:
+        log("Unrecognized location", location)
+        return None
+		
+    return img				
+	
 
 def main():
 
@@ -419,7 +471,8 @@ def main():
 				
 				# must check if the image size is valid
                 if img_size[0] and img_size[1]:
-
+                     img = get_img_from_wms(wms, layer, coord_sys, box, img_size, location)
+					 
                      img = wms.getmap(layers=layer,
                                  styles=[],
                                  srs=coord_sys,
