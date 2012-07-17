@@ -6,6 +6,7 @@ import math
 import datetime
 import sys
 
+from wsgimg import *
 
 # CRITICAL TODO's:
 #
@@ -455,76 +456,71 @@ def main():
             log("Null GID")
             continue
 				
-        try:
-            # box is floats: [xmin, ymin, xmax, ymax]
-            box = record[XMIN:]
-            wms_serv, layer = get_wms_server(location)
-            if wms_serv:
+        
+        # box is floats: [xmin, ymin, xmax, ymax]
+        box = record[XMIN:]
 
-                start_t = datetime.datetime.now()
-                
-                wms = WebMapService(wms_serv, version='1.1.1')
-                wms.identification.abstract
+        wms_serv, layer = get_wms_server(location)
+        if wms_serv:
 
-                img_size = get_img_size(box[0], box[1], box[2], box[3])
-                coord_sys = "EPSG:" + GEOG
-				
-				# must check if the image size is valid
-                if img_size[0] and img_size[1]:
-                     img = get_img_from_wms(wms, layer, coord_sys, box, img_size, location)
-					 
-                     img = wms.getmap(layers=layer,
-                                 styles=[],
-                                 srs=coord_sys,
-                                 bbox=box,
-                                 size=img_size,
-                                 format='image/png',
-                                 transparent=True
-                                 )
+            start_t = datetime.datetime.now()
 
-                     # get polygon as list of points (ie, not a string)
-                     polygon = wkt_to_list(record[CV_HULL])
-                
-                     # do greenspace calc on image
-                     greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
-					 
-			    # we should not insert something into the database if the image 
-				# is invalid as there is nothing for ricks stuff to read
-                else:
-                    greenspace = 0
-				
-				# dont insert if we have no greenspace
-                if greenspace:
-				
-                    end_t = datetime.datetime.now()
+            wms = WebMapService(wms_serv, version='1.1.1')
+            wms.identification.abstract
 
-                    # append update statement to string
-                    update_stmnt += create_update_statement(greenspace,
-                                                        record[GID],
-                                                        record[CITY_NAME],
-                                                        start_t,
-                                                        end_t,
-                                                        wms_serv,
-                                                        location)
-                    num_updates+=1
+            img_size = get_img_size(box[0], box[1], box[2], box[3])
+            coord_sys = "EPSG:" + GEOG
 
-                    # batch updates to the database to avoid creating many connections
-                    if num_updates >= batch_size:
-                        update_database(update_stmnt)
-                        update_stmnt = ""
-                        num_updates = 0
+            # must check if the image size is valid
+            if img_size[0] and img_size[1]:
+                 img = get_img_from_wms(wms, layer, coord_sys, box, img_size, location)
 
-                if PRINT_DBG_STR:
-                    print record[GID], record[CITY_NAME], img_size, greenspace
-                log(record[GID], record[CITY_NAME], img_size, greenspace)
+                 img = wms.getmap(layers=layer,
+                             styles=[],
+                             srs=coord_sys,
+                             bbox=box,
+                             size=img_size,
+                             format='image/png',
+                             transparent=True
+                             )
 
-            #else:
-                #print record[CITY_NAME], box, "not within our data range!"
+                 # get polygon as list of points (ie, not a string)
+                 polygon = wkt_to_list(record[CV_HULL])
 
-        # catch all the errors and send to the log... is this a good idea???
-        except Exception as e:
-            log("Unexpected exception, process failed:", e)
-            raise
+                 # do greenspace calc on image
+                 greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
+
+            else:
+                greenspace = 0
+
+            # dont insert if we have no greenspace
+            if greenspace:
+
+                end_t = datetime.datetime.now()
+
+                # append update statement to string
+                update_stmnt += create_update_statement(greenspace,
+                                                    record[GID],
+                                                    record[CITY_NAME],
+                                                    start_t,
+                                                    end_t,
+                                                    wms_serv,
+                                                    location)
+                num_updates+=1
+
+                # batch updates to the database to avoid creating many connections
+                if num_updates >= batch_size:
+                    update_database(update_stmnt)
+                    update_stmnt = ""
+                    num_updates = 0
+
+            if PRINT_DBG_STR:
+                print record[GID], record[CITY_NAME], img_size, greenspace
+            log(record[GID], record[CITY_NAME], img_size, greenspace)
+
+        #else:
+            #print record[CITY_NAME], box, "not within our data range!"
+
 
     if len(update_stmnt):
         update_database(update_stmnt)
