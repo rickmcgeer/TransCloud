@@ -6,7 +6,7 @@ import math
 import datetime
 import sys
 
-from wsgimg import *
+from wmsimg import *
 
 # CRITICAL TODO's:
 #
@@ -33,12 +33,12 @@ MASK_COLOUR = 0
 LOW_GREEN_VAL = 0.0001
 
 # database constants
-DB_USER = "root"#"gisdemo"#"postgres"
-DB_PASS = "root"#"123456"#""
-GIS_DATABASE = "world"#"gisdemo"
+DB_USER = "postgres"#"root"#"postgres"
+DB_PASS = ""#root"#""
+GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
-CITY_TABLE = {'canada':"ca_cities", 'us':"us_cities", 'all':"map"}
+CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
 ID_COL = "gid"
 NAME_COL = "name"
 GEOM_COL = "the_geom"
@@ -60,7 +60,7 @@ GEOG = WSG84
 
 # do we, and if so where do we want to print images
 PRINT_IMG = True
-IMG_LOC = "/tmp/"
+
 
 PRINT_DBG_STR = True # print to stdout
 
@@ -117,8 +117,9 @@ def query_database(region):
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
+        where = " WHERE name LIKE 'VANCOUVER' OR name LIKE 'HOPE'"
         #where = " WHERE name LIKE 'BOISE CITY'"
-        where = " WHERE "+GREEN_COL+"=0"
+        #where = " WHERE "+GREEN_COL+"=0"
 		
         #limit = " LIMIT 50"
         limit = ""
@@ -252,42 +253,31 @@ def write_image(fname, w, h, pixels):
 
 
 
-def calc_greenspace(img, box, polygon, gid, city):
+def calc_greenspace(img, polygon):
     """ given a png image, bounding box, and polygon will count the 
     percentage of greenspace contained in the image within the polygon
     """
 	
-    if not city:
-        city = ""
-
-    bytes_of_png = img.read()
-    image = png.Reader(bytes=bytes_of_png)
-
-    # extract image data
-    px_width, px_height, rgbs, metadata = image.read()
-    # we get lists of arrays of pixels, one list ele to a row
-    rgbs = list(rgbs) 
-
-    # write original image
-#    if PRINT_IMG:
-#        write_image(city+str(gid)+"-org.png",
-#                    px_width, px_height, rgbs)
-
     # for placing the pixels in the coord system
-    min_x = box[0]
-    max_y = box[3]
-    # increment = length x|y / width|height
-    x_incr = (box[2] - box[0]) / px_width
-    y_incr = (box[3] - box[1]) / px_height
+    min_x = img.bbox.xmin
+    max_y = img.bbox.ymin
+    # x and y increase per pixel
+    x_incr = img.getXPerPixel()
+    y_incr = img.getYPerPixel()
     
+    px_width = img.px_w
+    px_height = img.px_h
+
+    print px_width, px_height, min_x, max_y, polygon
+
     gs = 0
     px = 0
     y_pos = 0
     while y_pos < px_height:
 
-        red = rgbs[y_pos][0::4]
-        green = rgbs[y_pos][1::4]
-        blue = rgbs[y_pos][2::4]
+        red = img.rgbs[y_pos][0::4]
+        green = img.rgbs[y_pos][1::4]
+        blue = img.rgbs[y_pos][2::4]
 
         x_pos = 0
         while x_pos < px_width:
@@ -304,15 +294,14 @@ def calc_greenspace(img, box, polygon, gid, city):
             # change pixels not in the polygon
             elif PRINT_IMG:
                 #rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
-                rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
+                img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
 
             x_pos+=1
         y_pos+=1
 
     # write modified image
     if PRINT_IMG:
-        write_image(city+str(gid)+"-mod.png",
-                    px_width, px_height, rgbs)
+        img.writeImg()
 
     # return num of greenspace pixels / pixels in polygon
     return float(gs) / float(px)
@@ -456,70 +445,51 @@ def main():
             log("Null GID")
             continue
 				
+        start_t = datetime.datetime.now()
         
         # box is floats: [xmin, ymin, xmax, ymax]
         box = record[XMIN:]
+        img_w, img_h = get_img_size(box[0], box[1], box[2], box[3])
 
-        wms_serv, layer = get_wms_server(location)
-        if wms_serv:
+        if img_w and img_h:
 
-            start_t = datetime.datetime.now()
-
-            wms = WebMapService(wms_serv, version='1.1.1')
-            wms.identification.abstract
-
-            img_size = get_img_size(box[0], box[1], box[2], box[3])
             coord_sys = "EPSG:" + GEOG
+            # getlandsat image
+            img = landsatImg(record[GID], record[CITY_NAME], box, coord_sys, img_w, img_h, location)
 
-            # must check if the image size is valid
-            if img_size[0] and img_size[1]:
-                 img = get_img_from_wms(wms, layer, coord_sys, box, img_size, location)
+            # get polygon as list of points (ie, not a string)
+            polygon = wkt_to_list(record[CV_HULL])
 
-                 img = wms.getmap(layers=layer,
-                             styles=[],
-                             srs=coord_sys,
-                             bbox=box,
-                             size=img_size,
-                             format='image/png',
-                             transparent=True
-                             )
+            # do greenspace calc on image
+            greenspace = calc_greenspace(img, polygon)
 
-                 # get polygon as list of points (ie, not a string)
-                 polygon = wkt_to_list(record[CV_HULL])
+        else:
+            greenspace = 0
 
-                 # do greenspace calc on image
-                 greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
+        # dont insert if we have no greenspace
+        if greenspace:
 
-            else:
-                greenspace = 0
+            end_t = datetime.datetime.now()
 
-            # dont insert if we have no greenspace
-            if greenspace:
+            # append update statement to string
+            update_stmnt += create_update_statement(greenspace,
+                                                img.gid,
+                                                img.city,
+                                                start_t,
+                                                end_t,
+                                                img.server,
+                                                location)
+            num_updates+=1
 
-                end_t = datetime.datetime.now()
+            # batch updates to the database to avoid creating many connections
+            if num_updates >= batch_size:
+                update_database(update_stmnt)
+                update_stmnt = ""
+                num_updates = 0
 
-                # append update statement to string
-                update_stmnt += create_update_statement(greenspace,
-                                                    record[GID],
-                                                    record[CITY_NAME],
-                                                    start_t,
-                                                    end_t,
-                                                    wms_serv,
-                                                    location)
-                num_updates+=1
-
-                # batch updates to the database to avoid creating many connections
-                if num_updates >= batch_size:
-                    update_database(update_stmnt)
-                    update_stmnt = ""
-                    num_updates = 0
-
-            if PRINT_DBG_STR:
-                print record[GID], record[CITY_NAME], img_size, greenspace
-            log(record[GID], record[CITY_NAME], img_size, greenspace)
-
-        #else:
-            #print record[CITY_NAME], box, "not within our data range!"
+        if PRINT_DBG_STR:
+            print record[GID], record[CITY_NAME], img_size, greenspace
+        log(record[GID], record[CITY_NAME], img_size, greenspace)
 
 
     if len(update_stmnt):
