@@ -11,23 +11,36 @@ IMG_EXT = ".png"
 class landsatImg:
     """  """
 
-    gid = None
-    city = None
-    location = None
-    bbox = None
-    w = None
-    h = None
-    server = None
-    layer = None
-    wms = None
-    img = None
-    px_w = None
-    px_h = None
-    rgbs = None
-    imgMeta = None
+    #gid = None
+    #city = None
+    #location = None
+    #bbox = None
+    #w = None
+    #h = None
+    #server = None
+    #layer = None
+    #wms = None
+    #img = None
+    #px_w = None
+    #px_h = None
+    #rgbs = None
+    #imgMeta = None
+
+"""
+width: 14939.0695913  height: 11676.2882614
+px width: 498
+px_height: 390
+min_x: -123.465415955
+max_y: 48.4037399292
+x_incr: 0.000405154553763
+y_incr: 0.000269239376753
+
+"""
+
 
     class boundBox:
         """  """
+
         def __init__(self, box):
             self.xmin = box[0]
             self.ymin = box[1]

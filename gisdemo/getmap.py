@@ -118,8 +118,7 @@ def query_database(region):
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
         #where = " WHERE name LIKE 'HOPE'"
-        where = " WHERE name LIKE 'VANCOUVER'"
-        #where = " WHERE gid=18529" # this is victoria
+        where = " WHERE gid=18529" # this is victoria
         #where = " WHERE name LIKE 'BOSTON'"
         #where = " WHERE "+GREEN_COL+"=0"
 		
@@ -257,6 +256,13 @@ def calc_greenspace(img, polygon):
     px_width = img.px_w
     px_height = img.px_h
 
+    print "px width:", px_width
+    print "px_height:", px_height
+    print "min_x:", min_x
+    print "max_y:", max_y
+    print "x_incr:", x_incr
+    print "y_incr:", y_incr
+
     gs = 0
     px = 0
     y_pos = 0
@@ -266,10 +272,10 @@ def calc_greenspace(img, polygon):
         green = img.rgbs[y_pos][1::4]
         blue = img.rgbs[y_pos][2::4]
 
-        if y_pos == 0:
-            print "reds:", red
-            print "greens:", green
-            print "blues:", blue
+        #if y_pos == 0:
+        #    print "reds:", red
+        #    print "greens:", green
+        #    print "blues:", blue
 
         x_pos = 0
         while x_pos < px_width:
