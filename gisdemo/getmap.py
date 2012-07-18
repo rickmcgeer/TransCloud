@@ -64,14 +64,14 @@ IMG_LOC = "/tmp/"
 PRINT_DBG_STR = True # print to stdout
 
 # dict for worldwide wms servers
-WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://198.55.37.8:8080/geoserver/opengeo/wms"}
-WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['Landsat7:L7-US-70-UTM11N'],[''],['']]}
+WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://localhost:8080/geoserver/Landsat7/wms"}
+WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7-US-30']]}
 
 # 
 LOG_FILE = None
 LOG_NAME = "getmap.log"
 
-
+LAST_LOC = 'us'
 
 def log(*args):
     """ Write a timestamp and the args passed to the log. 
@@ -116,18 +116,18 @@ def query_database(region):
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
-        #where = " WHERE name LIKE 'BOISE CITY'"
+        #where = " WHERE name LIKE 'BOSTON'"
         where = " WHERE "+GREEN_COL+"=0"
 		
-        #limit = " LIMIT 50"
-        limit = ""
+        limit = " LIMIT 10"
+        #limit = ""
 
         query = "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
 
         cur.execute(query)
 
         records = cur.fetchall()
-        print len(records)
+        #print len(records)
 
         cur.close()
         conn.close()
@@ -259,13 +259,44 @@ def calc_greenspace(img, box, polygon, gid, city):
     if not city:
         city = ""
 
-    bytes_of_png = img.read()
-    image = png.Reader(bytes=bytes_of_png)
+    if len(img) == 3:
+		# red data
+        red_bytes = img[0].read()
+        red_image = png.Reader(bytes=red_bytes)
+        #f=open('test.png', 'wb')
+        #print red_bytes
+        px_width, px_height, rgbs, metadata = red_image.asRGBA()
+		
+		# green data
+        green_bytes = img[1].read()
+        green_image = png.Reader(bytes=green_bytes)
+        greens = list(green_image.asRGBA()[2])
 
-    # extract image data
-    px_width, px_height, rgbs, metadata = image.read()
-    # we get lists of arrays of pixels, one list ele to a row
-    rgbs = list(rgbs) 
+		# blue data
+        blue_bytes = img[2].read()
+        blue_image = png.Reader(bytes=blue_bytes)
+        blues = list(blue_image.asRGBA()[2])
+		
+        rgbs = list(rgbs)
+		
+        i=0
+        while i<len(rgbs):
+            j=0
+            while j<len(rgbs[i]):
+                rgbs[i][j+1] = greens[i][j+1]
+                rgbs[i][j+2] = blues[i][j+2]
+                j+=4
+            i+=1	
+				
+								
+    else:
+        bytes_of_png = img[0].read()
+        image = png.Reader(bytes=bytes_of_png)
+
+        # extract image data
+        px_width, px_height, rgbs, metadata = image.asRGBA()
+        # we get lists of arrays of pixels, one list ele to a row
+        rgbs = list(rgbs) 
 
     # write original image
 #    if PRINT_IMG:
@@ -348,6 +379,7 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
         """ Queries the database to ge the distance in m between 
         2 lat long points """
         
+		# convert to well known text (wkt)
         a_wkt = "POINT(" + str(a[0]) + " " + str(a[1]) + ")"
         b_wkt = "POINT(" + str(b[0]) + " " + str(b[1]) + ")"
  
@@ -386,14 +418,12 @@ def get_wms_server(loc):
     return WMS_SERVER[loc], WMS_LAYER[loc]
 
 
-def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
 
-    def combine_rgb(red, green, blue):
-		None
+def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
 
     if location == 'canada':
 					
-	    img = wms.getmap(layers=layer,
+        img = wms.getmap(layers=layer,
 						styles=[],
 						srs=coord_sys,
                         bbox=box,
@@ -401,6 +431,7 @@ def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
                         format='image/png',
                         transparent=True
                         )
+        img = [img] # we want a tuple
 						
     elif location == 'us':
         red = wms.getmap(layers=layer[0],
@@ -418,7 +449,7 @@ def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
                         size=img_size,
                         format='image/png',
                         transparent=True
-                        )						
+                        )		
         blue = wms.getmap(layers=layer[2],
 						styles=[],
 						srs=coord_sys,
@@ -427,8 +458,8 @@ def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
                         format='image/png',
                         transparent=True
                         )
-						
-        img = combine_rgb(red, green, blue)
+        #img = (red, None, None)
+        img = [red, green, blue]
 		
     else:
         log("Unrecognized location", location)
@@ -437,17 +468,17 @@ def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
     return img				
 	
 
-def main():
 
+def main(location):
+	
     batch_size = 1 # could make fn of len(records) when that works
     num_updates = 0
     update_stmnt = ""
 
-    location = 'canada'
-
+    #location = 'us'
     records = query_database(location)
 	
-    #print len(records)
+    print "Processing", len(records), location, "records"
 
     for record in records:
 	
@@ -462,31 +493,33 @@ def main():
             if wms_serv:
 
                 start_t = datetime.datetime.now()
-                
-                wms = WebMapService(wms_serv, version='1.1.1')
+                #print wms_serv, layer
+                wms = WebMapService(wms_serv, version='1.1.0')
                 wms.identification.abstract
+                #return
+				
 
                 img_size = get_img_size(box[0], box[1], box[2], box[3])
                 coord_sys = "EPSG:" + GEOG
 				
 				# must check if the image size is valid
                 if img_size[0] and img_size[1]:
-                     img = get_img_from_wms(wms, layer, coord_sys, box, img_size, location)
+                     imgs = get_img_from_wms(wms, layer, coord_sys, box, img_size, location)
 					 
-                     img = wms.getmap(layers=layer,
-                                 styles=[],
-                                 srs=coord_sys,
-                                 bbox=box,
-                                 size=img_size,
-                                 format='image/png',
-                                 transparent=True
-                                 )
+                     #img = wms.getmap(layers=layer,
+                     #            styles=[],
+                     #            srs=coord_sys,
+                     #            bbox=box,
+                     #            size=img_size,
+                     #            format='image/png',
+                     #            transparent=True
+                     #            )
 
                      # get polygon as list of points (ie, not a string)
                      polygon = wkt_to_list(record[CV_HULL])
                 
                      # do greenspace calc on image
-                     greenspace = calc_greenspace(img, box, polygon, record[GID], record[CITY_NAME])
+                     greenspace = calc_greenspace(imgs, box, polygon, record[GID], record[CITY_NAME])
 					 
 			    # we should not insert something into the database if the image 
 				# is invalid as there is nothing for ricks stuff to read
@@ -532,7 +565,10 @@ def main():
     return len(records)
 
 
+
 if __name__ == '__main__':
+
+    global LAST_LOC
 
     try:
         LOG_FILE = open(LOG_NAME, 'a')
@@ -540,9 +576,17 @@ if __name__ == '__main__':
         print "Failed to open Log:", e, "\nLogging to stderr"
 
     log("Started")
-    proc = main()
+	
+    proc = main(LAST_LOC)
     while(proc):
-        proc = main()
+        print ">>>>>>", LAST_LOC
+        if LAST_LOC == 'us':
+            LAST_LOC = 'canada'
+        else:
+            LAST_LOC = 'us'
+		
+        proc = main(LAST_LOC)
+		
     log("Stopped")
 
     if LOG_FILE:
