@@ -44,7 +44,7 @@ NAME_COL = "name"
 GEOM_COL = "the_geom"
 GREEN_COL = "greenspace"
 
-IMG_TABLE = "processed"
+IMG_TABLE = "times"#"processed"
 IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
@@ -83,7 +83,7 @@ def log(*args):
     if LOG_FILE:
         logs.append(LOG_FILE)
     #else:
-	logs.append(sys.stderr)
+    logs.append(sys.stderr)
 
 
     for lf in logs:
@@ -248,20 +248,13 @@ def calc_greenspace(img, polygon):
 
     # for placing the pixels in the coord system
     min_x = img.bbox.xmin
-    max_y = img.bbox.ymin
+    max_y = img.bbox.ymax
     # x and y increase per pixel
     x_incr = img.getXPerPixel()
     y_incr = img.getYPerPixel()
     
     px_width = img.px_w
     px_height = img.px_h
-
-    print "px width:", px_width
-    print "px_height:", px_height
-    print "min_x:", min_x
-    print "max_y:", max_y
-    print "x_incr:", x_incr
-    print "y_incr:", y_incr
 
     gs = 0
     px = 0
@@ -272,19 +265,11 @@ def calc_greenspace(img, polygon):
         green = img.rgbs[y_pos][1::4]
         blue = img.rgbs[y_pos][2::4]
 
-        #if y_pos == 0:
-        #    print "reds:", red
-        #    print "greens:", green
-        #    print "blues:", blue
-
         x_pos = 0
         while x_pos < px_width:
             # place pixel in bounding box
             px_x = min_x + (x_pos * x_incr)
             px_y = max_y - (y_pos * y_incr)
-            
-            #if not x_pos % 100:
-            #    print px_x, px_y
 
             if _isPointInPolygon([px_x, px_y], polygon):
                 px+=1
@@ -295,8 +280,7 @@ def calc_greenspace(img, polygon):
             # change pixels not in the polygon
             elif PRINT_IMG:
                 #rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
-                #img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
-                None
+                img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
 
             x_pos+=1
         y_pos+=1
@@ -434,8 +418,8 @@ def main(location):
                 num_updates = 0
 
         if PRINT_DBG_STR:
-            print record[GID], record[CITY_NAME], img_size, greenspace
-        log(record[GID], record[CITY_NAME], img_size, greenspace)
+            print record[GID], record[CITY_NAME], (img_w, img_h), greenspace
+        log(record[GID], record[CITY_NAME], (img_w, img_h), greenspace)
 
 
     if len(update_stmnt):
@@ -457,14 +441,14 @@ if __name__ == '__main__':
     log("Started")
 	
     proc = main(LAST_LOC)
-    while(proc):
-        print ">>>>>>", LAST_LOC
-        if LAST_LOC == 'us':
-            LAST_LOC = 'canada'
-        else:
-            LAST_LOC = 'us'
+    #while(proc):
+    #    print ">>>>>>", LAST_LOC
+    #    if LAST_LOC == 'us':
+    #        LAST_LOC = 'canada'
+    #    else:
+    #        LAST_LOC = 'us'
 		
-        proc = main(LAST_LOC)
+    #    proc = main(LAST_LOC)
 		
     log("Stopped")
 
