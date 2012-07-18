@@ -32,12 +32,12 @@ MASK_COLOUR = 0
 LOW_GREEN_VAL = 0.0001
 
 # database constants
-DB_USER = "root"#"gisdemo"#"postgres"
-DB_PASS = "root"#"123456"#""
-GIS_DATABASE = "world"#"gisdemo"
+DB_USER = "stredger"#"root"#"gisdemo"#"postgres"
+DB_PASS = "swick"#"root"#"123456"#""
+GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
-CITY_TABLE = {'canada':"ca_cities", 'us':"us_cities", 'all':"map"}
+CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
 ID_COL = "gid"
 NAME_COL = "name"
 GEOM_COL = "the_geom"
@@ -71,7 +71,7 @@ WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7
 LOG_FILE = None
 LOG_NAME = "getmap.log"
 
-LAST_LOC = 'us'
+LAST_LOC = 'canada'
 
 def log(*args):
     """ Write a timestamp and the args passed to the log. 
@@ -116,8 +116,9 @@ def query_database(region):
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
+        where = " WHERE gid = 18529"
         #where = " WHERE name LIKE 'BOSTON'"
-        where = " WHERE "+GREEN_COL+"=0"
+        #where = " WHERE "+GREEN_COL+"=0"
 		
         limit = " LIMIT 10"
         #limit = ""
