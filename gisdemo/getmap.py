@@ -33,9 +33,9 @@ MASK_COLOUR = 0
 LOW_GREEN_VAL = 0.0001
 
 # database constants
-DB_USER = "postgres"#"root"#"postgres"
-DB_PASS = ""#root"#""
-GIS_DATABASE = "gisdemo"#"world"#"gisdemo"
+DB_USER = "stredger"#"root"
+DB_PASS = "swick"#root"
+GIS_DATABASE = "gisdemo"#"world"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
 CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
@@ -65,14 +65,14 @@ PRINT_IMG = True
 PRINT_DBG_STR = True # print to stdout
 
 # dict for worldwide wms servers
-WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://198.55.37.8:8080/geoserver/opengeo/wms"}
-WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['Landsat7:L7-US-70-UTM11N'],[''],['']]}
+WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://localhost:8080/geoserver/Landsat7/wms"}
+WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7-US-30']]}
 
 # 
 LOG_FILE = None
 LOG_NAME = "getmap.log"
 
-
+LAST_LOC = 'canada'
 
 def log(*args):
     """ Write a timestamp and the args passed to the log. 
@@ -117,19 +117,21 @@ def query_database(region):
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
-        where = " WHERE name LIKE 'VANCOUVER' OR name LIKE 'HOPE'"
-        #where = " WHERE name LIKE 'BOISE CITY'"
+        #where = " WHERE name LIKE 'HOPE'"
+        where = " WHERE name LIKE 'VANCOUVER'"
+        #where = " WHERE gid=18529" # this is victoria
+        #where = " WHERE name LIKE 'BOSTON'"
         #where = " WHERE "+GREEN_COL+"=0"
 		
-        #limit = " LIMIT 50"
-        limit = ""
+        limit = " LIMIT 10"
+        #limit = ""
 
         query = "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
 
         cur.execute(query)
 
         records = cur.fetchall()
-        print len(records)
+        #print len(records)
 
         cur.close()
         conn.close()
@@ -240,24 +242,11 @@ def _isPointInPolygon(r, P):
 
 
 
-def write_image(fname, w, h, pixels):
-    """ Writes a png image to the filesystem """
-
-    try:
-        wt = png.Writer(width=w, height=h, alpha=True, bitdepth=8)
-        f = open(IMG_LOC+fname, 'wb')
-        wt.write(f, pixels)
-        f.close()
-    except IOError as e:
-        log(e)
-
-
-
 def calc_greenspace(img, polygon):
     """ given a png image, bounding box, and polygon will count the 
     percentage of greenspace contained in the image within the polygon
     """
-	
+
     # for placing the pixels in the coord system
     min_x = img.bbox.xmin
     max_y = img.bbox.ymin
@@ -268,8 +257,6 @@ def calc_greenspace(img, polygon):
     px_width = img.px_w
     px_height = img.px_h
 
-    print px_width, px_height, min_x, max_y, polygon
-
     gs = 0
     px = 0
     y_pos = 0
@@ -279,12 +266,20 @@ def calc_greenspace(img, polygon):
         green = img.rgbs[y_pos][1::4]
         blue = img.rgbs[y_pos][2::4]
 
+        if y_pos == 0:
+            print "reds:", red
+            print "greens:", green
+            print "blues:", blue
+
         x_pos = 0
         while x_pos < px_width:
             # place pixel in bounding box
             px_x = min_x + (x_pos * x_incr)
             px_y = max_y - (y_pos * y_incr)
-        
+            
+            #if not x_pos % 100:
+            #    print px_x, px_y
+
             if _isPointInPolygon([px_x, px_y], polygon):
                 px+=1
                 # if green is the most promemant colour, we count as greenspace
@@ -294,7 +289,8 @@ def calc_greenspace(img, polygon):
             # change pixels not in the polygon
             elif PRINT_IMG:
                 #rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
-                img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
+                #img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
+                None
 
             x_pos+=1
         y_pos+=1
@@ -338,11 +334,13 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
         """ Queries the database to ge the distance in m between 
         2 lat long points """
         
+		# convert to well known text (wkt)
         a_wkt = "POINT(" + str(a[0]) + " " + str(a[1]) + ")"
         b_wkt = "POINT(" + str(b[0]) + " " + str(b[1]) + ")"
  
-        query = "SELECT ST_Distance(ST_GeogFromText('SRID="\
-            +GEOG+";"+a_wkt+"'),ST_GeogFromText('SRID="+GEOG+";"+b_wkt+"'));"
+        query = "SELECT ST_Distance("\
+            +"ST_GeogFromText('SRID="+GEOG+";"+a_wkt+"'),"\
+            +"ST_GeogFromText('SRID="+GEOG+";"+b_wkt+"'));"
         cur.execute(query)
         records = cur.fetchall()
 
@@ -369,75 +367,16 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
     
 
 
-def get_wms_server(loc):
-
-    # bbox[0] is min x, [1] is min y, [2] max x, [3] max y
-    #if bbox[0] > -140 and bbox[1] > 42 and bbox[2] < -50 and bbox[3] < 70:
-    return WMS_SERVER[loc], WMS_LAYER[loc]
-
-
-def get_img_from_wms(wms, layer, coord_sys, box, img_size, location):
-
-    def combine_rgb(red, green, blue):
-		None
-
-    if location == 'canada':
-					
-	    img = wms.getmap(layers=layer,
-						styles=[],
-						srs=coord_sys,
-                        bbox=box,
-                        size=img_size,
-                        format='image/png',
-                        transparent=True
-                        )
-						
-    elif location == 'us':
-        red = wms.getmap(layers=layer[0],
-						styles=[],
-						srs=coord_sys,
-                        bbox=box,
-                        size=img_size,
-                        format='image/png',
-                        transparent=True
-                        )
-        green = wms.getmap(layers=layer[1],
-						styles=[],
-						srs=coord_sys,
-                        bbox=box,
-                        size=img_size,
-                        format='image/png',
-                        transparent=True
-                        )						
-        blue = wms.getmap(layers=layer[2],
-						styles=[],
-						srs=coord_sys,
-                        bbox=box,
-                        size=img_size,
-                        format='image/png',
-                        transparent=True
-                        )
-						
-        img = combine_rgb(red, green, blue)
-		
-    else:
-        log("Unrecognized location", location)
-        return None
-		
-    return img				
+def main(location):
 	
-
-def main():
-
     batch_size = 1 # could make fn of len(records) when that works
     num_updates = 0
     update_stmnt = ""
 
-    location = 'canada'
-
+    #location = 'us'
     records = query_database(location)
 	
-    #print len(records)
+    print "Processing", len(records), location, "records"
 
     for record in records:
 	
@@ -450,6 +389,7 @@ def main():
         # box is floats: [xmin, ymin, xmax, ymax]
         box = record[XMIN:]
         img_w, img_h = get_img_size(box[0], box[1], box[2], box[3])
+
 
         if img_w and img_h:
 
@@ -498,7 +438,10 @@ def main():
     return len(records)
 
 
+
 if __name__ == '__main__':
+
+    global LAST_LOC
 
     try:
         LOG_FILE = open(LOG_NAME, 'a')
@@ -506,9 +449,17 @@ if __name__ == '__main__':
         print "Failed to open Log:", e, "\nLogging to stderr"
 
     log("Started")
-    proc = main()
+	
+    proc = main(LAST_LOC)
     while(proc):
-        proc = main()
+        print ">>>>>>", LAST_LOC
+        if LAST_LOC == 'us':
+            LAST_LOC = 'canada'
+        else:
+            LAST_LOC = 'us'
+		
+        proc = main(LAST_LOC)
+		
     log("Stopped")
 
     if LOG_FILE:

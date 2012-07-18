@@ -1,18 +1,19 @@
 from owslib.wms import WebMapService
 import png
 
-
 # dict for worldwide wms servers
-WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://198.55.37.8:8080/geoserver/opengeo/wms"}
-WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['Landsat7:L7-US-70-UTM11N'],[''],['']]}
+WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://localhost:8080/geoserver/Landsat7/wms"}
+WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7-US-30']]}
 
 IMG_LOC = "/tmp/"
+IMG_EXT = ".png"
 
 class landsatImg:
     """  """
 
     gid = None
     city = None
+    location = None
     bbox = None
     w = None
     h = None
@@ -40,6 +41,7 @@ class landsatImg:
     def __init__(self, gid, cityName, box, coordSys, width, height, location):
         self.gid = gid
         self.city = cityName
+        self.location = location
         if not self.city:
             self.city = ""
 
@@ -82,11 +84,13 @@ class landsatImg:
     def getYPerPixel(self):
         return (self.bbox.ymax - self.bbox.ymin) / self.px_h
 
+    def getImgName(self):
+        return self.city+str(self.gid)
 
     def writeImg(self):
         try:
             wt = png.Writer(width=self.w, height=self.h, alpha=True, bitdepth=8)
-            f = open(IMG_LOC+self.city+str(self.gid), 'wb')
+            f = open(IMG_LOC+self.getImgName()+IMG_EXT, 'wb')
             wt.write(f, self.rgbs)
             f.close()
         except IOError as e:
@@ -95,11 +99,61 @@ class landsatImg:
 
 
 
+
 class bandedLandsatImg(landsatImg):
     """  """
 
+
     def getImg(self):
-        None
-        
+        """  """
+
+        if len(self.layer) != 3:
+            print "banded image withought 3 layers!"
+            return # we should raise some sort of error
+
+        def getBand(self, layer):
+            """  """
+            return self.wms.getmap(layers=layer,
+                                   styles=[],
+                                   srs=self.projection,
+                                   bbox=self.bbox.getBox(),
+                                   size=(self.w, self.h),
+                                   format='image/png',
+                                   transparent=True)
+
+        red = self.getBand(self.layer[0])
+        green = self.getBand(self.layer[1])		
+        blue = self.getBand(self.layer[2])
+
+        return [red, green, blue]
+
+
+
     def getImgData(self):
-        None
+        """  """
+
+        if len(self.img) != 3:
+            print "banded image withought 3 bands!"
+            return # raise some sort of error
+
+        def getPixels(self, img):
+            """  """
+            imgBytes = img.read()
+            image = png.Reader(bytes=imgBytes)
+            return image.asRGBA()
+
+        px_wid, px_hei, rgbs, metadata = self.getPixels(img[0])
+        green = list(self.getPixels(img[1])[2])
+        blue = list(self.getPixels(img[2])[2])
+
+        rgbs = list(rgbs)	
+        i=0
+        while i<len(rgbs):
+            j=0
+            while j<len(rgbs[i]):
+                rgbs[i][j+1] = greens[i][j+1]
+                rgbs[i][j+2] = blues[i][j+2]
+                j+=4
+            i+=1	
+	
+        return px_wid, px_hei, rgbs, metadata
