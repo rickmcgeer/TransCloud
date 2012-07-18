@@ -109,7 +109,7 @@ class bandedLandsatImg(landsatImg):
         """  """
 
         if len(self.layer) != 3:
-            print "banded image withought 3 layers!"
+            print "banded image without 3 layers!"
             return # we should raise some sort of error
 
         def getBand(self, layer):
@@ -134,7 +134,7 @@ class bandedLandsatImg(landsatImg):
         """  """
 
         if len(self.img) != 3:
-            print "banded image withought 3 bands!"
+            print "banded image without 3 bands!"
             return # raise some sort of error
 
         def getPixels(self, img):
