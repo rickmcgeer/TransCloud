@@ -64,13 +64,10 @@ PRINT_IMG = True
 
 PRINT_DBG_STR = True # print to stdout
 
-# dict for worldwide wms servers
-WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://localhost:8080/geoserver/Landsat7/wms"}
-WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7-US-30']]}
 
 # 
 LOG_FILE = None
-LOG_NAME = "getmap.log"
+LOG_NAME = "greenspace.log"
 
 LAST_LOC = 'canada'
 
@@ -162,10 +159,10 @@ def create_update_statement(greenspace, gid, name, start, end, serv_name, locati
 
     green_tbl = "UPDATE "+CITY_TABLE[location]\
         +" SET "+GREEN_COL+"=" + str(greenspace)\
-        + " WHERE "+ID_COL+"=" + str(gid) + ";"
+        +" WHERE "+ID_COL+"=" + str(gid) + ";"
 
     image_tbl = "UPDATE "+IMG_TABLE\
-        +" SET "+IMG_NAME_COL+"='" + name + str(gid) + "-mod.png', "\
+        +" SET "+IMG_NAME_COL+"='" + name + str(gid) + ".png', "\
         +START_T_COL+"="+st_time+", "\
         +END_T_COL+"="+end_time+", "\
         +SERV_NAME_COL+"='"+serv_name+"'"\
