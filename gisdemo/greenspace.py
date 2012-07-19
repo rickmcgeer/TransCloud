@@ -6,15 +6,8 @@ import math
 import datetime
 import sys
 
-from wmsimg import *
-
-# CRITICAL TODO's:
-#
-#  - Make initial query pull only correct data, we must modify either 
-#      the table or where clause in query_database()
-#     After that we must make get_wms_server() behave better as it checks
-#      if around canada right now
-#
+import wmsImg
+import dbObj
 
 
 # these correspond to the selected column num in the SQL statement
@@ -32,47 +25,18 @@ MASK_COLOUR = 0
 
 LOW_GREEN_VAL = 0.0001
 
-# database constants
-DB_USER = "stredger"#"root"
-DB_PASS = "swick"#root"
-GIS_DATABASE = "gisdemo"#"world"
-PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
-
-CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
-ID_COL = "gid"
-NAME_COL = "name"
-GEOM_COL = "the_geom"
-GREEN_COL = "greenspace"
-
-IMG_TABLE = "times"#"processed"
-IMG_NAME_COL = "file_path"
-START_T_COL = "process_start_time"
-END_T_COL = "process_end_time"
-SERV_NAME_COL = "server_name"
-
-
 # number of pixels per meter
 M_PER_PIXEL = 30
-
-# projection SRID
-WSG84 = "4326"
-GEOG = WSG84
 
 # do we, and if so where do we want to print images
 PRINT_IMG = True
 
-
 PRINT_DBG_STR = True # print to stdout
-
-# dict for worldwide wms servers
-WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://localhost:8080/geoserver/Landsat7/wms"}
-WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7-US-30']]}
 
 # 
 LOG_FILE = None
-LOG_NAME = "getmap.log"
+LOG_NAME = "greenspace.log"
 
-LAST_LOC = 'canada'
 
 def log(*args):
     """ Write a timestamp and the args passed to the log. 
@@ -91,113 +55,6 @@ def log(*args):
         for arg in args:
             msg += str(arg) + " "
         lf.write(msg+'\n')
-
-
-
-def query_database(region):
-    """ Selects data from the database, and returns a list of records. 
-    If an error occurs connecting to the database, or executing the 
-    query, we simply return an empty list.
-    """
-	
-    #records = []
-    try:
-        conn = psycopg2.connect(database=GIS_DATABASE,
-                                user=DB_USER,
-                                password=DB_PASS)
-        cur = conn.cursor()
-        #print "con=", conn, "cur=", cur	
-
-        select = ID_COL+", "+NAME_COL+", "\
-            "ST_AsText(ST_ConvexHull(ST_Transform("+GEOM_COL+","+GEOG+"))),"\
-            "ST_XMin(ST_Transform("+GEOM_COL+","+GEOG+")),"\
-            "ST_YMin(ST_Transform("+GEOM_COL+","+GEOG+")),"\
-            "ST_XMax(ST_Transform("+GEOM_COL+","+GEOG+")),"\
-            "ST_YMax(ST_Transform("+GEOM_COL+","+GEOG+"))"
-
-        # keep WHERE in here incase we dont want a where clause
-        #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
-        #where = " WHERE name LIKE 'HOPE'"
-        where = " WHERE gid=18529" # this is victoria
-        #where = " WHERE name LIKE 'BOSTON'"
-        #where = " WHERE "+GREEN_COL+"=0"
-		
-        limit = " LIMIT 10"
-        #limit = ""
-
-        query = "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
-
-        cur.execute(query)
-
-        records = cur.fetchall()
-        #print len(records)
-
-        cur.close()
-        conn.close()
-		
-        return records
-
-    except psycopg2.ProgrammingError as e:
-        log("Failed to fetch from database:", e)
-        return []
-
-    # we always want to return a list
-    #finally:
-    #    return records
-
-
-
-def create_update_statement(greenspace, gid, name, start, end, serv_name, location):
-    """ Returns an sql update statement as a string which sets
-    the record with the matching gid's greenspace value, image 
-    name, and timestamps
-    """
-
-    if name is None:
-        name = ""
-
-    # format the python timestamps into something postgres can understand
-    st_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
-    end_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
-
-    green_tbl = "UPDATE "+CITY_TABLE[location]\
-        +" SET "+GREEN_COL+"=" + str(greenspace)\
-        + " WHERE "+ID_COL+"=" + str(gid) + ";"
-
-    image_tbl = "UPDATE "+IMG_TABLE\
-        +" SET "+IMG_NAME_COL+"='" + name + str(gid) + "-mod.png', "\
-        +START_T_COL+"="+st_time+", "\
-        +END_T_COL+"="+end_time+", "\
-        +SERV_NAME_COL+"='"+serv_name+"'"\
-        +" WHERE "+ID_COL+"=" + str(gid) + ";"
-
-    return green_tbl + image_tbl
-
-
-
-def update_database(query):
-    """ Given a string continging sql, will connect to the
-    database and perform the sql query, if the query fails 
-    for any reason we log the error but continue execution.
-    """
-
-    #print query
-    try:
-        conn = psycopg2.connect(database=GIS_DATABASE,
-                                user=DB_USER,
-                                password=DB_PASS)
-        cur = conn.cursor()
-        cur.execute(query)
-
-        # we must commit our transaction
-        conn.commit()
-
-        cur.close()
-        conn.close()
-
-    except psycopg2.ProgrammingError as e:
-        log("Failed to update database:", e)
-
 
 
 # The following is from http://python.net/~gherman/convexhull.html 
@@ -311,34 +168,22 @@ def wkt_to_list(wkt):
 
 
 
-def get_img_size(long_min, lat_min, long_max, lat_max):
+def get_img_size(pgConn, long_min, lat_min, long_max, lat_max):
     """ Given a bounding box of lat and long coords calculates
     the image size in pixels required to encompass the area """
 
-    conn = psycopg2.connect(database=GIS_DATABASE,
-                            user=DB_USER,
-                            password=DB_PASS)
-    cur = conn.cursor()
-
-    def get_dist_from_pts(a, b):
+    def get_dist_from_pts(pgConn, a, b):
         """ Queries the database to ge the distance in m between 
         2 lat long points """
         
-		# convert to well known text (wkt)
-        a_wkt = "POINT(" + str(a[0]) + " " + str(a[1]) + ")"
-        b_wkt = "POINT(" + str(b[0]) + " " + str(b[1]) + ")"
- 
-        query = "SELECT ST_Distance("\
-            +"ST_GeogFromText('SRID="+GEOG+";"+a_wkt+"'),"\
-            +"ST_GeogFromText('SRID="+GEOG+";"+b_wkt+"'));"
-        cur.execute(query)
-        records = cur.fetchall()
+        query = pgConn.createCoordQuery(a, b)
+        records = pgConn.performSelect(query)
 
         return float(records[0][0])
 
     # get the x and y length of our bounding box in meters
-    x_meters = get_dist_from_pts((long_min, lat_min), (long_max, lat_min))
-    y_meters = get_dist_from_pts((long_min, lat_min), (long_min, lat_max))
+    x_meters = get_dist_from_pts(pgConn, (long_min, lat_min), (long_max, lat_min))
+    y_meters = get_dist_from_pts(pgConn, (long_min, lat_min), (long_min, lat_max))
 
     if PRINT_DBG_STR:
         print "width:", x_meters, " height:", y_meters
@@ -350,9 +195,6 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
     x_pixels = int(math.ceil(x_meters / M_PER_PIXEL))
     y_pixels = int(math.ceil(y_meters / M_PER_PIXEL))
 
-    cur.close()
-    conn.close()
-
     return (x_pixels, y_pixels)
     
 
@@ -363,8 +205,10 @@ def main(location):
     num_updates = 0
     update_stmnt = ""
 
-    #location = 'us'
-    records = query_database(location)
+    pgConn = dbObj.pgConnection()
+
+    select_query = pgConn.createSelectQuery(location)
+    records = pgConn.performSelect(select_query)
 	
     print "Processing", len(records), location, "records"
 
@@ -378,14 +222,14 @@ def main(location):
         
         # box is floats: [xmin, ymin, xmax, ymax]
         box = record[XMIN:]
-        img_w, img_h = get_img_size(box[0], box[1], box[2], box[3])
+        img_w, img_h = get_img_size(pgConn, box[0], box[1], box[2], box[3])
 
 
         if img_w and img_h:
 
-            coord_sys = "EPSG:" + GEOG
+            coord_sys = "EPSG:" + dbObj.GEOG
             # getlandsat image
-            img = landsatImg(record[GID], record[CITY_NAME], box, coord_sys, img_w, img_h, location)
+            img = wmsImg.landsatImg(record[GID], record[CITY_NAME], box, coord_sys, img_w, img_h, location)
 
             # get polygon as list of points (ie, not a string)
             polygon = wkt_to_list(record[CV_HULL])
@@ -402,18 +246,19 @@ def main(location):
             end_t = datetime.datetime.now()
 
             # append update statement to string
-            update_stmnt += create_update_statement(greenspace,
+            update_stmnt += pgConn.createUpdateStmnt(greenspace,
                                                 img.gid,
                                                 img.city,
                                                 start_t,
                                                 end_t,
+                                                img.getImgName(),
                                                 img.server,
                                                 location)
             num_updates+=1
 
             # batch updates to the database to avoid creating many connections
             if num_updates >= batch_size:
-                update_database(update_stmnt)
+                pgConn.performUpdate(update_stmnt)
                 update_stmnt = ""
                 num_updates = 0
 
@@ -424,14 +269,13 @@ def main(location):
 
     if len(update_stmnt):
         update_database(update_stmnt)
-		
+    
+    del pgConn
     return len(records)
 
 
 
 if __name__ == '__main__':
-
-    global LAST_LOC
 
     try:
         LOG_FILE = open(LOG_NAME, 'a')
@@ -440,15 +284,7 @@ if __name__ == '__main__':
 
     log("Started")
 	
-    proc = main(LAST_LOC)
-    #while(proc):
-    #    print ">>>>>>", LAST_LOC
-    #    if LAST_LOC == 'us':
-    #        LAST_LOC = 'canada'
-    #    else:
-    #        LAST_LOC = 'us'
-		
-    #    proc = main(LAST_LOC)
+    proc = main('canada')
 		
     log("Stopped")
 

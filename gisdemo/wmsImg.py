@@ -86,12 +86,12 @@ class landsatImg:
         return (self.bbox.ymax - self.bbox.ymin) / self.px_h
 
     def getImgName(self):
-        return self.city+str(self.gid)
+        return self.city+str(self.gid)+IMG_EXT
 
     def writeImg(self):
         try:
             wt = png.Writer(width=self.w, height=self.h, alpha=True, bitdepth=8)
-            f = open(IMG_LOC+self.getImgName()+IMG_EXT, 'wb')
+            f = open(IMG_LOC+self.getImgName(), 'wb')
             wt.write(f, self.rgbs)
             f.close()
         except IOError as e:
@@ -109,7 +109,7 @@ class bandedLandsatImg(landsatImg):
         """  """
 
         if len(self.layer) != 3:
-            print "banded image withought 3 layers!"
+            print "banded image without 3 layers!"
             return # we should raise some sort of error
 
         def getBand(self, layer):
@@ -134,7 +134,7 @@ class bandedLandsatImg(landsatImg):
         """  """
 
         if len(self.img) != 3:
-            print "banded image withought 3 bands!"
+            print "banded image without 3 bands!"
             return # raise some sort of error
 
         def getPixels(self, img):
