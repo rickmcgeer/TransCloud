@@ -86,12 +86,12 @@ class landsatImg:
         return (self.bbox.ymax - self.bbox.ymin) / self.px_h
 
     def getImgName(self):
-        return self.city+str(self.gid)
+        return self.city+str(self.gid)+IMG_EXT
 
     def writeImg(self):
         try:
             wt = png.Writer(width=self.w, height=self.h, alpha=True, bitdepth=8)
-            f = open(IMG_LOC+self.getImgName()+IMG_EXT, 'wb')
+            f = open(IMG_LOC+self.getImgName(), 'wb')
             wt.write(f, self.rgbs)
             f.close()
         except IOError as e:

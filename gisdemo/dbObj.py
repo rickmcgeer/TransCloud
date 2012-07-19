@@ -86,13 +86,13 @@ class pgConnection:
         return query
 
 
-    def  performSelect(self, query):
+    def performSelect(self, query):
         """ Perform 'query' in the database, then fetch the results
         if the query fails we log the error but continue execution.
         """
 
         try:
-            cur = conn.cursor()
+            cur = self.conn.cursor()
             cur.execute(query)
             # get our results
             records = cur.fetchall()
