@@ -50,7 +50,7 @@ def filter(path):
 # https://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis upload myfiles bigfile2.tgz
 def upload_single_landsat(lsat):
     command = ["swift", "-A",
-               "https://10.0.0.3:8080/auth/v1.0",
+               "https://swift.gcgis.trans-cloud.net:8080/auth/v1.0",
                "-U",
                "system:gis",
                "-K",
