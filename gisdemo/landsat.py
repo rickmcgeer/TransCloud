@@ -1,3 +1,12 @@
+import glob
+import os
+import subprocess
+import threading
+import time
+import decimal
+import threadpool
+
+
 class LandsatFile:
     def _get_pathparts(self, filepath):
         parts = self.filename.split('_')
@@ -18,12 +27,7 @@ class LandsatFile:
  
 
 
-import glob
-import os
-import subprocess
-import threading
-import time
-import decimal
+
 def crawl_filesystem(searchpath, pattern = "*.gz"):
     for path in searchpath:
         for subpath, subdirs, files in os.walk(path):
@@ -110,7 +114,6 @@ def done(job, rc):
     if rc != 0:
         print "Error: failed to upload", job.args[0].filename
 
-import threadpool
 
 pool = threadpool.ThreadPool(10)
 requests = threadpool.makeRequests(upload_single_landsat, to_upload, done)
