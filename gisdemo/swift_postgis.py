@@ -4,7 +4,7 @@ import gzip
 import commands
 import re
 import psycopg2
-import sys
+import sys, traceback
 import datetime
 import hashlib
 import subprocess
@@ -14,10 +14,12 @@ DB_USER = "postgres"
 DB_PASS = ""
 GIS_DATABASE = "world"
 GIS_TAB = "tiff"
+DB_HOST= "198.55.37.15"
+tiff_created = 0
 
 def craler():
     command = ["swift", "-A",
-           "https://swift.gcgis.trans-cloud.net:8080/auth/v1.0",
+           "http://swift.gcgis.trans-cloud.net:8080/auth/v1.0",
            "-U",
            "system:gis",
            "-K",
@@ -116,26 +118,21 @@ def poly2wkt(poly):
     wkt = 'POLYGON((' + str(p1x) + ' ' + str(p1y) + ', ' + str(p2x) + ' ' + str(p2y) + ', ' + str(p3x) + ' ' + str(p3y) + ', ' + str(p4x) + ' ' + str(p4y) + ', ' + str(p1x) + ' ' + str(p1y) + '))'
     return wkt
 
-def create_database():
+def create_database(conn, cur):
     try:
-        conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
-        cur = conn.cursor()
-        cur.execute('CREATE TABLE '+ GIS_TAB + ' (id serial PRIMARY KEY, "band" integer, "date" varchar(254), "key" varchar(254));')
-        cur.execute("SELECT AddGeometryColumn('" + GIS_TAB + "','the_geom','4202','POLYGON',2);")
-        conn.commit()
-        cur.close()
-        conn.close()
+        cur.execute("select exists(select * from information_schema.tables where table_name=%s)", (GIS_TAB,))
+        if (cur.fetchone()[0] is False):        
+            cur.execute('CREATE TABLE '+ GIS_TAB + ' (id serial PRIMARY KEY, "band" integer, "date" varchar(254), "fname" varchar(254));')
+            cur.execute("SELECT AddGeometryColumn('" + GIS_TAB + "','the_geom','4202','POLYGON',2);")
+            conn.commit()
     except psycopg2.ProgrammingError as e:
         log(e)
             
-def update_database(update):
+def update_database(conn, cur, band, date, name, geom):
     try:
-        conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
-        cur = conn.cursor()
+        update = "INSERT INTO " + GIS_TAB + " (band, date, fname, the_geom)  VALUES (" + str(band) + "," + date + "," + str(name) + "," + " ST_GeomFromText('" + wkt + "',4202));"
         cur.execute(update)
         conn.commit()
-        cur.close()
-        conn.close()
     except psycopg2.ProgrammingError as e:
         log("Failed to update database:", e)
         
@@ -150,14 +147,19 @@ if __name__ == '__main__':
     matchers.append(line_matcher(r'Upper\s*Right\s*\(\s*(\S+.\S+,\s*\S+.\S+)\)', handle_up_right))
     matchers.append(line_matcher(r'Lower\s*Right\s*\(\s*(\S+.\S+,\s*\S+.\S+)\)', handle_low_right))
     
-    create_database() # only call for the first time!!!!!!!!
+    # conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS)
+    conn = psycopg2.connect(database=GIS_DATABASE, user=DB_USER, password=DB_PASS, host=DB_HOST)
+    cur = conn.cursor()
+    create_database(conn, cur) # only call for the first time!!!!!!!!
 
     for zfilename in tiff_gz:  
         poly = get_poly(zfilename)
         seg = zfilename.split('.')
         date = seg[0].split('_')[1][-8:]
         band = int(seg[2][-2:])
-        key = int(hashlib.md5(str(path + '/' + zfilename)).hexdigest(), 16)  # ?? I use file name as Cassandra key????????????
+        name = "'" + seg[0] + '_' + seg[1] + '_' + seg[2] +"'"     
         wkt = poly2wkt(poly)
-        update = "INSERT INTO " + GIS_TAB + " (band, date, key, the_geom)  VALUES (" + str(band) + "," + date + "," + str(key) + "," + " ST_GeomFromText('" + wkt + "',4202));"
-        update_database(update)
+        update_database(conn, cur, band, date, name, wkt)
+    
+    cur.close()
+    conn.close()
