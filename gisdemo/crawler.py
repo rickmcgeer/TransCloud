@@ -120,47 +120,66 @@ if __name__ == '__main__':
     containers = list(command)
     containers.append("list")
     p = subprocess.Popen(containers, stdout=subprocess.PIPE)
+    p.wait()
     out, err = p.communicate()
 
+    
+
     buckets = out.split("\n")
+
+    if len(sys.argv) > 1:
+        target = sys.argv[1]   
+        spot = 0
+        for number, bucket in enumerate(buckets):
+            if target in bucket:
+                spot = number
+                break
+        buckets = buckets[spot:]            
+           
     for line in buckets:   # testing!!!!!!!!!
         to_crawl = []
-        if line[0] == "p":            
-            new_command = list(containers)
-            new_command.append(line)
-            p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
-            p.wait()
-            if p.returncode != 0:
-                print "skipping bucket", line
-                break
-            out, err = p.communicate()    
-            all_files =  out.split("\n")
-            to_crawl.append((line, all_files[0], all_files))
-            to_crawl = [f for f in to_crawl if f != ""]
+        try:
+           if line[0] == "p":            
+                new_command = list(containers)
+                new_command.append(line)
+                p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
+                p.wait()
+                if p.returncode != 0:
+                    print "skipping bucket", line
+                    break
+                out, err = p.communicate()    
+                all_files =  out.split("\n")
+                to_crawl.append((line, all_files[0], all_files))
+                to_crawl = [f for f in to_crawl if f != ""]
 
-        for files in to_crawl:
-            download_command = list(command)
-            download_command.append("download")
-            download_command.append(files[0])  # bucket number
-            download_command.append(files[1])  # first file name
-            print files[0]
-            print files[1]
-            rest = files[2]         # all rest of files
-            download_command.append("-o")
-            download_command.append(PATH+files[1])
-            p = subprocess.Popen(download_command, stdout=subprocess.PIPE)  # download the first file in the bucket
-            out, err = p.communicate()
-        
-            poly = get_poly(files[1])     
-            wkt = poly2wkt(poly)
-        
-            for f in rest:
-                if (f != ""):
-                    seg = f.split('.')
-                    date = seg[0].split('_')[1][-8:]
-                    band = int(seg[2][-2:])
-                    name = "'" + seg[0] + '_' + seg[1] + '_' + seg[2] +"'" 
-                    update_database(conn, cur, band, date, name, wkt)
+                for files in to_crawl:
+                    download_command = list(command)
+                    download_command.append("download")
+                    download_command.append(files[0])  # bucket number
+                    download_command.append(files[1])  # first file name
+                    print files[0]
+                    print files[1]
+                    rest = files[2]         # all rest of files
+                    download_command.append("-o")
+                    download_command.append(PATH+files[1])
+                    p = subprocess.Popen(download_command, stdout=subprocess.PIPE)  # download the first file in the bucket
+                    p.wait()
+                    if p.returncode != 0:
+                        print "skipping file", files[0], files[1]
+                        break
+                    out, err = p.communicate()
                 
+                    poly = get_poly(files[1])     
+                    wkt = poly2wkt(poly)
+                
+                    for f in rest:
+                        if (f != ""):
+                            seg = f.split('.')
+                            date = seg[0].split('_')[1][-8:]
+                            band = int(seg[2][-2:])
+                            name = "'" + seg[0] + '_' + seg[1] + '_' + seg[2] +"'" 
+                            update_database(conn, cur, band, date, name, wkt)
+        except Exception, e:
+            print e            
     cur.close()
     conn.close()
