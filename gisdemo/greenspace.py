@@ -126,25 +126,29 @@ def calc_greenspace(img, polygon):
         red = img.rgbs[y_pos][0::4]
         green = img.rgbs[y_pos][1::4]
         blue = img.rgbs[y_pos][2::4]
+        alpha = img.rgbs[y_pos][3::4]
 
         x_pos = 0
         while x_pos < px_width:
+            r = red[x_pos]
+            g = green[x_pos]
+            b = blue[x_pos]
+            a = alpha[x_pos]
+
             # place pixel in bounding box
             px_x = min_x + (x_pos * x_incr)
             px_y = max_y - (y_pos * y_incr)
-
-            if _isPointInPolygon([px_x, px_y], polygon):
-                # if we are transparent dont count us!
-                if not (img.rgbs[y_pos][3+x_pos*4] == 255):
+               # if we are transparent dont count us!
+            if not (a == MASK_COLOUR):
+                if _isPointInPolygon([px_x, px_y], polygon):
                     px+=1
                     # if green is the most promemant colour, we count as greenspace
-                    if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
+                    if g > r and g > b:
                         gs+=1
-                
-            # change pixels not in the polygon
-            elif PRINT_IMG:
-                #rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
-                img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
+
+                # Change pixels not in the polygon
+                else:
+                    img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
 
             x_pos+=1
         y_pos+=1
@@ -240,7 +244,7 @@ def main(location):
 
             lsimg = landsatImg.grasslandsat(record[GID], record[CITY_NAME], 
                                             box, coord_sys, location)
-            lsimg.getImgList()
+            lsimg.getImgList():
             lsimg.getSwiftImgs()
             lsimg.combineIntoPng()
             num = 0
@@ -255,8 +259,8 @@ def main(location):
             print " -> calculating greenspace"
             # do greenspace calc on image
             for img in lsimg.imgs:
-                greenspace += calc_greenspace(img, polygon)
-                #greenspace = 0.2
+                #greenspace += calc_greenspace(img, polygon)
+                greenspace = 0.2
                 img.writeImg()
                 print "WARGNIGN TERRIBLE GREEN VALUE"
 

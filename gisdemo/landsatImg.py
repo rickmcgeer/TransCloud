@@ -17,6 +17,13 @@ IMG_LOC = "/tmp/"
 IMG_EXT = ".png"
 
 
+
+#os.environ['GISDBASE'] = os.path.join(os.environ['HOME'], 'grassdata')
+#os.environ['GISBASE'] = "/usr/lib/grass64"
+#os.environ['PYTHONPATH'] = os.path.join(os.environ['GISBASE'], 'etc/python')+":"+os.environ['PYTHONPATH']
+
+
+
 class boundBox:
     """  """
 
@@ -60,9 +67,10 @@ class grasslandsat:
         toremove = ""
 
         for b in self.buckets:
-            toremove += b+"* "+os.path.join(os.environ['GISBASE'],b)+" "
+            toremove += b+"* "+os.path.join(os.environ['GISDBASE'],b)+" "
         for img in self.imgs:
             toremove += img.fname+" "+img.imgname
+        toremove += str(self.gid)+".shp" + str(self.gid)+".shx" + str(self.gid)+".dbf"
 
         subprocess.call(["rm", "-rf", toremove])
 
@@ -74,10 +82,18 @@ class grasslandsat:
         # Given box query GIS database, get list of buckets back as well as their coords!
         records = dbObj.performSelect(sql)
 
+        print "FAKE FILES UP IN HERE!!!"
         self.files = ["p110r023_5dt20060717.SR.b03.tif.gz",
                       "p110r023_5dt20060717.SR.b04.tif.gz",
                       "p110r023_5dt20060717.SR.b07.tif.gz"]
         
+        if not len(records):
+            None # Raise some sort of exception!
+
+        print len(records), "images intersect the city"
+        return len(records)
+
+
 
     def getSwiftImgs(self):
         """ pull required buckets from swift into local dir """
@@ -91,6 +107,11 @@ class grasslandsat:
             fpre = f.split('_')[0]
             if fpre not in self.buckets:
                 self.buckets.append(fpre)
+
+        if len(self.buckets) > 1:
+            print "Currently cant handle stitching images together!!"
+            return
+
 # TESTING COMMENT OUT
         # for b in self.buckets:
         #     subprocesS.Check_call(["swift", "-A", SWIFT_PROXY, "-U", SWIFT_USER,
