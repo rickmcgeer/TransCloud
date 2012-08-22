@@ -2,6 +2,8 @@ import subprocess
 import os
 import re
 
+import dbObj
+
 def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_"):
     command = "ogrinfo -so %s %s" % (shapefile, shapefile.split(".")[0])
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -31,7 +33,7 @@ def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_"):
 
 
     p.wait()
-    assert p.returncode == 0
+    assert p.returncode == 0, "Failed with %s"%(p.communicate()[0])
     if raster2:
         q.wait()
         assert q.returncode == 0
@@ -51,11 +53,37 @@ def test():
     assert rc==0, "Ogrinfo not installed"
     rc = subprocess.call(["which","gdal_translate"])
     assert rc==0, "Gdal-bin not installed"
+
+
+
+def getShapefile(gid):
     
-    
+    shpname = str(gid)+'.shp'
+
+    if os.path.exists(shpname):
+        return shpname
+
+    pginfo = "host="+dbObj.DB_HOST + " user="+dbObj.DB_USER\
+           + " dbname="+dbObj.GIS_DATABASE
+
+    sql = "SELECT the_geom FROM "+dbObj.CITY_TABLE['all']+" WHERE GID = "+str(gid)+";"
+
+    command = 'ogr2ogr -f "ESRI Shapefile" ' + shpname + ' PG:"'+pginfo +'" -sql "'+sql+'"'
+
+    print command
+
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
+    p.wait()
+    assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
+    assert os.path.exists(shpname)
+
+    return shpname
+
+if __name__ == "__main__": 
+    getShapefile(23839)
+
+
 test()
-
-
-crop("test.shp", "p145r032_7dt20060730.SR.b03.tif", raster2="p145r032_7dt20060730.SR.b04.tif", raster3="p145r032_7dt20060730.SR.b07.tif", prefix="new_")
+#crop("test.shp", "p145r032_7dt20060730.SR.b03.tif", raster2="p145r032_7dt20060730.SR.b04.tif", raster3="p145r032_7dt20060730.SR.b07.tif", prefix="new_")
 
 
