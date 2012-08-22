@@ -129,10 +129,14 @@ if __name__ == '__main__':
             new_command = list(containers)
             new_command.append(line)
             p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
+            p.wait()
+            if p.returncode != 0:
+                print "skipping bucket", line
+                break
             out, err = p.communicate()    
             all_files =  out.split("\n")
             to_crawl.append((line, all_files[0], all_files))
-            to_crawl[:] = [f for f in to_crawl if f != ""]
+            to_crawl = [f for f in to_crawl if f != ""]
 
         for files in to_crawl:
             download_command = list(command)
