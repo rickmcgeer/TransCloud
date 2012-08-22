@@ -1,15 +1,16 @@
-from owslib.wms import WebMapService
-from owslib.wms import ServiceException
-import png
-import psycopg2
+#from owslib.wms import WebMapService
+#from owslib.wms import ServiceException
+#import png
+#import psycopg2
 import math
 import datetime
 import sys
 
-import wmsImg
+import landsatImg
 import dbObj
+import trim
 
-
+# NOTE: these should really be in dbObj.py but ahm lay z
 # these correspond to the selected column num in the SQL statement
 GID = 0
 CITY_NAME = 1
@@ -20,7 +21,7 @@ XMAX = 5
 YMAX = 6
 
 
-# val of all pixels we want the space around the polygon to be
+# val of alpha pixels we want the space around the polygon to be
 MASK_COLOUR = 0
 
 LOW_GREEN_VAL = 0.0001
@@ -28,7 +29,7 @@ LOW_GREEN_VAL = 0.0001
 # number of pixels per meter
 M_PER_PIXEL = 30
 
-# do we, and if so where do we want to print images
+# do we want to print images
 PRINT_IMG = True
 
 PRINT_DBG_STR = True # print to stdout
@@ -38,23 +39,27 @@ LOG_FILE = None
 LOG_NAME = "greenspace.log"
 
 
+
 def log(*args):
     """ Write a timestamp and the args passed to the log. 
     If there is no log file we treat stderr as our log
     """
     logs = []
 	
+    if PRINT_DBG_STR:
+        logs.append(sys.stderr)
+
     if LOG_FILE:
         logs.append(LOG_FILE)
-    #else:
-    logs.append(sys.stderr)
-
+    elif not len(logs):
+        logs.append(sys.stderr)
 
     for lf in logs:
         msg = str(datetime.datetime.now()) + ": "
         for arg in args:
             msg += str(arg) + " "
         lf.write(msg+'\n')
+
 
 
 # The following is from http://python.net/~gherman/convexhull.html 
@@ -121,23 +126,29 @@ def calc_greenspace(img, polygon):
         red = img.rgbs[y_pos][0::4]
         green = img.rgbs[y_pos][1::4]
         blue = img.rgbs[y_pos][2::4]
+        alpha = img.rgbs[y_pos][3::4]
 
         x_pos = 0
         while x_pos < px_width:
+            r = red[x_pos]
+            g = green[x_pos]
+            b = blue[x_pos]
+            a = alpha[x_pos]
+
             # place pixel in bounding box
             px_x = min_x + (x_pos * x_incr)
             px_y = max_y - (y_pos * y_incr)
+               # if we are transparent dont count us!
+            if not (a == MASK_COLOUR):
+                if _isPointInPolygon([px_x, px_y], polygon):
+                    px+=1
+                    # if green is the most promemant colour, we count as greenspace
+                    if g > r and g > b:
+                        gs+=1
 
-            if _isPointInPolygon([px_x, px_y], polygon):
-                px+=1
-                # if green is the most promemant colour, we count as greenspace
-                if green[x_pos] > red[x_pos] and green[x_pos] > blue[x_pos]:
-                    gs+=1
-                
-            # change pixels not in the polygon
-            elif PRINT_IMG:
-                #rgbs[y_pos][x_pos*4] = rgbs[y_pos][1+x_pos*4] = rgbs[y_pos][2+x_pos*4] = MASK_COLOUR
-                img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
+                # Change pixels not in the polygon
+                else:
+                    img.rgbs[y_pos][3+x_pos*4] = MASK_COLOUR
 
             x_pos+=1
         y_pos+=1
@@ -201,9 +212,7 @@ def get_img_size(pgConn, long_min, lat_min, long_max, lat_max):
 
 def main(location):
 	
-    batch_size = 1 # could make fn of len(records) when that works
     num_updates = 0
-    update_stmnt = ""
 
     pgConn = dbObj.pgConnection()
 
@@ -213,62 +222,70 @@ def main(location):
     print "Processing", len(records), location, "records"
 
     for record in records:
-	
+
+        print "Processing", record[GID], record[CITY_NAME]
+
         if record[GID] is None:	
             log("Null GID")
             continue
-				
+
         start_t = datetime.datetime.now()
         
         # box is floats: [xmin, ymin, xmax, ymax]
         box = record[XMIN:]
         img_w, img_h = get_img_size(pgConn, box[0], box[1], box[2], box[3])
 
+        print " -> w:h = ", img_w, ":", img_h
 
+        greenspace = 0
         if img_w and img_h:
 
             coord_sys = "EPSG:" + dbObj.GEOG
-            # getlandsat image
-            img = wmsImg.landsatImg(record[GID], record[CITY_NAME], box, coord_sys, img_w, img_h, location)
+
+            lsimg = landsatImg.grasslandsat(record[GID], record[CITY_NAME], 
+                                            box, coord_sys, location)
+            lsimg.getImgList():
+            lsimg.getSwiftImgs()
+            lsimg.combineIntoPng()
+            num = 0
+            for img in lsimg.imgs:
+                img.readImgData()
+                img.imgname = str(record[GID])+"-"+record[CITY_NAME]+"-"+str(num)+".png"
+                num+=1
 
             # get polygon as list of points (ie, not a string)
             polygon = wkt_to_list(record[CV_HULL])
 
+            print " -> calculating greenspace"
             # do greenspace calc on image
-            greenspace = calc_greenspace(img, polygon)
+            for img in lsimg.imgs:
+                #greenspace += calc_greenspace(img, polygon)
+                greenspace = 0.2
+                img.writeImg()
+                print "WARGNIGN TERRIBLE GREEN VALUE"
 
-        else:
-            greenspace = 0
+            print " -> greenspace =", greenspace
 
         # dont insert if we have no greenspace
         if greenspace:
-
+ 
             end_t = datetime.datetime.now()
 
             # append update statement to string
-            update_stmnt += pgConn.createUpdateStmnt(greenspace,
-                                                img.gid,
-                                                img.city,
-                                                start_t,
-                                                end_t,
-                                                img.getImgName(),
-                                                img.server,
-                                                location)
-            num_updates+=1
+            update_stmnt = pgConn.createUpdateStmnt(greenspace,
+                                                    lsimg.gid, lsimg.city,
+                                                    start_t, end_t,
+                                                    str(record[GID])+"-"+record[CITY_NAME]+"-0.png",
+                                                    "Temp Server Name", location)
 
-            # batch updates to the database to avoid creating many connections
-            if num_updates >= batch_size:
-                pgConn.performUpdate(update_stmnt)
-                update_stmnt = ""
-                num_updates = 0
+            lsimg.uploadToSwift()
+            pgConn.performUpdate(update_stmnt)
+            
+            del lsimg
 
         if PRINT_DBG_STR:
             print record[GID], record[CITY_NAME], (img_w, img_h), greenspace
         log(record[GID], record[CITY_NAME], (img_w, img_h), greenspace)
-
-
-    if len(update_stmnt):
-        update_database(update_stmnt)
     
     del pgConn
     return len(records)
@@ -284,7 +301,7 @@ if __name__ == '__main__':
 
     log("Started")
 	
-    proc = main('canada')
+    proc = main('all')
 		
     log("Stopped")
 
