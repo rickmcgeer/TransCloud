@@ -1,6 +1,7 @@
 import subprocess
 import os
 import re
+import dbObj
 
 def get_projection(fil):
     command = "gdalinfo " + fil
@@ -57,7 +58,7 @@ def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_"):
 
 
     p.wait()
-    assert p.returncode == 0
+    assert p.returncode == 0, "Failed with %s"%(p.communicate()[0])
     if raster2:
         q.wait()
         assert q.returncode == 0
@@ -77,9 +78,32 @@ def test():
     assert rc==0, "Ogrinfo not installed"
     rc = subprocess.call(["which","gdal_translate"])
     assert rc==0, "Gdal-bin not installed"
+
+
+
+def getShapefile(gid):
     
-    
-test()
+    shpname = str(gid)+'.shp'
+
+    if os.path.exists(shpname):
+        return shpname
+
+    pginfo = "host="+dbObj.DB_HOST + " user="+dbObj.DB_USER\
+           + " dbname="+dbObj.GIS_DATABASE
+
+    sql = "SELECT the_geom FROM "+dbObj.CITY_TABLE['all']+" WHERE GID = "+str(gid)+";"
+
+    command = 'ogr2ogr -f "ESRI Shapefile" ' + shpname + ' PG:"'+pginfo +'" -sql "'+sql+'"'
+
+    print command
+
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
+    p.wait()
+    assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
+    assert os.path.exists(shpname)
+
+    return shpname
+
 
 if __name__ == "__main__":
 
@@ -88,5 +112,10 @@ if __name__ == "__main__":
     assert reproject_shapefile("19094.shp", "32617") == "./tmp2/19094.shp"
 
     crop("19094.shp", "p019r026_7dt20050708.SR.b03.tif", prefix="new_")
+
+    getShapefile(23839)
+
+
+test()
 
 
