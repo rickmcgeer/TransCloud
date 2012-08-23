@@ -104,7 +104,6 @@ def update_database(conn, cur, band, date, name, geom):
         exist = cur.fetchone()
         if (not exist):
             update = "INSERT INTO " + GIS_TAB + " (band, date, fname, the_geom)  VALUES (" + str(band) + "," + date + "," + str(name) + "," + " ST_Transform(ST_GeomFromText('" + wkt + "), 4326));"
-            print update
             cur.execute(update)
             conn.commit()
     except psycopg2.ProgrammingError as e:
