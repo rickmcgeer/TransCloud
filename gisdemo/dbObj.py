@@ -1,9 +1,10 @@
 import psycopg2
 
 # database constants
-DB_USER = "stredger"#"root"
-DB_PASS = "swick"#root"
-GIS_DATABASE = "gisdemo"#"world"
+DB_HOST = "10.0.0.16"
+DB_USER = "root"
+DB_PASS = ""
+GIS_DATABASE = "world"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
 CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
@@ -12,7 +13,7 @@ NAME_COL = "name"
 GEOM_COL = "the_geom"
 GREEN_COL = "greenspace"
 
-IMG_TABLE = "times"#"processed"
+IMG_TABLE = "processed"
 IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
@@ -29,10 +30,11 @@ class pgConnection:
 
     def __init__(self):
         try:
-            self.conn = psycopg2.connect(database=GIS_DATABASE,
+            self.conn = psycopg2.connect(host=DB_HOST,
+                                         database=GIS_DATABASE,
                                          user=DB_USER,
                                          password=DB_PASS)
-        except psycopg.ProgrammingError as e:
+        except psycopg2.ProgrammingError as e:
             print "Failed to connect to database:", str(e)
             raise # may want to raise some other error or somebody?
 
@@ -57,11 +59,15 @@ class pgConnection:
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
         #where = " WHERE name LIKE 'HOPE'"
-        where = " WHERE gid=18529" # this is victoria
-        #where = " WHERE name LIKE 'BOSTON'"
-        #where = " WHERE "+GREEN_COL+"=0"
+        #where = " WHERE gid=18529" # this is victoria
+        #where = " WHERE gid = 19094" 
+        #where = " WHERE gid = 25237" # boston
+        #where = " WHERE gid > 19093 AND gid < 19099" # this is boston
+        #where = " WHERE name LIKE 'BOSTON' OR name LIKE 'LONDON' OR name LIKE 'CANCUN'"
+        where = " WHERE "+GREEN_COL+"=0"
+        
 		
-        limit = " LIMIT 10"
+        limit = " LIMIT 1000"
         #limit = ""
 
         return "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
@@ -75,7 +81,7 @@ class pgConnection:
             print "Can't form sql to get distance between points:", a, b
             return 
 
-		# convert to well known text (wkt)
+	# convert to well known text (wkt)
         a_wkt = "POINT(" + str(a[0]) + " " + str(a[1]) + ")"
         b_wkt = "POINT(" + str(b[0]) + " " + str(b[1]) + ")"
  
@@ -102,8 +108,7 @@ class pgConnection:
         except psycopg2.ProgrammingError as e:
             print "Failed to fetch from database:", str(e)
             return []
-	
-
+ 
 
     def createUpdateStmnt(self, greenspace, gid, name, start, 
                               end, imgName, servName, region):

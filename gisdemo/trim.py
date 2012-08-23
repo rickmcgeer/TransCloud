@@ -14,27 +14,31 @@ def get_projection(fil):
     
 
 def reproject_shapefile(shapefile, new_projcode):
+    new_fil = "./tmp2/"+ shapefile
+    if os.path.exists(new_fil):
+        return new_fil
     base,ext = shapefile.split(".")
-    cmd =  'ogr2ogr -overwrite -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" tmp2 ' + shapefile
+    cmd =  'ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" tmp2 ' + shapefile
     print cmd
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     p.wait()
     assert p.returncode == 0, "Reprojection failed - Probably a SRS missmatch..."
     out, err = p.communicate()
     print out
-    return "./tmp2/"+shapefile
+    return new_fil
     
 
-def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_"):
+def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_", new_projcode=None):
     layername =  shapefile.split(".")[0]
-    new_projcode = get_projection(raster)
+    if not new_projcode:
+        new_projcode = get_projection(raster)
     new_shapefile = reproject_shapefile(shapefile, new_projcode)
 
     command = "ogrinfo  %s %s" % (new_shapefile,layername)
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     p.wait()
     out, err = p.communicate()
-    print out
+    #print out
     assert "Geometry: Polygon" in out, "Problem reading the shapefile"
     lines = out.split("\n")
     line = [x for x in lines if x.startswith("Extent: ")][0]
@@ -107,7 +111,7 @@ def getShapefile(gid):
 
 if __name__ == "__main__":
 
-    assert get_projection("p145r032_7dt20060730.SR.b03.tif") == "32644", "Did not get the correct projection"
+    #assert get_projection("p145r032_7dt20060730.SR.b03.tif") == "32644", "Did not get the correct projection"
     
     assert reproject_shapefile("19094.shp", "32617") == "./tmp2/19094.shp"
 
