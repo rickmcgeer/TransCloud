@@ -5,6 +5,7 @@ import os
 import subprocess
 import png
 import shutil
+import signal
 
 import dbObj
 import trim
@@ -18,11 +19,25 @@ SWIFT_PNG_BUCKET = "completed"
 IMG_LOC = "/tmp/"
 IMG_EXT = ".png"
 
+# swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
 
 
 #os.environ['GISDBASE'] = os.path.join(os.environ['HOME'], 'grassdata')
 #os.environ['GISBASE'] = "/usr/lib/grass64"
 #os.environ['PYTHONPATH'] = os.path.join(os.environ['GISBASE'], 'etc/python')+":"+os.environ['PYTHONPATH']
+
+# so we dont hang trying to dl from swift
+class Alarm(Exception):
+    pass
+def alarm_handler(signum, frame):
+    raise Alarm
+
+
+#signal.signal(signal.SIGALRM, alarm_handler)
+#signal.alarm(5*60)  # 5 minutes
+#stdoutdata, stderrdata = proc.communicate()
+#signal.alarm(0)  # reset the alarm
+
 
 
 
@@ -72,15 +87,15 @@ class grasslandsat:
         toremove = os.path.join(os.environ['GISDBASE'], str(self.gid))+" "
 
         for b in self.buckets:
-            toremove += b+"* "
+            toremove += "*"+b+"* "
         if self.img:
             toremove += self.img.fname+" "+self.img.imgname+" "
-        toremove += str(self.gid)+"* "
+        toremove += str(self.gid)+"* "+"tmp2/"+str(self.gid)+"* "
 
         print "rm -rf", toremove
         command = "rm -rf "+toremove
-        #p = subprocess.Popen(command, shell=True, 
-        #                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(command, shell=True, 
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
     def getImgList(self, pgConn):
@@ -108,7 +123,8 @@ class grasslandsat:
         #print self.files
         #print self.buckets
 
-        assert(len(self.files))
+
+        assert(len(self.files)) == 3, "Currently can't stitch together images, skipping " + str(self.gid)
         print len(self.files), "images intersect the city"
         return len(self.files)
 
@@ -129,10 +145,26 @@ class grasslandsat:
                         print "Skipping bucket "+b+" as we already have it!"
                         havebucket = 1
             if not havebucket:
+
                 command = "swift -A "+SWIFT_PROXY+" -U "+SWIFT_USER+" -K "+SWIFT_PWD+" download "+b
+                # spawna shell that executes swift, we set the sid of the shell so
+                #  we can kill it and all its children with os.killpg
                 p = subprocess.Popen(command, shell=True, 
-                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                p.wait()
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     preexec_fn=os.setsid) 
+
+                try:
+                    signal.signal(signal.SIGALRM, alarm_handler)
+                    signal.alarm(3*60)  # we will timeout after 3 minutes 
+
+                    p.wait()
+                    signal.alarm(0)  # reset the alarm
+                except Alarm:
+                    os.killpg(p.pid, signal.SIGTERM)
+                    # raise an assertion so we can continue execution after 
+                    #  (should really have our own exception but fk it)
+                    raise AssertionError("Timeout gettimg images from swift")
+
                 assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
 
         print "Complete!"
@@ -176,16 +208,19 @@ class grasslandsat:
             tiffs = []
             cwd = os.getcwd()
             print "Decompressing files"
-            for f in files:
-                tname = f.rstrip('.gz')
-                tiffs.append(tname)
-                if not os.path.exists(tname):
-                    inf = gzip.GzipFile(os.path.join(cwd, f), 'rb')
-                    dcmpdata = inf.read()
-                    inf.close()
-                    outf = open(tname, "w") # try catches????
-                    outf.write(dcmpdata)
-                    outf.close()
+            try:
+                for f in files:
+                    tname = f.rstrip('.gz')
+                    tiffs.append(tname)
+                    if not os.path.exists(tname):
+                        inf = gzip.GzipFile(os.path.join(cwd, f), 'rb')
+                        dcmpdata = inf.read()
+                        inf.close()
+                        outf = open(tname, "w") # try catches????
+                        outf.write(dcmpdata)
+                        outf.close()
+            except IOError as e:
+                raise AssertionError(e)
 
             print "Complete!"
             return tiffs
@@ -304,12 +339,13 @@ class grasslandsat:
     def uploadToSwift(self):
         print "Uploading processed image to swift"
         command = "swift -A "+SWIFT_PROXY+" -U "+SWIFT_USER+" -K "\
-            +SWIFT_PWD+" upload "+SWIFT_PNG_BUCKET+self.img.imgname
+            +SWIFT_PWD+" upload "+SWIFT_PNG_BUCKET+" "+self.img.imgname
         p = subprocess.Popen(command, shell=True, 
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         print "Complete!"
+        
 
 
 
