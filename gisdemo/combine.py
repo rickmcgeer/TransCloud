@@ -70,8 +70,8 @@ def _compose_tiff(new, path):
         print "Stitched with master %s!" % file_path
         os.remove("%s.uncompressed.tif" % file_path)
 
+    #return new + ".tif"
     return master_path
-
 
 def grab_pathrow_band_time(name):
     s1 = name.split('.')
@@ -84,14 +84,17 @@ def grab_pathrow_band_time(name):
     return rc
 
 
-def combine_bands(allfiles):
+def combine_bands(allfiles, gid="new"):
     target = []
+    if gid != "new" and os.path.exists(gid+"_b03.tif"):
+        return [gid+"_b03.tif", gid+"_b04.tif", gid+"_b07.tif"]
+
     for fname in allfiles:
         info = grab_pathrow_band_time(fname)
         if info[3] != '7dt':
             print "Skipping non-landsat 7 image", fname
         else:
-            target.append((fname[:-3], info))
+            target.append((fname, info))
 
     temps = {'b03':tempfile.mkdtemp(prefix='landsatb03'),
              'b04':tempfile.mkdtemp(prefix='landsatb04'),
@@ -102,21 +105,41 @@ def combine_bands(allfiles):
 
     done = []
     for d in temps.items():
-        new = _compose_tiff("new_"+d[0], d[1])
-        done.append(new)
+        new = _compose_tiff(gid+d[0], d[1])
+        done.append(new.split('/')[-1])
         shutil.copy(new,".")
         shutil.rmtree(d[1])
     return done
 
 
+def combine_single(allfiles, gid="new"):
+    target = []
+    for f in allfiles:
+        if 'grass' in f:
+            target.append(f)
+
+    temps = {'all':tempfile.mkdtemp(prefix='landsatb03')}
+
+    for f in target:
+        shutil.copy(f, temps['all']+"/"+f)
+
+    done = []
+    for d in temps.items():
+        new = _compose_tiff(gid+d[0], d[1])
+        done.append(new.split('/')[-1])
+        shutil.copy(new,".")
+        shutil.rmtree(d[1])
+    return done
+
 if __name__ == "__main__":
 
-    test_files = ['p011r031_5dt20050724.SR.b03.tif.gz', 'p011r031_5dt20050724.SR.b04.tif.gz', 'p011r031_5dt20050724.SR.b07.tif.gz', 'p012r030_7dt20061014.SR.b03.tif.gz', 'p012r030_7dt20061014.SR.b04.tif.gz', 'p012r030_7dt20061014.SR.b07.tif.gz', 'p012r031_7dt20060928.SR.b03.tif.gz', 'p012r031_7dt20060928.SR.b04.tif.gz', 'p012r031_7dt20060928.SR.b07.tif.gz', 'p013r030_5dt20050924.SR.b03.tif.gz', 'p013r030_5dt20050924.SR.b04.tif.gz', 'p013r030_5dt20050924.SR.b07.tif.gz']
+    #test_files = ['p011r031_5dt20050724.SR.b03.tif.gz', 'p011r031_5dt20050724.SR.b04.tif.gz', 'p011r031_5dt20050724.SR.b07.tif.gz', 'p012r030_7dt20061014.SR.b03.tif.gz', 'p012r030_7dt20061014.SR.b04.tif.gz', 'p012r030_7dt20061014.SR.b07.tif.gz', 'p012r031_7dt20060928.SR.b03.tif.gz', 'p012r031_7dt20060928.SR.b04.tif.gz', 'p012r031_7dt20060928.SR.b07.tif.gz', 'p013r030_5dt20050924.SR.b03.tif.gz', 'p013r030_5dt20050924.SR.b04.tif.gz', 'p013r030_5dt20050924.SR.b07.tif.gz']
 
+    test_files = ['p012r030_7dt20061014.SR.b03.tif', 'p012r030_7dt20061014.SR.b04.tif', 'p012r030_7dt20061014.SR.b07.tif', 'p012r031_7dt20060928.SR.b03.tif', 'p012r031_7dt20060928.SR.b04.tif', 'p012r031_7dt20060928.SR.b07.tif']
 
-    assert grab_pathrow_band_time(test_files[0]) == ('p011r031','b03', '20050724', '5dt'), "Problem parsing pathrow band"
-    assert grab_pathrow_band_time(test_files[1]) == ('p011r031','b04', '20050724', '5dt'), "Problem parsing pathrow band"
-    assert grab_pathrow_band_time(test_files[11]) == ('p013r030','b07', '20050924', '5dt'), "Problem parsing pathrow band"
+    #assert grab_pathrow_band_time(test_files[0]) == ('p011r031','b03', '20050724', '5dt'), "Problem parsing pathrow band"
+    #assert grab_pathrow_band_time(test_files[1]) == ('p011r031','b04', '20050724', '5dt'), "Problem parsing pathrow band"
+    #assert grab_pathrow_band_time(test_files[11]) == ('p013r030','b07', '20050924', '5dt'), "Problem parsing pathrow band"
 
 
     combine_bands(test_files)
