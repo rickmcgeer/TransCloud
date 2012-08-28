@@ -1,7 +1,7 @@
 import subprocess
 import os
 import re
-import dbObj
+#import dbObj
 
 def get_projection(fil):
     command = "gdalinfo " + fil
@@ -106,14 +106,14 @@ def getShapefile(gid):
 
 
 if __name__ == "__main__":
-
+    print ">>"
     assert get_projection("p145r032_7dt20060730.SR.b03.tif") == "32644", "Did not get the correct projection"
     
     assert reproject_shapefile("19094.shp", "32617") == "./tmp2/19094.shp"
 
     crop("19094.shp", "p019r026_7dt20050708.SR.b03.tif", prefix="new_")
 
-    getShapefile(23839)
+    #getShapefile(23839)
 
 
 test()
