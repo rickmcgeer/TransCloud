@@ -1,0 +1,29 @@
+<html><head>
+<link rel="shortcut icon" href="/assets/favicon.png" />
+<title>"Last 10 Cities"</title>
+<script type="text/javascript" src="last10Cities.js"></script>
+<link rel="stylesheet" type="text/css" href="last10Cities.css"></style>
+</head>
+
+<body onload="refreshData(); setInterval(refreshData(), 10000);">
+<h1>
+Processing Summary
+</h1>
+<button type="button" onclick="getLast10Cities();">Get Last 10</button>
+<button type="button" onclick="getTotalCitiesProcessed();">Get Total</button>
+
+Number of cities processed: <a name="numCities" id="numCities">0</a>
+
+<h2> Last Ten Cities</h2>
+<div class="wrapper"><span id="cityName_1"></span><span id="greenspace_1"></span><span id="process_time_1"></span><span id="serverName_1"></span><div id="city_image_1"></div></div>
+<div class="wrapper"><span id="cityName_2"></span><span id="greenspace_2"></span><span id="process_time_2"></span><span id="serverName_2"></span><div id="city_image_2"></div></div>
+<div class="wrapper"><span id="cityName_3"></span><span id="greenspace_3"></span><span id="process_time_3"></span><span id="serverName_3"></span><div id="city_image_3"></div></div>
+<div class="wrapper"><span id="cityName_4"></span><span id="greenspace_4"></span><span id="process_time_4"></span><span id="serverName_4"></span><div id="city_image_4"></div></div>
+<div class="wrapper"><span id="cityName_5"></span><span id="greenspace_5"></span><span id="process_time_5"></span><span id="serverName_5"></span><div id="city_image_5"></div></div>
+<div class="wrapper"><span id="cityName_6"></span><span id="greenspace_6"></span><span id="process_time_6"></span><span id="serverName_6"></span><div id="city_image_6"></div></div>
+<div class="wrapper"><span id="cityName_7"></span><span id="greenspace_7"></span><span id="process_time_7"></span><span id="serverName_7"></span><div id="city_image_7"></div></div>
+<div class="wrapper"><span id="cityName_8"></span><span id="greenspace_8"></span><span id="process_time_8"></span><span id="serverName_8"></span><div id="city_image_8"></div></div>
+<div class="wrapper"><span id="cityName_9"></span><span id="greenspace_9"></span><span id="process_time_9"></span><span id="serverName_9"></span><div id="city_image_9"></div></div>
+<div class="wrapper"><span id="cityName_10"></span><span id="greenspace_10"></span><span id="process_time_10"></span><span id="serverName_10"></span><div id="city_image_10"></div></div>
+</body>
+</html>
