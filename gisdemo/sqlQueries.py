@@ -65,12 +65,12 @@ try:
         entries = []
         for item_number in range(0, len(resultTuple)):
             if item_number not in json_query.property_columns: continue
-            fmt_string = '"' + json_query.resultsNameTuple[item_number] + '":"' + json_query.formatTuple[item_number] + '"'
+            fmt_string = '"' + json_query.resultsNameTuple[item_number] + '" : "' + json_query.formatTuple[item_number] + '"'
             entries += [fmt_string % resultTuple[item_number]]
-        properties = ','.join(entries)
+        properties = ', '.join(entries)
         response += properties + '},'
-	response += '"crs":{"type":"OGC", "properties":{"urn":"urn:ogc:def:crs:OGC:1.3:CRS84"}},'
-        response += '"geometry": %s},' % resultTuple[json_query.geometry_column]
+	response += '"crs" : {"type" : "OGC", "properties" : {"urn":"urn:ogc:def:crs:OGC:1.3:CRS84"}},'
+        response += '"geometry" : %s},' % resultTuple[json_query.geometry_column]
         
     response = response[:-1] # trim off the last ','
     response += ']}'
