@@ -16,6 +16,10 @@ DB_PASS = ""
 GIS_DATABASE = "gisdemo"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
+def clean(myStr):
+    if not myStr: return ""
+    return myStr.replace('"', '')
+
 class JSON_SQL_Query:
     def __init__(self, sqlQuery, resultsNameTuple, property_columns, formatTuple, geometry_column):
         self.sqlQuery = sqlQuery
@@ -65,11 +69,15 @@ try:
         entries = []
         for item_number in range(0, len(resultTuple)):
             if item_number not in json_query.property_columns: continue
-            fmt_string = '"' + json_query.resultsNameTuple[item_number] + '" : "' + json_query.formatTuple[item_number] + '"'
-            entries += [fmt_string % resultTuple[item_number]]
+            fmt_string = '"' + json_query.resultsNameTuple[item_number] + '":"' + json_query.formatTuple[item_number] + '"'
+            if json_query.formatTuple[item_number] == "%s":
+                entry = clean(resultTuple[item_number])
+            else:
+                entry = resultTuple[item_number]
+            entries += [fmt_string % entry]
         properties = ', '.join(entries)
         response += properties + '},'
-	response += '"crs" : {"type" : "OGC", "properties" : {"urn":"urn:ogc:def:crs:OGC:1.3:CRS84"}},'
+	response += '"crs":{"type":"OGC","properties":{"urn":"urn:ogc:def:crs:OGC:1.3:CRS84"}},'
         response += '"geometry" : %s},' % resultTuple[json_query.geometry_column]
         
     response = response[:-1] # trim off the last ','
