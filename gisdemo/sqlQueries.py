@@ -20,6 +20,30 @@ def clean(myStr):
     if not myStr: return ""
     return myStr.replace('"', '')
 
+#
+# A JSON_SQL_Query
+# fields:
+#  sqlQuery: the SQL string for the query
+#  resultsNameTuple: a tuple with the names of the fields that come out; used in generating
+#                    the JSON
+#  property_columns: a list of the columns we'll use as properties in the JSON.  If
+#                    property_columns = [0, 1], the first two entries in resultsNameTuple
+#                    will be the JSON properties we will generate, and the first two results
+#                    of each tuple of results from the datanbase will form the properties
+# formatTuple: A tuple of the same length as resultsNameTuple, with a format string
+#              suitable for string modulus in Python as the argument: the kth element tells
+#              how the kth result is formatted as a property
+# geometry_column: an integer saying which element of a result tuple is a GeoJSON formatted
+#                  geometry string
+# so, for example,
+#  JSON_SQL_Query("SELECT map.name, map.greenspace, ST_AsGeoJSON(map.the_geom) FROM map order by map.greenspace desc limit 10000", ("name", "greenspace", "geom"), [0, 1], ("%s", "%f", ""), 2),
+# says the fields that are coming out of the query should be named
+# "name", "greenspace", "geom"
+# [0, 1] says "name", "greenspace" are the properties
+# ("%s", "%f", "") says name should be formatted as a string, greenspace as a float
+# 2 says "geom" is a geometry
+#
+
 class JSON_SQL_Query:
     def __init__(self, sqlQuery, resultsNameTuple, property_columns, formatTuple, geometry_column):
         self.sqlQuery = sqlQuery
