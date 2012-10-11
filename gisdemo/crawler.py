@@ -13,7 +13,7 @@ import subprocess
 DB_USER = "postgres"
 DB_PASS = ""
 GIS_DATABASE = "world"
-GIS_TAB = "tiff4326"
+GIS_TAB = "tiff_rap"
 DB_HOST= "10.0.0.16"
 PATH = '/tmp/'
 
@@ -98,7 +98,7 @@ def create_database(conn, cur):
         log(e)
         conn.rollback()
             
-def update_database(conn, cur, band, date, name, geom):
+def update_database(conn, cur, band, date, name, wkt):
     try:
         cur.execute("SELECT fname FROM " + GIS_TAB + " WHERE fname = " + str(name) + ";")
         exist = cur.fetchone()
