@@ -1,0 +1,29 @@
+<html><head>
+<link rel="shortcut icon" href="/assets/favicon.png" />
+<title>"Last 10 Cities"</title>
+<script type="text/javascript" src="top10Cities.js"></script>
+<link rel="stylesheet" type="text/css" href="last10Cities.css"></style>
+</head>
+
+<body onload="refreshData(); setInterval(refreshData(), 10000);">
+<h1>
+Top 10 Green Cities
+</h1>
+<button type="button" onclick="top10Cities();">Top 10 Green Cities</button>
+
+<h2> Top Ten Cities</h2>
+<table>
+  <tr><td>City Name</td><td>Green Value</td></tr>
+  <tr><td id="cityName_1"></td><td id="green_value_1"></td></tr>
+<tr><td id="cityName_2"></td><td id="green_value_2"></td></tr>
+<tr><td id="cityName_3"></td><td id="green_value_3"></td></tr>
+<tr><td id="cityName_4"></td><td id="green_value_4"></td></tr>
+<tr><td id="cityName_5"></td><td id="green_value_5"></td></tr>
+<tr><td id="cityName_6"></td><td id="green_value_6"></td></tr>
+<tr><td id="cityName_7"></td><td id="green_value_7"></td></tr>
+<tr><td id="cityName_8"></td><td id="green_value_8"></td></tr>
+<tr><td id="cityName_9"></td><td id="green_value_9"></td></tr>
+<tr><td id="cityName_10"></td><td id="green_value_10"></td></tr>
+</table>
+</body>
+</html>
