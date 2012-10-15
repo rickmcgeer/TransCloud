@@ -1,9 +1,15 @@
-import psycopg2
+import os
+
+try:
+    import psycopg2
+    import png
+except:
+    print "Error: Please install the psycopg2 pypng python packages and libpg2-dev system package."
+    os.exit(1)
+
 import grass.script as grass
 import gzip
-import os
 import subprocess
-import png
 import shutil
 import signal
 
