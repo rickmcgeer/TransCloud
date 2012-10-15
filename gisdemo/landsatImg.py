@@ -7,6 +7,8 @@ except:
     print "Error: Please install the psycopg2 pypng python packages and libpg2-dev system package."
     os.exit(1)
 
+import settings
+
 import grass.script as grass
 import gzip
 import subprocess
@@ -17,13 +19,6 @@ import dbObj
 import trim
 import combine
 
-SWIFT_PROXY = "http://10.0.0.3:8080/auth/v1.0"
-SWIFT_USER = "system:gis"
-SWIFT_PWD = "uvicgis"
-SWIFT_PNG_BUCKET = "completed"
-
-IMG_LOC = "/tmp/"
-IMG_EXT = ".png"
 
 # swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
 
@@ -152,7 +147,7 @@ class grasslandsat:
                         havebucket = 1
             if not havebucket:
 
-                command = "swift -A "+SWIFT_PROXY+" -U "+SWIFT_USER+" -K "+SWIFT_PWD+" download "+b
+                command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b
                 # spawna shell that executes swift, we set the sid of the shell so
                 #  we can kill it and all its children with os.killpg
                 p = subprocess.Popen(command, shell=True, 
@@ -344,8 +339,8 @@ class grasslandsat:
 
     def uploadToSwift(self):
         print "Uploading processed image to swift"
-        command = "swift -A "+SWIFT_PROXY+" -U "+SWIFT_USER+" -K "\
-            +SWIFT_PWD+" upload "+SWIFT_PNG_BUCKET+" "+self.img.imgname
+        command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "\
+            +settings.SWIFT_PWD+" upload "+settings.SWIFT_PNG_BUCKET+" "+self.img.imgname
         p = subprocess.Popen(command, shell=True, 
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
