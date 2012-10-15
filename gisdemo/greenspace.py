@@ -7,6 +7,8 @@ import datetime
 import sys
 import os
 
+import settings
+
 import landsatImg
 import dbObj
 import trim
@@ -34,12 +36,7 @@ M_PER_PIXEL = 30
 # do we want to print images
 PRINT_IMG = True
 
-PRINT_DBG_STR = True # print to stdout
-
-# 
 LOG_FILE = None
-LOG_NAME = "/var/log/greenspace.log"
-
 
 
 def log(*args):
@@ -297,21 +294,23 @@ if __name__ == '__main__':
     if len(sys.argv) < 1:
         print "Must pass server name as 1st arg!"
         exit
-
-    servname = sys.argv[1]
-
     try:
-        LOG_FILE = open(LOG_NAME, 'a')
+        servname = sys.argv[1]
+    except IndexError:
+        print "Error: pass a server name as argv[1]"
+        
+    try:
+        LOG_FILE = open(settings.LOG_NAME, 'a')
     except IOError as e:
         print "Failed to open Log:", e, "\nLogging to stderr"
 
     os.chdir('/tmp')
 
     log("Started")
-    while(1):
-        proc = main('all', servname)
-
-    log("Stopped")
-
-    if LOG_FILE:
-        LOG_FILE.close()
+    try:
+        while(1):
+            proc = main('all', servname)
+    finally:
+        log("Stopped")
+        if LOG_FILE:
+            LOG_FILE.close()
