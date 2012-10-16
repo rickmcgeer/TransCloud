@@ -4,14 +4,17 @@
 #import psycopg2
 import math
 import datetime
-import sys
-import os
 
+import os
+import socket
 import settings
 
+from logging import log
+import logging
 import landsatImg
 import dbObj
-import trim
+
+
 
 
 # NOTE: these should really be in dbObj.py but ahm lay z
@@ -24,6 +27,9 @@ YMIN = 4
 XMAX = 5
 YMAX = 6
 
+servname = "unknown"
+
+pgConn = None
 
 # val of alpha pixels we want the space around the polygon to be
 MASK_COLOUR = 0
@@ -35,29 +41,6 @@ M_PER_PIXEL = 30
 
 # do we want to print images
 PRINT_IMG = True
-
-LOG_FILE = None
-
-
-def log(*args):
-    """ Write a timestamp and the args passed to the log. 
-    If there is no log file we treat stderr as our log
-    """
-    logs = []
-	
-    if PRINT_DBG_STR:
-        logs.append(sys.stderr)
-
-    if LOG_FILE:
-        logs.append(LOG_FILE)
-    elif not len(logs):
-        logs.append(sys.stderr)
-
-    for lf in logs:
-        msg = str(datetime.datetime.now()) + ": "
-        for arg in args:
-            msg += str(arg) + " "
-        lf.write(msg+'\n')
 
 
 
@@ -180,11 +163,11 @@ def wkt_to_list(wkt):
 
 
 
-def get_img_size(pgConn, long_min, lat_min, long_max, lat_max):
+def get_img_size(long_min, lat_min, long_max, lat_max):
     """ Given a bounding box of lat and long coords calculates
     the image size in pixels required to encompass the area """
 
-    def get_dist_from_pts(pgConn, a, b):
+    def get_dist_from_pts(a, b):
         """ Queries the database to ge the distance in m between 
         2 lat long points """
         
@@ -194,10 +177,10 @@ def get_img_size(pgConn, long_min, lat_min, long_max, lat_max):
         return float(records[0][0])
 
     # get the x and y length of our bounding box in meters
-    x_meters = get_dist_from_pts(pgConn, (long_min, lat_min), (long_max, lat_min))
-    y_meters = get_dist_from_pts(pgConn, (long_min, lat_min), (long_min, lat_max))
+    x_meters = get_dist_from_pts((long_min, lat_min), (long_max, lat_min))
+    y_meters = get_dist_from_pts((long_min, lat_min), (long_min, lat_max))
 
-    if PRINT_DBG_STR:
+    if settings.PRINT_DBG_STR:
         print "width:", x_meters, " height:", y_meters
 		
     if x_meters < M_PER_PIXEL or y_meters < M_PER_PIXEL:
@@ -208,81 +191,98 @@ def get_img_size(pgConn, long_min, lat_min, long_max, lat_max):
     y_pixels = int(math.ceil(y_meters / M_PER_PIXEL))
 
     return (x_pixels, y_pixels)
-    
 
 
-def main(location, servname="Temp Server Name"):
+def process_city(gid, cityname, convex_hull, xmin_box, location):
+
+    assert (gid is not None and cityname is not None and convex_hull is not None), "Process city inputs are None"
+    logging.prefix = cityname
+    # box is floats: [xmin, ymin, xmax, ymax]
+    box = xmin_box
+    #img_w, img_h = get_img_size(pgConn, box[0], box[1], box[2], box[3])
+    #print " -> w:h = ", img_w, ":", img_h
+
+    greenspace = 0
+    #if img_w and img_h:
+
+    coord_sys = "EPSG:" + dbObj.GEOG
+
+    start_t = datetime.datetime.now()
+
+    log("Invoking Grass")
+    lsimg = landsatImg.grasslandsat(gid, cityname, box, coord_sys, location)
+
+    log("Getting Image List")
+    lsimg.getImgList(pgConn)
+
+    log("Getting Images from Swift")
+    lsimg.getSwiftImgs()
+
+    log("Combine into PNG")
+    lsimg.combineIntoPng()
+
+    log("Read Image Data")
+    lsimg.img.readImgData()
+
+    # get polygon as list of points (ie, not a string)
+    log("Extracting Polygon points")
+    polygon = wkt_to_list(convex_hull)
+
+    log("Calculating Greenspace")
+    greenspace = calc_greenspace(lsimg.img, polygon)
+
+    log("Greenvalue of " ,str(greenspace), " was found")
+
+    # dont insert if we have no greenspace
+    if greenspace:
+        
+        end_t = datetime.datetime.now()
+
+        # append update statement to string
+        update_stmnt = pgConn.createUpdateStmnt(greenspace,
+                                                lsimg.gid, lsimg.city,
+                                                start_t, end_t,
+                                                lsimg.img.imgname,
+                                                servname, location)
+
+        lsimg.uploadToSwift()
+        pgConn.performUpdate(update_stmnt)
+    else:
+        log("Skipping database update and image sync because green value was None")
+
+    log("Cleanup")
+    del lsimg
+
+
+    log("RESULT:",gid, cityname, greenspace)
+
+
+
+def main(location):
 	
-    num_updates = 0
-
+    global pgConn
+    log("Connecting to database")
     pgConn = dbObj.pgConnection()
 
+    log("Getting new cities from database")
     select_query = pgConn.createSelectQuery(location)
     records = pgConn.performSelect(select_query)
-	
-    print "Fetched", len(records), location, "records"
+    log("Fetched", len(records), location, "records")
 
     for record in records:
         try:
-            print "Processing", record[GID], record[CITY_NAME]
+            log("Processing", record[GID], record[CITY_NAME])
 
             if record[GID] is None:	
-                log("Null GID")
+                log("Null GID, skipping")
                 continue
-
-            start_t = datetime.datetime.now()
-
-            # box is floats: [xmin, ymin, xmax, ymax]
-            box = record[XMIN:]
-            #img_w, img_h = get_img_size(pgConn, box[0], box[1], box[2], box[3])
-            #print " -> w:h = ", img_w, ":", img_h
-
-            greenspace = 0
-            #if img_w and img_h:
-
-            coord_sys = "EPSG:" + dbObj.GEOG
-
-            lsimg = landsatImg.grasslandsat(record[GID], record[CITY_NAME], 
-                                            box, coord_sys, location)
-            lsimg.getImgList(pgConn)
-            lsimg.getSwiftImgs()
-            lsimg.combineIntoPng()
-            lsimg.img.readImgData()
-
-            # get polygon as list of points (ie, not a string)
-            polygon = wkt_to_list(record[CV_HULL])
-
-            print " -> calculating greenspace"
-            # do greenspace calc on image
-            greenspace = calc_greenspace(lsimg.img, polygon)
-            #greenspace = 0.2
-            #lsimg.img.writeImg()
-            #print "WARNING TERRIBLE GREEN VALUE"
-            print " -> greenspace =", greenspace
-
-            # dont insert if we have no greenspace
-            if greenspace:
-
-                end_t = datetime.datetime.now()
-
-                # append update statement to string
-                update_stmnt = pgConn.createUpdateStmnt(greenspace,
-                                                        lsimg.gid, lsimg.city,
-                                                        start_t, end_t,
-                                                        lsimg.img.imgname,
-                                                        servname, location)
-
-                lsimg.uploadToSwift()
-                pgConn.performUpdate(update_stmnt)
-
-            del lsimg
-
-            if PRINT_DBG_STR:
-                print record[GID], record[CITY_NAME], greenspace
-            log(record[GID], record[CITY_NAME], greenspace)
+            
+            process_city(record[GID], record[CITY_NAME], record[CV_HULL], record[XMIN:], location)
 
         except AssertionError as e:
             log(e)
+        except Exception as e:
+            log("Proccsing", record[CITY_NAME], "with error", str(e))
 
     del pgConn
     return len(records)
@@ -291,26 +291,15 @@ def main(location, servname="Temp Server Name"):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 1:
-        print "Must pass server name as 1st arg!"
-        exit
-    try:
-        servname = sys.argv[1]
-    except IndexError:
-        print "Error: pass a server name as argv[1]"
-        
-    try:
-        LOG_FILE = open(settings.LOG_NAME, 'a')
-    except IOError as e:
-        print "Failed to open Log:", e, "\nLogging to stderr"
+    servname = socket.gethostname()
 
+    logging.start()
+    
+    log("Starting Green Cities on", servname)
+    
     os.chdir('/tmp')
 
-    log("Started")
     try:
-        while(1):
-            proc = main('all', servname)
+        proc = main('all')
     finally:
-        log("Stopped")
-        if LOG_FILE:
-            LOG_FILE.close()
+        logging.close()

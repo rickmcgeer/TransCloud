@@ -52,10 +52,10 @@ def filter(path):
 
 
 def upload_single_landsat(lsat):
-    program = "echo"
+    program = "swift"
 
     command = [program, "-A",
-               "http://swift.gcgis.trans-cloud.net:8080/auth/v1.0",
+               "http://newswift.gcgis.trans-cloud.net:8080/auth/v1.0",
                "-U",
                "system:gis",
                "-K",
@@ -96,9 +96,12 @@ if len(sys.argv) > 1:
 
 if len(sys.argv) > 1 and spot == 0:
     print "Warning: didn't find restore point."
-print spot
+new_size = 0
+for ls in to_upload[:spot]:
+    new_size += ls.size
 to_upload = to_upload[spot:]
-
+total_size = total_size - new_size
+ 
 orig_size = total_size
 starttime = time.time()
 
@@ -108,7 +111,6 @@ ndone = 0
 print nfiles
 sizelock.release()
 
-sys.exit(1)
 print "Phase 2: Uploading"
 decimal.getcontext().prec = 4
 #for landsat in to_upload:
