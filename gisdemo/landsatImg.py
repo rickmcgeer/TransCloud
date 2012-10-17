@@ -1,9 +1,41 @@
-import psycopg2
+import os
+import sys
+try:
+    import psycopg2
+    import png
+except:
+    print "Error: Please install the psycopg2 pypng python packages and libpg2-dev system package."
+    os.exit(1)
+
+import settings
+
+# export GISDBASE=$HOME/grassdata
+os.environ['GISDBASE'] = str(os.path.join(os.environ['HOME'], 'grassdata'))
+
+# export GISBASE=/usr/lib/grass64
+os.environ['GISBASE'] = "/usr/lib/grass64"
+
+# export PYTHONPATH=$GISBASE/etc/python:$PYTHONPATH
+pp = os.environ.get('PYTHONPATH', "")
+os.environ['PYTHONPATH']  = os.path.join(os.environ['GISBASE'], 'etc/python')+":"+pp
+sys.path.append(os.path.join(os.environ['GISBASE'], 'etc/python'))
+# export PATH=$GISBASE/bin:$GISBASE/scripts:$PATH
+os.environ['PATH'] = str(os.path.join(os.environ['GISBASE'], 'bin')) + ":" + os.environ['PATH']
+
+# export LD_LIBRARY_PATH=$GISBASE/lib:$LD_LIBRARY_PATH
+ld_path = os.environ.get('LD_LIBRARY_PATH', "")
+os.environ['LD_LIBRARY_PATH'] = str(os.path.join(os.environ['GISBASE'], 'lib')) + ":" + ld_path
+
+# export GIS_LOCK=$$
+os.environ['GIS_LOCK'] = str(os.getpid())
+
+# export GISRC=$HOME/.grassrc6
+os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
+
+
 import grass.script as grass
 import gzip
-import os
 import subprocess
-import png
 import shutil
 import signal
 
@@ -11,20 +43,12 @@ import dbObj
 import trim
 import combine
 
-SWIFT_PROXY = "http://10.0.0.3:8080/auth/v1.0"
-SWIFT_USER = "system:gis"
-SWIFT_PWD = "uvicgis"
-SWIFT_PNG_BUCKET = "completed"
-
-IMG_LOC = "/tmp/"
-IMG_EXT = ".png"
 
 # swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
 
 
-#os.environ['GISDBASE'] = os.path.join(os.environ['HOME'], 'grassdata')
-#os.environ['GISBASE'] = "/usr/lib/grass64"
-#os.environ['PYTHONPATH'] = os.path.join(os.environ['GISBASE'], 'etc/python')+":"+os.environ['PYTHONPATH']
+
+
 
 # so we dont hang trying to dl from swift
 class Alarm(Exception):
@@ -146,7 +170,7 @@ class grasslandsat:
                         havebucket = 1
             if not havebucket:
 
-                command = "swift -A "+SWIFT_PROXY+" -U "+SWIFT_USER+" -K "+SWIFT_PWD+" download "+b
+                command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b
                 # spawna shell that executes swift, we set the sid of the shell so
                 #  we can kill it and all its children with os.killpg
                 p = subprocess.Popen(command, shell=True, 
@@ -338,8 +362,8 @@ class grasslandsat:
 
     def uploadToSwift(self):
         print "Uploading processed image to swift"
-        command = "swift -A "+SWIFT_PROXY+" -U "+SWIFT_USER+" -K "\
-            +SWIFT_PWD+" upload "+SWIFT_PNG_BUCKET+" "+self.img.imgname
+        command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "\
+            +settings.SWIFT_PWD+" upload "+settings.SWIFT_PNG_BUCKET+" "+self.img.imgname
         p = subprocess.Popen(command, shell=True, 
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()

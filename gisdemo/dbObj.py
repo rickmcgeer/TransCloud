@@ -1,10 +1,6 @@
 import psycopg2
+import settings
 
-# database constants
-DB_HOST = "10.0.0.16"
-DB_USER = "root"
-DB_PASS = ""
-GIS_DATABASE = "world"
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
 CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
@@ -30,10 +26,10 @@ class pgConnection:
 
     def __init__(self):
         try:
-            self.conn = psycopg2.connect(host=DB_HOST,
-                                         database=GIS_DATABASE,
-                                         user=DB_USER,
-                                         password=DB_PASS)
+            self.conn = psycopg2.connect(host=settings.DB_HOST,
+                                         database=settings.GIS_DATABASE,
+                                         user=settings.DB_USER,
+                                         password=settings.DB_PASS)
         except psycopg2.ProgrammingError as e:
             print "Failed to connect to database:", str(e)
             raise # may want to raise some other error or somebody?

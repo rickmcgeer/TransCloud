@@ -21,8 +21,8 @@ for line in out.split("\n"):
         p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
         out, err = p.communicate()
         print out
-        for files in out.split("\n"):
-            to_crawl.append((line, files))
+        all_files =  out.split("\n"):
+        to_crawl.append((line, all_files[0], all_files))
 
 print to_crawl
 to_crawl[:] = [f for f in to_crawl if f != ""]
@@ -33,6 +33,9 @@ for files in to_crawl:
     download_command.append("download")
     download_command.append(files[0])
     download_command.append(files[1])
+    rest = files[2]
+    for rest:
+        insert into DB
     print download_command
     #p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
     #out, err = p.communicate()
