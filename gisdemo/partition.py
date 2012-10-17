@@ -34,7 +34,8 @@ def create_database(conn, cur):
 
 def update_database(conn, cur, name, wkt):
     try:
-        update = "INSERT INTO " + GIS_TAB + " (continent_name, the_geom)  VALUES (" + str(name) + "," + " ST_GeomFromText('" + wkt + "', 4326));"
+        update = "INSERT INTO " + GIS_TAB + " (continent_name, the_geom)  VALUES (" + str(name) \
+            + "," + " ST_GeomFromText('" + wkt + "', 4326));"
         print update
         cur.execute(update)
         conn.commit()
@@ -47,14 +48,22 @@ if __name__ == '__main__':
     cur = conn.cursor()
     create_database(conn, cur)
     
-    wkt = 'POLYGON((' + str(-180) + ' ' + str(85) + ', ' + str(-18) + ' ' + str(85) + ', ' + str(-18) + ' ' + str(18) + ', ' + str(-180) + ' ' + str(18) + ', ' + str(-180) + ' ' + str(85) + '))'
+    wkt = 'POLYGON((' + str(-180) + ' ' + str(85) + ', ' + str(-18) + ' ' + str(85) + ', ' \
+        + str(-18) + ' ' + str(18) + ', ' + str(-180) + ' ' + str(18) + ', ' + str(-180) \
+        + ' ' + str(85) + '))'
     update_database(conn, cur, "'north_america'", wkt)
     
-    wkt = 'POLYGON((' + str(-18) + ' ' + str(85) + ', ' + str(60) + ' ' + str(85) + ', ' + str(60) + ' ' + str(18) + ', ' + str(-18) + ' ' + str(18) + ', ' + str(-18) + ' ' + str(85) + '))'
+    wkt = 'POLYGON((' + str(-18) + ' ' + str(85) + ', ' + str(60) + ' ' + str(85) + ', ' \
+        + str(60) + ' ' + str(18) + ', ' + str(-18) + ' ' + str(18) + ', ' + str(-18) + ' ' \
+        + str(85) + '))'
     update_database(conn, cur, "'europe'", wkt)
     
-    wkt = 'POLYGON((' + str(-180) + ' ' + str(18) + ', ' + str(60) + ' ' + str(18) + ', ' + str(60) + ' ' + str(-58) + ', ' + str(-180) + ' ' + str(58) + ', ' + str(-180) + ' ' + str(18) + '))'
+    wkt = 'POLYGON((' + str(-180) + ' ' + str(18) + ', ' + str(60) + ' ' + str(18) + ', ' \
+        + str(60) + ' ' + str(-58) + ', ' + str(-180) + ' ' + str(58) + ', ' + str(-180) \
+        + ' ' + str(18) + '))'
     update_database(conn, cur, "'south_america_africa'", wkt)
     
-    wkt = 'POLYGON((' + str(60) + ' ' + str(85) + ', ' + str(180) + ' ' + str(85) + ', ' + str(180) + ' ' + str(-85) + ', ' + str(60) + ' ' + str(-58) + ', ' + str(60) + ' ' + str(85) + '))'
+    wkt = 'POLYGON((' + str(60) + ' ' + str(85) + ', ' + str(180) + ' ' + str(85) + ', ' \
+        + str(180) + ' ' + str(-85) + ', ' + str(60) + ' ' + str(-58) + ', ' + str(60) \
+        + ' ' + str(85) + '))'
     update_database(conn, cur, "'asia_oceania'", wkt)
