@@ -162,13 +162,13 @@ class grasslandsat:
 
         print "getting images from swift!"
         for b in self.buckets:
-            havebucket = 0
-            for f in self.files:
-                if b in f:
-                    if os.path.exists(f):
-                        print "Skipping bucket "+b+" as we already have it!"
-                        havebucket = 1
-            if not havebucket:
+#            havebucket = 0
+#            for f in self.files:
+#                if b in f:
+#                    if os.path.exists(f):
+#                        print "Skipping bucket "+b+" as we already have it!"
+#                        havebucket = 1
+#           if not havebucket:
 
                 command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b
                 # spawna shell that executes swift, we set the sid of the shell so
