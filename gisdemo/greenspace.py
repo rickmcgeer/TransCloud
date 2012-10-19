@@ -209,9 +209,9 @@ def process_city(gid, cityname, convex_hull, xmin_box, location):
 
     start_t = datetime.datetime.now()
 
-    log("Invoking Grass")
-    lsimg = landsatImg.grasslandsat(gid, cityname, box, coord_sys, location)
-
+    log("New storage class")
+    lsimg = landsatImg.GrassLandsat(gid, cityname, box, coord_sys, location)
+    print "pgConn:", pgConn
     log("Getting Image List")
     lsimg.getImgList(pgConn)
 
@@ -257,22 +257,23 @@ def process_city(gid, cityname, convex_hull, xmin_box, location):
     log("RESULT:",gid, cityname, greenspace)
 
 
+def get_cities(location):
+    
+    log("Getting new cities from database")
+    select_query = pgConn.createSelectQuery(location, 50)
+    records = pgConn.performSelect(select_query)
+    log("Fetched", len(records), location, "records")
+    return records
 
 def main(location):
 	
     global pgConn
-    log("Connecting to database")
-    pgConn = dbObj.pgConnection()
-
-    log("Getting new cities from database")
-    select_query = pgConn.createSelectQuery(location)
-    records = pgConn.performSelect(select_query)
-    log("Fetched", len(records), location, "records")
-
+    records = get_cities(location)
+    os.chdir('/tmp')
     for record in records:
         try:
             log("Processing", record[GID], record[CITY_NAME])
-
+            continue
             if record[GID] is None:	
                 log("Null GID, skipping")
                 continue
@@ -288,18 +289,19 @@ def main(location):
     return len(records)
 
 
-
-if __name__ == '__main__':
-
+def init():
+    global pgConn
     servname = socket.gethostname()
 
     logging.start()
     
     log("Starting Green Cities on", servname)
-    
-    os.chdir('/tmp')
+    log("Connecting to database")
+    pgConn = dbObj.pgConnection()
 
-    try:
-        proc = main('all')
-    finally:
-        logging.close()
+def close():
+    logging.close()
+
+
+if __name__ == '__main__':
+    init()

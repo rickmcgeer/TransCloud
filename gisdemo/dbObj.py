@@ -39,7 +39,7 @@ class pgConnection:
         self.conn.close()
 
 
-    def createSelectQuery(self, region):
+    def createSelectQuery(self, region, limit):
         """ Returns an sql select statement as a string which gets
         records from the table containing the specified region
         with no greenspace value
@@ -63,7 +63,7 @@ class pgConnection:
         where = " WHERE "+GREEN_COL+"=0"
         
 		
-        limit = " LIMIT 1000"
+        limit = " LIMIT " + str(limit)
         #limit = ""
 
         return "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
