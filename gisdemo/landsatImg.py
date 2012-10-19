@@ -139,14 +139,6 @@ class GrassLandsat:
 
         print "getting images from swift!"
         for b in self.buckets:
-            havebucket = 0
-            for f in self.files:
-                if f in b:
-                    if os.path.exists(f):
-                        print "Skipping bucket "+b+" as we already have it!"
-                        havebucket = 1
-            if not havebucket:
-
                 command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b
                 # spawna shell that executes swift, we set the sid of the shell so
                 #  we can kill it and all its children with os.killpg
