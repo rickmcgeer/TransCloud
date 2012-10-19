@@ -118,6 +118,3 @@ if __name__ == "__main__":
 
     #getShapefile(23839)
 
-test()
-
-
