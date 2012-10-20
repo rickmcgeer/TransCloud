@@ -9,8 +9,8 @@ import os
 import socket
 import settings
 
-from logging import log
-import logging
+from greencitieslog import log
+import greencitieslog
 import landsatImg
 import dbObj
 
@@ -196,7 +196,7 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
 def process_city(gid, cityname, convex_hull, xmin_box, location):
 
     assert (gid is not None and cityname is not None and convex_hull is not None), "Process city inputs are None"
-    logging.prefix = cityname
+    greencitieslog.prefix = cityname
     # box is floats: [xmin, ymin, xmax, ymax]
     box = xmin_box
     #img_w, img_h = get_img_size(pgConn, box[0], box[1], box[2], box[3])
@@ -257,10 +257,10 @@ def process_city(gid, cityname, convex_hull, xmin_box, location):
     log("RESULT:",gid, cityname, greenspace)
 
 
-def get_cities(location):
+def get_cities(location, num_cities=10):
     
     log("Getting new cities from database")
-    select_query = pgConn.createSelectQuery(location, 50)
+    select_query = pgConn.createSelectQuery(location, num_cities)
     records = pgConn.performSelect(select_query)
     log("Fetched", len(records), location, "records")
     return records
@@ -273,7 +273,7 @@ def main(location):
     for record in records:
         try:
             log("Processing", record[GID], record[CITY_NAME])
-            continue
+            
             if record[GID] is None:	
                 log("Null GID, skipping")
                 continue
@@ -282,8 +282,8 @@ def main(location):
 
         except AssertionError as e:
             log(e)
-        except Exception as e:
-            log("Proccsing", record[CITY_NAME], "with error", str(e))
+        #except Exception as e:
+        #    log("Processing ", record[CITY_NAME], " with error ", str(e))
 
     del pgConn
     return len(records)
@@ -293,15 +293,16 @@ def init():
     global pgConn
     servname = socket.gethostname()
 
-    logging.start()
+    greencitieslog.start()
     
     log("Starting Green Cities on", servname)
     log("Connecting to database")
     pgConn = dbObj.pgConnection()
 
 def close():
-    logging.close()
+    greencitieslog.close()
 
 
 if __name__ == '__main__':
     init()
+    main("all")

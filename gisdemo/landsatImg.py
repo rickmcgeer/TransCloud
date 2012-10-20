@@ -22,12 +22,8 @@ import combine
 
 
 # swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
-
-
-
-
-
 # so we dont hang trying to dl from swift
+
 class Alarm(Exception):
     pass
 def alarm_handler(signum, frame):
@@ -99,34 +95,74 @@ class GrassLandsat:
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
+    def check_bad_record(self, obj):
+        """Does this record have the world wrap around bug? if so, discount"""
+        b1 = obj['coordinates'][0][0]
+        b2 = obj['coordinates'][0][1]
+        b3 = obj['coordinates'][0][2]
+        b4 = obj['coordinates'][0][3]
+        
+        leftlat = b1[0]
+        rightlat = b3[0]
+        
+        #are we near the edge?
+        if abs(leftlat) > 175 or abs(rightlat) > 175:
+            isleftneg = leftlat<0
+            isrightneg = rightlat<0
+            if isleftneg != isrightneg:
+                return True,[leftlat, rightlat]
+            else:
+                return False,[]
+        else:
+            return False,[]
+            
+
+        
+
     def getImgList(self,pgConn):
         """ """
-
-        sql = "select fname from (select ST_Transform(the_geom, 4326) as the_geom from map where gid = "+str(self.gid)+") as map , tiff4326 where ST_Intersects(map.the_geom, tiff4326.the_geom);"
+        import json
+        sql = "select fname, ST_AsGeoJson(tiff4326.the_geom) "\
+            "from (select ST_Transform(the_geom, 4326) as the_geom from map where gid = "+str(self.gid)+") as map , tiff4326 where ST_Intersects(map.the_geom, tiff4326.the_geom);"
 
         records = pgConn.performSelect(sql)
-
         assert len(records), "No data crawled yet"
-       
+        decided_date = None
         for r in records:
+            is_bad, bb = self.check_bad_record(json.loads(r[1]))
+            if is_bad:
+                print "Warning: Skipping", r[0], "because of wraparound bug. Coords:",bb
+                continue
+            else:
+                print "Info: Proccessing", r[0]
+
             pieces = r[0].split('_')
             if len(pieces) == 4:
                 # we only want 7dt for landsat 7 (7),decade set (d) and triband (t)
+                date = pieces[1][3:]
                 if '7dt' in pieces[1]:
+                    # make sure dates line up
+                    if not decided_date:
+                        decided_date = date
+                    else:
+                        assert date == decided_date, "Adding images from two time peroids"
+
                     s = pieces[0]+"_"+pieces[1]+"."+pieces[2]+"."+pieces[3]+".tif.gz"
                     self.files.append(s)
                     # if this is a new prefix add it to the bucket list so we can dl from swift
                     if pieces[0] not in self.buckets:
                         self.buckets.append(pieces[0])
+                else:
+                    print "Skipping", r[0]
             else:
-                print "Incorrect file format from database", r[0]
+                raise Exception("Invalid image name in database:" + r[0])
 
         #print self.files
         #print self.buckets
 
 
-        assert(len(self.files)) == 3, "Currently can't stitch together images, skipping " + str(self.gid)
         print len(self.files), "images intersect the city"
+
         return len(self.files)
 
 
@@ -169,7 +205,7 @@ class GrassLandsat:
         """ """
 
         def getBand(fname):
-            """ """
+            """ Check which band is in a filename"""
             if 'b03.' in fname:
                 return 3
             if 'b04.' in fname:
@@ -290,7 +326,8 @@ class GrassLandsat:
             # p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
 
         #else:
-        print "Getting shapefile for", str(self.gid)
+
+        log("Getting shapefile for", str(self.gid))
         shpname = trim.getShapefile(self.gid)
         #try:
         trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_")
