@@ -64,7 +64,7 @@ def _compose_tiff(new, path):
         uncompressed_file = _uncompress(file_path)
         myFiles.append(uncompressed_file)
 
-    mergeCmd = '/usr/bin/gdal_merge.py -n 9999 -a_nodata 9999 -of GTIFF -o '
+    mergeCmd = '/usr/bin/gdal_merge.py -n -9999 -a_nodata -9999 -of GTIFF -o '
     mergeCmd += master_path
     for filename in myFiles:
         mergeCmd += ' ' + filename
