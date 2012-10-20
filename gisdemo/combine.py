@@ -18,8 +18,9 @@ def _uncompress(file_path):
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     output = p.stdout.read()
     p.wait()
-    assert p.returncode == 0, "GDalWarp Failed"
+    assert p.returncode == 0, "Uncompress Failed"
     print output
+    return '%s.uncompressed.tif' % file_path
 
 
 def _remove_nearblack(file_path):
@@ -54,21 +55,46 @@ def _stitch_with_master(file_path, master_path):
 def _compose_tiff(new, path):
     master_path = path + "/"+new + ".tif"
 
+#
+# New Code begins
+#
+    myFiles = []
     for filename in sorted(os.listdir(path)):
-
         file_path = os.path.join(path, filename)
+        uncompressed_file = _uncompress(file_path)
+        myFiles.append(uncompressed_file)
 
-        print "Uncompressing...%s" % file_path
-        _uncompress(file_path)
+    mergeCmd = '/usr/bin/gdal_merge.py -n 9999 -a_nodata 9999 -of GTIFF -o '
+    mergeCmd += master_path
+    for filename in myFiles:
+        mergeCmd += ' ' + filename
 
-        print "Removing near black...%s" % file_path
-        _remove_nearblack("%s.uncompressed.tif" % file_path)
+    print "Merging..." + mergeCmd
 
-        print "Stitching with master...%s" % file_path
-        _stitch_with_master("%s.uncompressed.tif" % file_path, master_path)
+    p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    p.wait()
+    output = p.stdout.read()
+    assert p.returncode == 0, "GDalMerge Failed"
+    print output
+#
+# New Code ends...
+#
 
-        print "Stitched with master %s!" % file_path
-        os.remove("%s.uncompressed.tif" % file_path)
+    ## for filename in sorted(os.listdir(path)):
+
+    ##     file_path = os.path.join(path, filename)
+
+    ##     print "Uncompressing...%s" % file_path
+    ##     _uncompress(file_path)
+
+    ##     print "Removing near black...%s" % file_path
+    ##     _remove_nearblack("%s.uncompressed.tif" % file_path)
+
+    ##     print "Stitching with master...%s" % file_path
+    ##     _stitch_with_master("%s.uncompressed.tif" % file_path, master_path)
+
+    ##     print "Stitched with master %s!" % file_path
+    ##     os.remove("%s.uncompressed.tif" % file_path)
 
     #return new + ".tif"
     return master_path
