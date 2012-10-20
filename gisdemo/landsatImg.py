@@ -9,29 +9,6 @@ except:
 
 import settings
 
-# export GISDBASE=$HOME/grassdata
-os.environ['GISDBASE'] = str(os.path.join(os.environ['HOME'], 'grassdata'))
-
-# export GISBASE=/usr/lib/grass64
-os.environ['GISBASE'] = "/usr/lib/grass64"
-
-# export PYTHONPATH=$GISBASE/etc/python:$PYTHONPATH
-pp = os.environ.get('PYTHONPATH', "")
-os.environ['PYTHONPATH']  = os.path.join(os.environ['GISBASE'], 'etc/python')+":"+pp
-sys.path.append(os.path.join(os.environ['GISBASE'], 'etc/python'))
-# export PATH=$GISBASE/bin:$GISBASE/scripts:$PATH
-os.environ['PATH'] = str(os.path.join(os.environ['GISBASE'], 'bin')) + ":" + os.environ['PATH']
-
-# export LD_LIBRARY_PATH=$GISBASE/lib:$LD_LIBRARY_PATH
-ld_path = os.environ.get('LD_LIBRARY_PATH', "")
-os.environ['LD_LIBRARY_PATH'] = str(os.path.join(os.environ['GISBASE'], 'lib')) + ":" + ld_path
-
-# export GIS_LOCK=$$
-os.environ['GIS_LOCK'] = str(os.getpid())
-
-# export GISRC=$HOME/.grassrc6
-os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
-
 
 import grass.script as grass
 import gzip
@@ -65,7 +42,7 @@ def alarm_handler(signum, frame):
 
 
 
-class boundBox:
+class BoundBox:
     """  """
 
     def __init__(self, box):
@@ -77,6 +54,7 @@ class boundBox:
     def getBox(self):
         return [self.xmin, self.ymin, self.xmax, self.ymax]
 
+<<<<<<< HEAD
 import re
 
 def checkValidImageSpec(identifierAsList):
@@ -138,6 +116,10 @@ class imageID:
 from operator import itemgetter, attrgetter        
         
 class grasslandsat:
+=======
+
+class GrassLandsat:
+>>>>>>> 94c8d35a768cf9341588b541c24d0178048e67a9
     """ """
 
     def __init__(self, gid, cityName, box, coordSys, location):
@@ -147,7 +129,7 @@ class grasslandsat:
         if not self.city:
             self.city = ""
 
-        self.bbox = boundBox(box)
+        self.bbox = BoundBox(box)
         self.projection = coordSys
         self.buckets = []
         self.files = []
@@ -171,7 +153,7 @@ class grasslandsat:
         ##                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-    def getImgList(self, pgConn):
+    def getImgList(self,pgConn):
         """ """
 
         sql = "select fname from (select ST_Transform(the_geom, 4326) as the_geom from map where gid = "+str(self.gid)+") as map , tiff4326 where ST_Intersects(map.the_geom, tiff4326.the_geom);"
@@ -261,6 +243,7 @@ class grasslandsat:
         assert(len(self.buckets))
 
         print "getting images from swift!"
+
         ## for b in self.buckets:
         ##     havebucket = 0
         ##     for f in self.files:

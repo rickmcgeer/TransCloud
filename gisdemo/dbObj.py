@@ -39,7 +39,7 @@ class pgConnection:
         self.conn.close()
 
 
-    def createSelectQuery(self, region):
+    def createSelectQuery(self, region, limit):
         """ Returns an sql select statement as a string which gets
         records from the table containing the specified region
         with no greenspace value
@@ -63,7 +63,7 @@ class pgConnection:
         where = " WHERE "+GREEN_COL+"=0"
         
 		
-        limit = " LIMIT 1000"
+        limit = " LIMIT " + str(limit)
         #limit = ""
 
         return "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
@@ -87,6 +87,9 @@ class pgConnection:
 
         return query
 
+    def createClusterQuery(self,wkt):
+       return "SELECT id, continent_name FROM by_continent WHERE ST_Intersects(by_continent.the_geom, ST_GeographyFromText('"+wkt+"'));"
+       
 
     def performSelect(self, query):
         """ Perform 'query' in the database, then fetch the results
@@ -150,3 +153,11 @@ class pgConnection:
         except psycopg2.ProgrammingError as e:
             print "Failed to update database:", str(e)
             return
+
+
+if __name__ == "__main__":
+    db = pgConnection()
+    q = db.createClusterQuery("SRID=4326;POINT(-43.23456 72.4567772)")
+    assert db.performSelect(q)[0] == 1
+    
+    
