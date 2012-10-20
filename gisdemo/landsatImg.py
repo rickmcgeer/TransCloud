@@ -54,7 +54,7 @@ class BoundBox:
     def getBox(self):
         return [self.xmin, self.ymin, self.xmax, self.ymax]
 
-<<<<<<< HEAD
+
 import re
 
 def checkValidImageSpec(identifierAsList):
@@ -115,11 +115,8 @@ class imageID:
                         
 from operator import itemgetter, attrgetter        
         
-class grasslandsat:
-=======
 
 class GrassLandsat:
->>>>>>> 94c8d35a768cf9341588b541c24d0178048e67a9
     """ """
 
     def __init__(self, gid, cityName, box, coordSys, location):
