@@ -61,7 +61,6 @@ class pgConnection:
         #where = " WHERE gid > 19093 AND gid < 19099" # this is boston
         #where = " WHERE name LIKE 'BOSTON' OR name LIKE 'LONDON' OR name LIKE 'CANCUN'"
         where = " WHERE "+GREEN_COL+"=0"
-        
 		
         limit = " LIMIT " + str(limit)
         #limit = ""
