@@ -6,6 +6,10 @@ import os
 import greenspace
 import tempfile
 import json
+import SimpleHTTPServer
+import SocketServer
+import threading
+import optparse
 
 
 def mapper(entry, params):
@@ -21,7 +25,8 @@ def mapper(entry, params):
             greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all")
         except Exception as e:
             print str(e)
-
+            event name, "(id "+id+")", str(e)
+        event name, "(id "+id+")", "processed"
         print name, id
         return ()
     except Exception as e:
@@ -32,17 +37,20 @@ def mapper_init(x,y):
     print "Mapper Init Done"
 
 
-NUM_MAPPERS=1
-
 if __name__ == '__main__':
+    parser = optparse.OptionParser()
+    parser.add_option("-c", "--num_cities", dest="num_cities", type="int", default=2, help="number of cities to run the calculation on")
+    parser.add_option("-m", "--num_mappers", dest="num_mappers", type="int", default=4, help="number of nodes to map the job to")
+    (options, args_not_used) = parser.parse_args()
+    print "Running with "+str(options.num_cities)+" cities and "+str(options.num_mappers)+" mappers"
     here = os.path.dirname(os.path.realpath(__file__))+"/"
     greenspace.init()
-    cities = greenspace.get_cities("all")
+    cities = greenspace.get_cities("all", options.num_cities)
     input_files = []
     fds = []
-    for n in xrange(NUM_MAPPERS):
+    for n in xrange(options.num_mappers):
         fid,name = tempfile.mkstemp(dir=".")
-        print fid, name
+        print "Temp data file", fid, name
         f = os.fdopen(fid, "w+b")
         fds.append(f)
         input_files.append(name)
@@ -51,16 +59,25 @@ if __name__ == '__main__':
         fd = fds[i%len(input_files)]
         json.dump(c,fd ,separators=(',',':'))
         fd.write("\n")
+        print "City", c[1], "to",fd 
     for f in fds:
         f.close()
-    input_files = ["http://disco1:8081/" + os.path.basename(name) for name in input_files]
+
+    PORT = 8081
+    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    httpd = SocketServer.TCPServer(("", PORT), Handler)
+    print "serving at port", PORT
+    def start_server():
+	httpd.serve_forever()
+    threading.Thread(target=start_server).start()
+    input_files = ["http://disco1:" + str(PORT) + "/" + os.path.basename(name) for name in input_files]
     print input_files
 
     print "Setting up Disco"
     src_files = ["settings.py",
                   "greenspace.py",
                   "landsatImg.py",
-                  "logging.py",
+                  "greencitieslog.py",
                   "partition.py",
                   "trim.py",
                   "dbObj.py",
@@ -88,5 +105,9 @@ if __name__ == '__main__':
     job.run()
 
     print "Job run"
+    #while not job.done():
+    #    
     job.wait(show=True)
     print "Done Job"
+
+    httpd.shutdown()

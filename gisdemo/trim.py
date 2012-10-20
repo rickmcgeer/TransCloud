@@ -1,7 +1,8 @@
 import subprocess
 import os
 import re
-#import dbObj
+import dbObj
+import settings
 
 def get_projection(fil):
     command = "gdalinfo " + fil
@@ -92,8 +93,8 @@ def getShapefile(gid):
     if os.path.exists(shpname):
         return shpname
 
-    pginfo = "host="+dbObj.DB_HOST + " user="+dbObj.DB_USER\
-           + " dbname="+dbObj.GIS_DATABASE
+    pginfo = "host="+settings.DB_HOST + " user="+settings.DB_USER\
+           + " dbname="+settings.GIS_DATABASE
 
     sql = "SELECT the_geom FROM "+dbObj.CITY_TABLE['all']+" WHERE GID = "+str(gid)+";"
 

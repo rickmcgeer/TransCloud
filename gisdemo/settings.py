@@ -43,5 +43,5 @@ os.environ['GIS_LOCK'] = str(os.getpid())
 # export GISRC=$HOME/.grassrc6
 os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 
-
+os.environ['LOCATION_NAME'] = "greenspace"
 
