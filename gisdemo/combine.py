@@ -11,25 +11,27 @@ import os
 import shutil
 from subprocess import Popen, PIPE, STDOUT
 import tempfile
+import settings
 
 
 def _uncompress(file_path):
-    cmd = '/usr/bin/gdal_translate %s %s.uncompressed.tif' % (file_path, file_path)
+    cmd = '/usr/local/bin/gdal_translate %s %s.uncompressed.tif' % (file_path, file_path)
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-    output = p.stdout.read()
     p.wait()
-    assert p.returncode == 0, "Uncompress Failed"
+    output = p.stdout.read()
     print output
+    assert p.returncode == 0, "Uncompress Failed"
     return '%s.uncompressed.tif' % file_path
 
 
 def _remove_nearblack(file_path):
     cmd = '/usr/bin/nearblack -near 20 %s' % file_path
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-    output = p.stdout.read()
     p.wait()
-    assert p.returncode == 0, "GDalWarp Failed"
+    output = p.stdout.read()
     print output
+    assert p.returncode == 0, "GDalWarp Failed"
+    
 
 
 def _stitch_with_master(file_path, master_path):
@@ -64,7 +66,7 @@ def _compose_tiff(new, path):
         uncompressed_file = _uncompress(file_path)
         myFiles.append(uncompressed_file)
 
-    mergeCmd = '/usr/bin/gdal_merge.py -n -9999 -a_nodata -9999 -of GTIFF -o '
+    mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -of GTIFF -o '
     mergeCmd += master_path
     for filename in myFiles:
         mergeCmd += ' ' + filename
@@ -122,9 +124,9 @@ def combine_bands(allfiles, gid="new"):
         else:
             target.append((fname, info))
 
-    temps = {'b03':tempfile.mkdtemp(prefix='landsatb03'),
-             'b04':tempfile.mkdtemp(prefix='landsatb04'),
-             'b07':tempfile.mkdtemp(prefix='landsatb07')}
+    temps = {'b03':tempfile.mkdtemp(prefix='landsatb03', dir=settings.TEMP_FILE_DIR),
+             'b04':tempfile.mkdtemp(prefix='landsatb04', dir=settings.TEMP_FILE_DIR),
+             'b07':tempfile.mkdtemp(prefix='landsatb07', dir=settings.TEMP_FILE_DIR)}
 
     for f in target:
         shutil.copy(f[0], temps[f[1][1]]+"/"+f[0])

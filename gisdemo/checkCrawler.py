@@ -258,7 +258,7 @@ if __name__ == '__main__':
     
     log("Starting Green Cities on", servname)
     
-    os.chdir('/tmp')
+    os.chdir(settings.TEMP_FILE_DIR)
 
     try:
         proc = main('all')
