@@ -15,11 +15,15 @@ def alarm_handler(signum, frame):
 
 
 def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
+
+  if type(args) == list or type(args)==tuple:
+      print args
+      args = ' '.join(args)
   command = "swift -A "+swift_proxy+" -U "+settings.SWIFT_USER+ \
     " -K "+settings.SWIFT_PWD+ " " + \
     operation + " " + \
     bucket + " " + \
-    ' '.join(args)
+    args
 
   print command
 
@@ -54,7 +58,6 @@ def swift(operation, bucket, *args):
   """
   # if the image is migging, upload it
   cache = False
-
   process = do_swift_command("http://"+settings.SWIFT_PROXY1+":8080/auth/v1.0", \
                                  operation, bucket, True, *args)
   if process.returncode != 0:

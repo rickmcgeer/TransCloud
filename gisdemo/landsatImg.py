@@ -21,24 +21,7 @@ import dbObj
 import trim
 import combine
 from greencitieslog import log
-
-
-
-# swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
-# so we dont hang trying to dl from swift
-
-class Alarm(Exception):
-    pass
-def alarm_handler(signum, frame):
-    raise Alarm
-
-
-#signal.signal(signal.SIGALRM, alarm_handler)
-#signal.alarm(5*60)  # 5 minutes
-#stdoutdata, stderrdata = proc.communicate()
-#signal.alarm(0)  # reset the alarm
-
-
+import gcswift
 
 
 class BoundBox:
@@ -321,13 +304,13 @@ class GrassLandsat:
 
         
         havebucket = False
-        for (b, f) in self.buckets:
+        for b, f in self.buckets:
             if os.path.exists(f):
                 print "Skipping file "+f+" as we already have it!"
                 continue
             
-            p = swift.do_swift_command(settings.SWIFT_PROXY, "download", b, True, f)
-            assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
+            gcswift.swift("download", b, f)
+          
 
         print "Complete!"
         self.havefiles = True
