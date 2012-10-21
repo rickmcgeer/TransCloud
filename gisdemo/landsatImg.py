@@ -13,6 +13,7 @@ import settings
 # import grass.script as grass
 import gzip
 import subprocess
+from subprocess import Popen, PIPE, STDOUT
 import shutil
 import signal
 
@@ -523,7 +524,7 @@ class GrassLandsat:
 
         mergeCmd += outpng
 
-        for filename in myFiles: mergeCmd += ' ' + filename
+        for filename in fnames: mergeCmd += ' ' + filename
 
         print "creating...", outpng, "with", mergeCmd
 
