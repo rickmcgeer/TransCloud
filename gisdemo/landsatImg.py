@@ -5,20 +5,23 @@ try:
     import png
 except:
     print "Error: Please install the psycopg2 pypng python packages and libpg2-dev system package."
-    os.exit(1)
+    sys.exit(1)
 
 import settings
 
 
-import grass.script as grass
+# import grass.script as grass
 import gzip
 import subprocess
+from subprocess import Popen, PIPE, STDOUT
 import shutil
 import signal
 
 import dbObj
 import trim
 import combine
+from greencitieslog import log
+
 
 
 # swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
@@ -153,15 +156,15 @@ class GrassLandsat:
         b3 = obj['coordinates'][0][2]
         b4 = obj['coordinates'][0][3]
         
-        leftlat = b1[0]
-        rightlat = b3[0]
+        leftlong = b1[0]
+        rightlong = b3[0]
         
         #are we near the edge?
-        if abs(leftlat) > 175 or abs(rightlat) > 175:
-            isleftneg = leftlat<0
-            isrightneg = rightlat<0
+        if abs(leftlong) > 175 or abs(rightlong) > 175:
+            isleftneg = leftlong<0
+            isrightneg = rightlong<0
             if isleftneg != isrightneg:
-                return True,[leftlat, rightlat]
+                return True,[leftlong, rightlong]
             else:
                 return False,[]
         else:
@@ -190,7 +193,7 @@ class GrassLandsat:
                 print "Warning: Skipping", r[0], "because of wraparound bug. Coords:",bb
                 continue
             else:
-                print "Info: Proccessing", r[0]
+                print "Info: Processing", r[0]
 
             pieces = r[0].split('_')
             if len(pieces) == 4:
@@ -323,26 +326,7 @@ class GrassLandsat:
                 print "Skipping file "+f+" as we already have it!"
                 continue
             
-
-            command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b+ " " + f
-            # spawna shell that executes swift, we set the sid of the shell so
-            #  we can kill it and all its children with os.killpg
-            p = subprocess.Popen(command, shell=True, 
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 preexec_fn=os.setsid) 
-
-            try:
-                signal.signal(signal.SIGALRM, alarm_handler)
-                signal.alarm(3*60)  # we will timeout after 3 minutes 
-
-                p.wait()
-                signal.alarm(0)  # reset the alarm
-            except Alarm:
-                os.killpg(p.pid, signal.SIGTERM)
-                # raise an assertion so we can continue execution after 
-                #  (should really have our own exception but fk it)
-                raise AssertionError("Timeout gettimg images from swift")
-
+            p = swift.do_swift_command(settings.SWIFT_PROXY, "download", b, True, f)
             assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
 
         print "Complete!"
@@ -427,10 +411,6 @@ class GrassLandsat:
                 
         ##         #print l
 
-        ##         assert len(l) == 3, "Bucket has to many images to combine"
-        ##         pre = b
-        ##         outtiffs = []
-            
 
         ##         # p = grass.run_command("r.in.gdal", input=l[0], 
         ##         #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
@@ -515,28 +495,51 @@ class GrassLandsat:
         #    print e
 
         pre = str(self.gid)
+        outpng = str(self.gid)+"_grass.png"
+
+        mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -separate -of PNG -o '
+
+        mergeCmd += outpng
+
+        for filename in fnames: mergeCmd += ' ' + filename
+
+        print "creating...", outpng, "with", mergeCmd
+
+        p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+        p.wait()
+        output = p.stdout.read()
+        assert p.returncode == 0, "Creation of merged bands Failed"
+        print output
 
         #read images into grass
-        p = grass.run_command("r.in.gdal", input=fnames[0], 
-                              output=pre+"."+str(getBand(fnames[0])), location=pre)
-        p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
-        for f in fnames[1:]:
-            p = grass.run_command("r.in.gdal", input=f, 
-                                  output=pre+"."+str(getBand(f)) )       
+        ## p = grass.run_command("r.in.gdal", input=fnames[0], 
+        ##                       output=pre+"."+str(getBand(fnames[0])), location=pre)
+        ## p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
+        ## for f in fnames[1:]:
+        ##     p = grass.run_command("r.in.gdal", input=f, 
+        ##                           output=pre+"."+str(getBand(f)) )       
 
-        # equalize colour values, eg. min green = min blue etc
-        p = grass.run_command("i.landsat.rgb", red=pre+".7",
-                              green=pre+".4", blue=pre+".3")
+        ## # equalize colour values, eg. min green = min blue etc
+        ## # p = grass.run_command("i.landsat.rgb", red=pre+".7",
+        ## #                      green=pre+".4", blue=pre+".3")
 
-        # combine bands into one image
-        p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
-                              blue=pre+".3", output=pre+".rgb")
+        ## # combine bands into one image
+        ## print "Running r.composite"
+        ## p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
+        ##                       blue=pre+".3", output=pre+".rgb")
+        ## print p
+        ## assert p == 0, "r.composite failed"
 
-        outpng = str(self.gid)+"_grass.png"
-        p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
+        ## print "Creating " + pre + "_grass.png"
 
-        # reset the map so we dont fail creating a location
-        p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")
+        ## outpng = str(self.gid)+"_grass.png"
+        ## p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
+        ## print p
+        ## assert p == 0, "r.out.png failed"
+
+        ## # reset the map so we dont fail creating a location
+        ## p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")
+        ## assert p == 0, "g.mapset failed"
 
         # we give it 1) the name of the png created from grass 
         #  and 2) the name the greenspace calc will create
@@ -547,11 +550,7 @@ class GrassLandsat:
 
     def uploadToSwift(self):
         print "Uploading processed image to swift"
-        command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "\
-            +settings.SWIFT_PWD+" upload "+settings.SWIFT_PNG_BUCKET+" "+self.img.imgname
-        p = subprocess.Popen(command, shell=True, 
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
+        p = swift.do_swift_command(settings.SWIFT_PROXY, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         print "Complete!"
         

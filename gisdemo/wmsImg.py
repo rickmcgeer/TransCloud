@@ -1,11 +1,12 @@
 from owslib.wms import WebMapService
 import png
+import settings
 
 # dict for worldwide wms servers
 WMS_SERVER = {'canada':"http://ows.geobase.ca/wms/geobase_en", 'us':"http://localhost:8080/geoserver/Landsat7/wms"}
 WMS_LAYER = {'canada':['imagery:landsat7'], 'us':[['L7-US-70'],['L7-US-40'],['L7-US-30']]}
 
-IMG_LOC = "/tmp/"
+IMG_LOC = settings.TEMP_FILE_DIR + "/"
 IMG_EXT = ".png"
 
 class landsatImg:

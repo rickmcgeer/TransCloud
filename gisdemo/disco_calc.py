@@ -10,12 +10,13 @@ import SimpleHTTPServer
 import SocketServer
 import threading
 import optparse
+import settings
 
 
 def mapper(entry, params):
     try:
         import os, json
-        os.chdir("/tmp")
+        os.chdir(settings.TEMP_FILE_DIR)
         try:
             id, name, poly, bb1, bb2, bb3, bb4 = json.loads(entry)   
         except Exception as e:
@@ -25,8 +26,7 @@ def mapper(entry, params):
             greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all")
         except Exception as e:
             print str(e)
-            event name, "(id "+id+")", str(e)
-        event name, "(id "+id+")", "processed"
+
         print name, id
         return ()
     except Exception as e:
@@ -105,8 +105,6 @@ if __name__ == '__main__':
     job.run()
 
     print "Job run"
-    #while not job.done():
-    #    
     job.wait(show=True)
     print "Done Job"
 

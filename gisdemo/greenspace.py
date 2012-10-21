@@ -269,7 +269,7 @@ def main(location):
 	
     global pgConn
     records = get_cities(location)
-    os.chdir('/tmp')
+    os.chdir(settings.TEMP_FILE_DIR)
     for record in records:
         try:
             log("Processing", record[GID], record[CITY_NAME])

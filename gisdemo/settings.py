@@ -1,7 +1,16 @@
-SWIFT_PROXY = "http://198.55.35.2:8080/auth/v1.0"
+CLUSTERS={'HP':'198.55.35.2', 'EMULAB':'155.98.38.233'}
+
+
+SWIFT_PROXY1 = CLUSTERS['EMULAB']
+SWIFT_PROXY2 = CLUSTERS['HP']
 SWIFT_USER = "system:gis"
 SWIFT_PWD = "uvicgis"
 SWIFT_PNG_BUCKET = "completed"
+
+# if the first proxy fails, fall back to this one
+# currently set to HP
+DEFAULT_SWIFT_HOST = "198.55.35.2"
+
 
 IMG_LOC = "/tmp/"
 IMG_EXT = ".png"
@@ -12,7 +21,7 @@ PRINT_DBG_STR = True # print to stdout
 LOG_NAME = "green.log"
 
 # database constants
-DB_HOST = "10.0.0.16"
+DB_HOST = "green.cities.trans-cloud.net"
 DB_USER = "root"
 DB_PASS = ""
 GIS_DATABASE = "world"
@@ -44,4 +53,7 @@ os.environ['GIS_LOCK'] = str(os.getpid())
 os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 
 os.environ['LOCATION_NAME'] = "greenspace"
+
+# Place for Temporary Files
+TEMP_FILE_DIR = '/mnt/disk1'
 

@@ -8,6 +8,7 @@ import sys, traceback
 import datetime
 import hashlib
 import subprocess
+import settings
 
 # database constants
 DB_USER = "postgres"
@@ -27,6 +28,7 @@ def craler():
     containers = list(command)
     containers.append("list")
     p = subprocess.Popen(containers, stdout=subprocess.PIPE)
+    p.wait()
     out, err = p.communicate()
 
     to_crawl = []
@@ -36,6 +38,7 @@ def craler():
             new_command = list(containers)
             new_command.append(line)
             p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
+            p.wait()
             out, err = p.communicate()    
             for files in out.split("\n"):
                 to_crawl.append((line, files))
@@ -49,8 +52,9 @@ def craler():
         download_command.append(files[0])
         download_command.append(files[1])
         download_command.append("-o")
-        download_command.append("/tmp/"+files[1])
+        download_command.append(settings.TEMP_FILE_DIR + "/" +files[1])
         p = subprocess.Popen(download_command, stdout=subprocess.PIPE)
+        p.wait()
         out, err = p.communicate()
         
 def log(*args):
@@ -85,11 +89,12 @@ def get_poly(zfilename):
     f = gzip.GzipFile(full_name, 'rb')
     decompresseddata = f.read()
     f.close()
-    outFile = open("/tmp/tmp.tif", "w")
+    tempTIFFile = settings.TEMP_FILE_DIR + "/tmp.tif"
+    outFile = open(tempTIFFile, "w")
     outFile.write(decompresseddata)
     outFile.close()
-    out = commands.getoutput('gdalinfo /tmp/tmp.tif')
-    commands.getoutput('rm -f /tmp/tmp.tif')
+    out = commands.getoutput('gdalinfo ' + tempTIFFile)
+    commands.getoutput('rm -f ' + tempTIFFile)
         
     lines = out.split('\n')
     polygon = {}
@@ -139,7 +144,7 @@ def update_database(conn, cur, band, date, name, geom):
 if __name__ == '__main__':
     #craler()
     
-    path = '/tmp/'
+    path = settings.TEMP_FILE_DIR + '/'
     tiff_gz = [f for f in os.listdir(path) if f.endswith('.tif.gz')]    
     matchers = []
     matchers.append(line_matcher(r'Upper\s*Left\s*\(\s*(\S+.\S+,\s*\S+.\S+)\)', handle_up_left))
