@@ -8,6 +8,7 @@ import sys, traceback
 import datetime
 import hashlib
 import subprocess
+import settings
 
 # database constants
 DB_USER = "postgres"
@@ -15,7 +16,7 @@ DB_PASS = ""
 GIS_DATABASE = "world"
 GIS_TAB = "tiff_rap"
 DB_HOST= "10.0.0.16"
-PATH = '/tmp/'
+PATH = settings.TEMP_FILE_DIR + '/'
 
 def log(*args):
     lf = sys.stderr
@@ -58,11 +59,12 @@ def get_poly(zfilename):
     f = gzip.GzipFile(full_name, 'rb')
     decompresseddata = f.read()
     f.close()
-    outFile = open("/tmp/tmp.tif", "w")
+    tempTifFileName = settings.TEMP_FILE_DIR + "/tmp.tif"
+    outFile = open(tempTifFileName, "w")
     outFile.write(decompresseddata)
     outFile.close()
-    out = commands.getoutput('gdalinfo /tmp/tmp.tif')
-    commands.getoutput('rm -f /tmp/tmp.tif')
+    out = commands.getoutput('gdalinfo ' + tempTifFileName)
+    commands.getoutput('rm -f ' + tempTifFileName)
     commands.getoutput('rm -f ' + full_name)
         
     lines = out.split('\n')

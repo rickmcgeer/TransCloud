@@ -12,7 +12,7 @@ PRINT_DBG_STR = True # print to stdout
 LOG_NAME = "green.log"
 
 # database constants
-DB_HOST = "10.0.0.16"
+DB_HOST = "green.cities.trans-cloud.net"
 DB_USER = "root"
 DB_PASS = ""
 GIS_DATABASE = "world"
@@ -44,4 +44,7 @@ os.environ['GIS_LOCK'] = str(os.getpid())
 os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 
 os.environ['LOCATION_NAME'] = "greenspace"
+
+# Place for Temporary Files
+TEMP_FILE_DIR = '/mnt/disk1'
 

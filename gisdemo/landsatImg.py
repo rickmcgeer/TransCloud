@@ -5,20 +5,23 @@ try:
     import png
 except:
     print "Error: Please install the psycopg2 pypng python packages and libpg2-dev system package."
-    os.exit(1)
+    sys.exit(1)
 
 import settings
 
 
-import grass.script as grass
+# import grass.script as grass
 import gzip
 import subprocess
+from subprocess import Popen, PIPE, STDOUT
 import shutil
 import signal
 
 import dbObj
 import trim
 import combine
+from greencitieslog import log
+
 
 
 # swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
@@ -396,69 +399,94 @@ class GrassLandsat:
             print "Combining images"
             fnames = combine.combine_bands(fnames, str(self.gid))
 
-            # need this to reproject later!
-            nproj = trim.get_projection(fnames[0])
+           ##  # need this to reproject later!
+        ##     nproj = trim.get_projection(fnames[0])
 
-            # for each bucket we combine 3 bands and normalize the colour
-            for (b, old_f) in self.buckets:
-                l = []
-                for f in fnames:
-                    if b in f:
-                        l.append(f)
+        ##     # for each bucket we combine 3 bands and normalize the colour
+        ##     for (b, old_f) in self.buckets:
+        ##         l = []
+        ##         for f in fnames:
+        ##             if b in f:
+        ##                 l.append(f)
                 
-                #print l
-
-                assert len(l) == 3, "Bucket has too many images to combine"
-                pre = b
-                outtiffs = []
-            
-                # p = grass.run_command("r.in.gdal", input=l[0], 
-                #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
-
-                # p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
-                # for f in l[1:]:
-                #     p = grass.run_command("r.in.gdal", input=f, 
-                #                           output=pre+"."+str(getBand(f)) )       
-
-                # # equalize colour values, eg. min green = min blue etc
-                # p = grass.run_command("i.landsat.rgb", red=pre+".7",
-                #                       green=pre+".4", blue=pre+".3")
-
-                # # combine bands into one image
-                # p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
-                #                       blue=pre+".3", output=pre+".rgb")
-
-                outtiff = b+"tmp_grass.png.tif"
-                outtiffs.append(outtiff)
-                # p = grass.run_command("r.out.tiff", input=pre+".rgb", output=outtiff)
-
-                # # reset the map so we dont fail creating a location
-                # p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")     
-
-            # print "Combining images"
-            # fnames = combine.combine_single(outtiffs, str(self.gid))
-
-            # assert len(fnames) == 1
-
-            # print "Getting shapefile for", str(self.gid)
-            # shpname = trim.getShapefile(self.gid)
-            # #try:
-            # trim.crop(shpname, fnames[0], prefix="trim_", new_projcode=nproj)
-            # fnames = ["trim_"+name for name in fnames]
-            # #except AssertionError as e:
-            # #    print e
-
-            # #This is a crappy way to convert to a png! But oh well
-            # pre = str(self.gid)
-            # p = grass.run_command("r.in.gdal", input=fnames[0], 
-            #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
-            # outpng = str(self.gid)+"_grass.png"
-            # p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
+        ##         #print l
 
 
-        #else:
+        ##         # p = grass.run_command("r.in.gdal", input=l[0], 
+        ##         #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
+
+        ##         # p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
+        ##         # for f in l[1:]:
+        ##         #     p = grass.run_command("r.in.gdal", input=f, 
+        ##         #                           output=pre+"."+str(getBand(f)) )       
+
+        ##         # # equalize colour values, eg. min green = min blue etc
+        ##         # p = grass.run_command("i.landsat.rgb", red=pre+".7",
+        ##         #                       green=pre+".4", blue=pre+".3")
+
+        ##         # # combine bands into one image
+        ##         # p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
+        ##         #                       blue=pre+".3", output=pre+".rgb")
+
+        ##         outtiff = b+"tmp_grass.png.tif"
+        ##         outtiffs.append(outtiff)
+        ##         # p = grass.run_command("r.out.tiff", input=pre+".rgb", output=outtiff)
+
+        ##         # # reset the map so we dont fail creating a location
+        ##         # p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")     
+
+        ##     # print "Combining images"
+        ##     # fnames = combine.combine_single(outtiffs, str(self.gid))
+
+        ##     # assert len(fnames) == 1
+
+        ##     # print "Getting shapefile for", str(self.gid)
+        ##     # shpname = trim.getShapefile(self.gid)
+        ##     # #try:
+        ##     # trim.crop(shpname, fnames[0], prefix="trim_", new_projcode=nproj)
+        ##     # fnames = ["trim_"+name for name in fnames]
+        ##     # #except AssertionError as e:
+        ##     # #    print e
+
+        ##     # #This is a crappy way to convert to a png! But oh well
+        ##     # pre = str(self.gid)
+        ##     # p = grass.run_command("r.in.gdal", input=fnames[0], 
+        ##     #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
+        ##     # outpng = str(self.gid)+"_grass.png"
+        ##     # p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
+
+        ## else:
+        ##     print "Getting shapefile for", str(self.gid)
+        ##     shpname = trim.getShapefile(self.gid)
+        ##     #try:
+        ##     trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_")
+        ##     fnames = ["trim_"+name for name in fnames]
+        ##     #except AssertionError as e:
+        ##     #    print e
+
+        ##     pre = str(self.gid)
+
+        ##     #read images into grass
+        ##     p = grass.run_command("r.in.gdal", input=fnames[0], 
+        ##                           output=pre+"."+str(getBand(fnames[0])), location=pre)
+        ##     p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
+        ##     for f in fnames[1:]:
+        ##         p = grass.run_command("r.in.gdal", input=f, 
+        ##                               output=pre+"."+str(getBand(f)) )       
+
+        ##     # equalize colour values, eg. min green = min blue etc
+        ##     p = grass.run_command("i.landsat.rgb", red=pre+".7",
+        ##                           green=pre+".4", blue=pre+".3")
+
+        ##     # combine bands into one image
+        ##     p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
+        ##                           blue=pre+".3", output=pre+".rgb")
+
+        ##     outpng = str(self.gid)+"_grass.png"
+        ##     p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
 
         log("Getting shapefile for", str(self.gid))
+
         shpname = trim.getShapefile(self.gid)
         #try:
         trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_")
@@ -467,28 +495,51 @@ class GrassLandsat:
         #    print e
 
         pre = str(self.gid)
+        outpng = str(self.gid)+"_grass.png"
+
+        mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -separate -of PNG -o '
+
+        mergeCmd += outpng
+
+        for filename in fnames: mergeCmd += ' ' + filename
+
+        print "creating...", outpng, "with", mergeCmd
+
+        p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+        p.wait()
+        output = p.stdout.read()
+        assert p.returncode == 0, "Creation of merged bands Failed"
+        print output
 
         #read images into grass
-        p = grass.run_command("r.in.gdal", input=fnames[0], 
-                              output=pre+"."+str(getBand(fnames[0])), location=pre)
-        p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
-        for f in fnames[1:]:
-            p = grass.run_command("r.in.gdal", input=f, 
-                                  output=pre+"."+str(getBand(f)) )       
+        ## p = grass.run_command("r.in.gdal", input=fnames[0], 
+        ##                       output=pre+"."+str(getBand(fnames[0])), location=pre)
+        ## p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
+        ## for f in fnames[1:]:
+        ##     p = grass.run_command("r.in.gdal", input=f, 
+        ##                           output=pre+"."+str(getBand(f)) )       
 
-        # equalize colour values, eg. min green = min blue etc
-        p = grass.run_command("i.landsat.rgb", red=pre+".7",
-                              green=pre+".4", blue=pre+".3")
+        ## # equalize colour values, eg. min green = min blue etc
+        ## # p = grass.run_command("i.landsat.rgb", red=pre+".7",
+        ## #                      green=pre+".4", blue=pre+".3")
 
-        # combine bands into one image
-        p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
-                              blue=pre+".3", output=pre+".rgb")
+        ## # combine bands into one image
+        ## print "Running r.composite"
+        ## p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
+        ##                       blue=pre+".3", output=pre+".rgb")
+        ## print p
+        ## assert p == 0, "r.composite failed"
 
-        outpng = str(self.gid)+"_grass.png"
-        p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
+        ## print "Creating " + pre + "_grass.png"
 
-        # reset the map so we dont fail creating a location
-        p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")
+        ## outpng = str(self.gid)+"_grass.png"
+        ## p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
+        ## print p
+        ## assert p == 0, "r.out.png failed"
+
+        ## # reset the map so we dont fail creating a location
+        ## p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")
+        ## assert p == 0, "g.mapset failed"
 
         # we give it 1) the name of the png created from grass 
         #  and 2) the name the greenspace calc will create
