@@ -8,12 +8,21 @@ if [ "$(whoami)" != 'root' ]; then
 fi
 
 set -o errexit
-apt-get -y --force-yes install python-pip python-dev
+apt-get -y --force-yes install python-pip python-dev build-essential
 apt-get -y --force-yes install libpq-dev
 pip install psycopg2
 pip install pypng
 pip install python-swiftclient
-apt-get -y --force-yes install grass grass-dev gdal-bin
+
+wget http://download.osgeo.org/gdal/gdal-1.9.1.tar.gz
+tar zxf gdal-1.9.1.tar.gz
+cd gdal-1.9.1
+./configure --with-python --prefix=/usr/local
+make -j8 all install
+ldconfig
+
+
+#apt-get -y --force-yes install 
 
 
 
