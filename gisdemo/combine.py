@@ -13,13 +13,15 @@ from subprocess import Popen, PIPE, STDOUT
 import tempfile
 import settings
 
-
+#
+# I think _uncompress, _stitch_with_master and _remove_nearblack are now dead code...
+#
 def _uncompress(file_path):
     cmd = '/usr/local/bin/gdal_translate %s %s.uncompressed.tif' % (file_path, file_path)
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     p.wait()
     output = p.stdout.read()
-    print output
+    log(output)
     assert p.returncode == 0, "Uncompress Failed"
     return '%s.uncompressed.tif' % file_path
 
@@ -29,7 +31,7 @@ def _remove_nearblack(file_path):
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     p.wait()
     output = p.stdout.read()
-    print output
+    log(output)
     assert p.returncode == 0, "GDalWarp Failed"
     
 
@@ -37,11 +39,11 @@ def _remove_nearblack(file_path):
 def _stitch_with_master(file_path, master_path):
     master_path = master_path.strip()
     if not os.path.exists(master_path):
-        print "First file"
+        log("First file")
         shutil.copyfile(file_path, master_path)
         return
     else:
-        print os.path.exists(master_path)
+        log(os.path.exists(master_path))
 
     tmp_master  = master_path.strip()+".temp.tif"
     cmd = '/usr/bin/gdalwarp -multi -srcnodata 0 %s %s %s' % (file_path, master_path, tmp_master)
@@ -49,7 +51,7 @@ def _stitch_with_master(file_path, master_path):
     p.wait()
     output = p.stdout.read()
     assert p.returncode == 0, "GDalWarp Failed"
-    print output
+    log(output)
     shutil.copyfile(tmp_master, master_path)
     os.remove(tmp_master)
 
@@ -57,9 +59,6 @@ def _stitch_with_master(file_path, master_path):
 def _compose_tiff(new, path):
     master_path = path + "/"+new + ".tif"
 
-#
-# New Code begins
-#
     myFiles = []
     for filename in sorted(os.listdir(path)):
         file_path = os.path.join(path, filename)
@@ -71,34 +70,13 @@ def _compose_tiff(new, path):
     for filename in myFiles:
         mergeCmd += ' ' + filename
 
-    print "Merging..." + mergeCmd
+    log("Merging..." + mergeCmd)
 
     p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     p.wait()
     output = p.stdout.read()
     assert p.returncode == 0, "GDalMerge Failed"
-    print output
-#
-# New Code ends...
-#
-
-    ## for filename in sorted(os.listdir(path)):
-
-    ##     file_path = os.path.join(path, filename)
-
-    ##     print "Uncompressing...%s" % file_path
-    ##     _uncompress(file_path)
-
-    ##     print "Removing near black...%s" % file_path
-    ##     _remove_nearblack("%s.uncompressed.tif" % file_path)
-
-    ##     print "Stitching with master...%s" % file_path
-    ##     _stitch_with_master("%s.uncompressed.tif" % file_path, master_path)
-
-    ##     print "Stitched with master %s!" % file_path
-    ##     os.remove("%s.uncompressed.tif" % file_path)
-
-    #return new + ".tif"
+    log(output)
     return master_path
 
 def grab_pathrow_band_time(name):
@@ -119,8 +97,8 @@ def combine_bands(allfiles, gid="new"):
 
     for fname in allfiles:
         info = grab_pathrow_band_time(fname)
-        if info[3] != '7dt':
-            print "Skipping non-landsat 7 image", fname
+        if info[3] != '7dt' and info[3] != '5dt':
+            log("Skipping non-landsat 5/7 image" + fname)
         else:
             target.append((fname, info))
 

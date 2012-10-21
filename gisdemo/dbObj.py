@@ -3,7 +3,7 @@ import settings
 
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
-CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map"}
+CITY_TABLE = {'canada':"ca_cities", 'us':"us_cities", 'all':"map"}
 ID_COL = "gid"
 NAME_COL = "name"
 GEOM_COL = "the_geom"
@@ -33,6 +33,10 @@ class pgConnection:
         except psycopg2.ProgrammingError as e:
             print "Failed to connect to database:", str(e)
             raise # may want to raise some other error or somebody?
+        except psycopg2.OperationalError as e:
+            print "Failed to connect to database:", str(e)
+            print "host", settings.DB_HOST, "database", settings.GIS_DATABASE, "user", settings.DB_USER, "password", settings.DB_PASS
+            raise # may want to raise some other error or somebody?
 
 
     def __del__(self):
@@ -60,6 +64,7 @@ class pgConnection:
         #where = " WHERE gid = 25237" # boston
         #where = " WHERE gid > 19093 AND gid < 19099" # this is boston
         #where = " WHERE name LIKE 'BOSTON' OR name LIKE 'LONDON' OR name LIKE 'CANCUN'"
+        #where = " WHERE name='KOLBASOVKA'"
         where = " WHERE "+GREEN_COL+"=0"
 		
         limit = " LIMIT " + str(limit)
