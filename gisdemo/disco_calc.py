@@ -10,12 +10,13 @@ import SimpleHTTPServer
 import SocketServer
 import threading
 import optparse
+import settings
 
 
 def mapper(entry, params):
     try:
         import os, json
-        os.chdir("/tmp")
+        os.chdir(settings.TEMP_FILE_DIR)
         try:
             id, name, poly, bb1, bb2, bb3, bb4 = json.loads(entry)   
         except Exception as e:
