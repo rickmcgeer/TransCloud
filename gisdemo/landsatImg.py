@@ -153,15 +153,15 @@ class GrassLandsat:
         b3 = obj['coordinates'][0][2]
         b4 = obj['coordinates'][0][3]
         
-        leftlat = b1[0]
-        rightlat = b3[0]
+        leftlong = b1[0]
+        rightlong = b3[0]
         
         #are we near the edge?
-        if abs(leftlat) > 175 or abs(rightlat) > 175:
-            isleftneg = leftlat<0
-            isrightneg = rightlat<0
+        if abs(leftlong) > 175 or abs(rightlong) > 175:
+            isleftneg = leftlong<0
+            isrightneg = rightlong<0
             if isleftneg != isrightneg:
-                return True,[leftlat, rightlat]
+                return True,[leftlong, rightlong]
             else:
                 return False,[]
         else:
@@ -190,7 +190,7 @@ class GrassLandsat:
                 print "Warning: Skipping", r[0], "because of wraparound bug. Coords:",bb
                 continue
             else:
-                print "Info: Proccessing", r[0]
+                print "Info: Processing", r[0]
 
             pieces = r[0].split('_')
             if len(pieces) == 4:
@@ -323,26 +323,7 @@ class GrassLandsat:
                 print "Skipping file "+f+" as we already have it!"
                 continue
             
-
-            command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b+ " " + f
-            # spawna shell that executes swift, we set the sid of the shell so
-            #  we can kill it and all its children with os.killpg
-            p = subprocess.Popen(command, shell=True, 
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 preexec_fn=os.setsid) 
-
-            try:
-                signal.signal(signal.SIGALRM, alarm_handler)
-                signal.alarm(3*60)  # we will timeout after 3 minutes 
-
-                p.wait()
-                signal.alarm(0)  # reset the alarm
-            except Alarm:
-                os.killpg(p.pid, signal.SIGTERM)
-                # raise an assertion so we can continue execution after 
-                #  (should really have our own exception but fk it)
-                raise AssertionError("Timeout gettimg images from swift")
-
+            p = swift.do_swift_command(settings.SWIFT_PROXY, "download", b, True, f)
             assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
 
         print "Complete!"
@@ -427,7 +408,7 @@ class GrassLandsat:
                 
                 #print l
 
-                assert len(l) == 3, "Bucket has to many images to combine"
+                assert len(l) == 3, "Bucket has too many images to combine"
                 pre = b
                 outtiffs = []
             
@@ -518,11 +499,7 @@ class GrassLandsat:
 
     def uploadToSwift(self):
         print "Uploading processed image to swift"
-        command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "\
-            +settings.SWIFT_PWD+" upload "+settings.SWIFT_PNG_BUCKET+" "+self.img.imgname
-        p = subprocess.Popen(command, shell=True, 
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
+        p = swift.do_swift_command(settings.SWIFT_PROXY, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         print "Complete!"
         
