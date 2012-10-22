@@ -13,7 +13,7 @@ import time
 
 
 GENI_PROXY = "http://198.55.35.2:8080/auth/v1.0" # continent id 4, asia oceania
-LOCAL_GENI_PROXY = 
+LOCAL_GENI_PROXY = "http://10.0.0.3:8080/auth/v1.0" # need diff user and pass
 GENI_IMG_FILE = "swiftimages/swift-images4.txt"
 
 UVIC_PROXY = "http://142.104.195.225:8080/auth/v1.0" # continent id 3, south america
