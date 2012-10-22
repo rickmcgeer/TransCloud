@@ -1,7 +1,7 @@
 import os
 import sys
 import threading
-import swift
+import gcswift
 import shutil
 import time
 
