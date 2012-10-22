@@ -51,6 +51,8 @@ alldownloadflag = 0
 
 def download_bucket(bucket, proxy):
 
+    status = 0
+
     try:
         os.mkdir(bucket)
     except OSError:
@@ -68,8 +70,11 @@ def download_bucket(bucket, proxy):
         dlfaillistlock.acquire()
         dlfaillist.append(bucket)
         dlfaillistlock.release()
+        status = -1
 
     os.chdir('..')
+    
+    return status
 
 
 def dl_thread():
@@ -92,6 +97,8 @@ def dl_thread():
 
 def upload_bucket(bucket, proxy):
 
+    status = 0
+
     os.chdir(bucket)
 
     try:
@@ -103,12 +110,15 @@ def upload_bucket(bucket, proxy):
         upfaillistlock.acquire()
         upfaillist.append(bucket)
         upfaillistlock.release()
+        status = -1
 
     try:
         os.chdir('..')
         shutil.rmtree(bucket)
     except OSError:
         print "Failed to remove temp dir", bucket
+
+    return status
 
 
 def up_thread():
