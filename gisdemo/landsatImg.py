@@ -22,6 +22,7 @@ import dbObj
 import trim
 import combine
 from greencitieslog import log
+
     
 def getBand(fname):
     """ Check which band is in a filename"""
@@ -33,21 +34,8 @@ def getBand(fname):
         return 7
     assert False
 
-# swift -A http://198.55.37.2:8080/auth/v1.0 -U system:gis -K uvicgis list completed
-# so we dont hang trying to dl from swift
 
-class Alarm(Exception):
-    pass
-def alarm_handler(signum, frame):
-    raise Alarm
-
-
-#signal.signal(signal.SIGALRM, alarm_handler)
-#signal.alarm(5*60)  # 5 minutes
-#stdoutdata, stderrdata = proc.communicate()
-#signal.alarm(0)  # reset the alarm
-
-
+import gcswift
 
 
 class BoundBox:
@@ -161,15 +149,15 @@ class GrassLandsat:
         b3 = obj['coordinates'][0][2]
         b4 = obj['coordinates'][0][3]
         
-        leftlat = b1[0]
-        rightlat = b3[0]
+        leftlong = b1[0]
+        rightlong = b3[0]
         
         #are we near the edge?
-        if abs(leftlat) > 175 or abs(rightlat) > 175:
-            isleftneg = leftlat<0
-            isrightneg = rightlat<0
+        if abs(leftlong) > 175 or abs(rightlong) > 175:
+            isleftneg = leftlong<0
+            isrightneg = rightlong<0
             if isleftneg != isrightneg:
-                return True,[leftlat, rightlat]
+                return True,[leftlong, rightlong]
             else:
                 return False,[]
         else:
@@ -199,6 +187,7 @@ class GrassLandsat:
                 continue
             else:
                 log("Info: Proccessing " + r[0])
+
 
             pieces = r[0].split('_')
             if len(pieces) == 4:
@@ -267,31 +256,12 @@ class GrassLandsat:
         log("getting images from swift!")
         
         havebucket = False
-        for (b, f) in self.buckets:
+        for b, f in self.buckets:
             if os.path.exists(f):
                 log("Skipping file "+f+" as we already have it!")
                 continue
             
-            command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b+ " " + f
-            # spawna shell that executes swift, we set the sid of the shell so
-            #  we can kill it and all its children with os.killpg
-            p = subprocess.Popen(command, shell=True, 
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 preexec_fn=os.setsid) 
-
-            try:
-                signal.signal(signal.SIGALRM, alarm_handler)
-                signal.alarm(3*60)  # we will timeout after 3 minutes 
-
-                p.wait()
-                signal.alarm(0)  # reset the alarm
-            except Alarm:
-                os.killpg(p.pid, signal.SIGTERM)
-                # raise an assertion so we can continue execution after 
-                #  (should really have our own exception but fk it)
-                raise AssertionError("Timeout gettimg images from swift")
-
-            assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
+            gcswift.swift("download", b, f)
 
         log("Complete!")
         self.havefiles = True
@@ -354,8 +324,7 @@ class GrassLandsat:
             log("Combining images")
             fnames = combine.combine_bands(fnames, str(self.gid))
 
-         
-        
+
         log("Getting shapefile for", str(self.gid))
 
         shpname = trim.getShapefile(self.gid)
@@ -409,11 +378,7 @@ class GrassLandsat:
 
     def uploadToSwift(self):
         log("Uploading processed image to swift")
-        command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "\
-            +settings.SWIFT_PWD+" upload "+settings.SWIFT_PNG_BUCKET+" "+self.img.imgname
-        p = subprocess.Popen(command, shell=True, 
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
+        p = swift.do_swift_command(settings.SWIFT_PROXY, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         log("Complete!")
         

@@ -1,7 +1,16 @@
-SWIFT_PROXY = "http://198.55.35.2:8080/auth/v1.0"
+CLUSTERS={'HP':'198.55.35.2', 'EMULAB':'155.98.38.233'}
+
+
+SWIFT_PROXY1 = CLUSTERS['EMULAB']
+SWIFT_PROXY2 = CLUSTERS['HP']
 SWIFT_USER = "system:gis"
 SWIFT_PWD = "uvicgis"
 SWIFT_PNG_BUCKET = "completed"
+
+# if the first proxy fails, fall back to this one
+# currently set to HP
+DEFAULT_SWIFT_HOST = "198.55.35.2"
+
 
 IMG_LOC = "/tmp/"
 IMG_EXT = ".png"

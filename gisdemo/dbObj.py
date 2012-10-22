@@ -3,11 +3,13 @@ import settings
 
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
 
-CITY_TABLE = {'canada':"ca_cities", 'us':"us_cities", 'all':"map"}
-ID_COL = "gid"
-NAME_COL = "name"
-GEOM_COL = "the_geom"
-GREEN_COL = "greenspace"
+cluster_query =  ""
+CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map",}
+ID_COL = "map.gid"
+NAME_COL = "map.name"
+GEOM_COL = "map.the_geom"
+GREEN_COL = "map.greenspace"
+
 
 IMG_TABLE = "processed"
 IMG_NAME_COL = "file_path"
@@ -48,6 +50,13 @@ class pgConnection:
         records from the table containing the specified region
         with no greenspace value
         """
+        assert type(region)==int
+        assert 1 <= region <= 4
+
+#select fname 
+#from (select ST_Transform(the_geom, 4326) as the_geom from by_continent where id = 1 ) as map , tiff4326 
+#where ST_Intersects(map.the_geom, tiff4326.the_geom);
+
 
         select = ID_COL+", "+NAME_COL+", "\
             "ST_AsText(ST_ConvexHull(ST_Transform("+GEOM_COL+","+GEOG+"))),"\
@@ -55,6 +64,8 @@ class pgConnection:
             "ST_YMin(ST_Transform("+GEOM_COL+","+GEOG+")),"\
             "ST_XMax(ST_Transform("+GEOM_COL+","+GEOG+")),"\
             "ST_YMax(ST_Transform("+GEOM_COL+","+GEOG+"))"
+
+        _from  = " FROM " + "(select ST_Transform(the_geom, 4326) as the_geom from by_continent where id = %d ) as cluster, map" % (region)
 
         # keep WHERE in here incase we dont want a where clause
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
@@ -65,12 +76,13 @@ class pgConnection:
         #where = " WHERE gid > 19093 AND gid < 19099" # this is boston
         #where = " WHERE name LIKE 'BOSTON' OR name LIKE 'LONDON' OR name LIKE 'CANCUN'"
         #where = " WHERE name='KOLBASOVKA'"
-        where = " WHERE "+GREEN_COL+"=0"
+        where = " WHERE "+GREEN_COL+"=0" + \
+        "AND " + "ST_Intersects( ST_Transform(map.the_geom, 4326), cluster.the_geom)"
 		
         limit = " LIMIT " + str(limit)
         #limit = ""
 
-        return "SELECT " + select + " FROM " + CITY_TABLE[region] + where + limit + ";"
+        return "SELECT " + select + _from + where + limit + ";"
 
     
     def createCoordQuery(self, a, b):

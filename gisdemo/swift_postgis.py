@@ -28,6 +28,7 @@ def craler():
     containers = list(command)
     containers.append("list")
     p = subprocess.Popen(containers, stdout=subprocess.PIPE)
+    p.wait()
     out, err = p.communicate()
 
     to_crawl = []
@@ -37,6 +38,7 @@ def craler():
             new_command = list(containers)
             new_command.append(line)
             p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
+            p.wait()
             out, err = p.communicate()    
             for files in out.split("\n"):
                 to_crawl.append((line, files))
@@ -52,6 +54,7 @@ def craler():
         download_command.append("-o")
         download_command.append(settings.TEMP_FILE_DIR + "/" +files[1])
         p = subprocess.Popen(download_command, stdout=subprocess.PIPE)
+        p.wait()
         out, err = p.communicate()
         
 def log(*args):

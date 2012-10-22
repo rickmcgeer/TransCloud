@@ -9,6 +9,7 @@ command = ["swift", "-A",
 containers = list(command)
 containers.append("list")
 p = subprocess.Popen(containers, stdout=subprocess.PIPE)
+p.wait()
 out, err = p.communicate()
 print out,err
 
@@ -19,6 +20,7 @@ for line in out.split("\n"):
         new_command = list(containers)
         new_command.append(line)
         p = subprocess.Popen(new_command, stdout=subprocess.PIPE)
+        p.wait()
         out, err = p.communicate()
         print out
         all_files =  out.split("\n"):

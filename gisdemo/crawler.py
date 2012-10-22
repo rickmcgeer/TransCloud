@@ -130,6 +130,7 @@ if __name__ == '__main__':
     containers.append("list")
     p = subprocess.Popen(containers, stdout=subprocess.PIPE)
     p.wait()
+    assert p.returncode == 0, "Failed on swift host %s with %s" % ("swift.gcgis.trans-cloud.net", p.communicate()[1])
     out, err = p.communicate()
    
     buckets = out.split("\n")  #[::-1]
