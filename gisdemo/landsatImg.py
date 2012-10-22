@@ -22,6 +22,7 @@ import dbObj
 import trim
 import combine
 from greencitieslog import log
+import tempfile
 
     
 def getBand(fname):
@@ -128,6 +129,7 @@ class GrassLandsat:
         self.files = []
         self.img = None
         self.havefiles = False
+        self.shapefile_tmpDir=tempfile.mkdtemp()
 
 
     def __del__(self):
@@ -138,7 +140,7 @@ class GrassLandsat:
             toremove += "*"+b+"* "
         if self.img:
             toremove += self.img.fname+" "+self.img.imgname+" "
-        toremove += str(self.gid)+"* "+"tmp2/"+str(self.gid)+"* "
+        toremove += str(self.gid)+"* "+ self.shapefile_tmpDir + "/"+str(self.gid)+"* "
 
         
 
@@ -337,7 +339,7 @@ class GrassLandsat:
 
         shpname = trim.getShapefile(self.gid)
         #try:
-        trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_")
+        trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.shapefile_tmpDir)
         fnames = ["trim_"+name for name in fnames]
         #except AssertionError as e:
         #    print e
