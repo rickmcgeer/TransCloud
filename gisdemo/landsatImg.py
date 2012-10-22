@@ -253,12 +253,10 @@ class GrassLandsat:
         assert(len(self.files))
         assert(len(self.buckets))
 
-        log("getting images from swift!")
-        
         havebucket = False
         for b, f in self.buckets:
             if os.path.exists(f):
-                log("Skipping file "+f+" as we already have it!")
+                # Skipping file "+f+" as we already have it!
                 continue
             
             gcswift.swift("download", b, f)
@@ -293,6 +291,7 @@ class GrassLandsat:
 
         def decompressTiffs(files):
             """ """
+            import zlib
             tiffs = []
             cwd = os.getcwd()
             log("Decompressing files")
@@ -308,9 +307,18 @@ class GrassLandsat:
                         outf.write(dcmpdata)
                         outf.close()
             except IOError as e:
+                # might be corrupt - delete now so not cached
+                for f in files:
+                    print "Corrupt files, unlinking:", f
+                    os.unlink(f)
                 raise AssertionError(e)
-
-            log("Complete!")
+            except zlib.error as e:
+                # might be corrupt - delete now so not cached
+                for f in files:
+                    print "Corrupt files, unlinking:", f
+                    os.unlink(f)
+                raise AssertionError(e)
+            log("Decompressing files done")
             return tiffs
 
         assert(self.havefiles)
