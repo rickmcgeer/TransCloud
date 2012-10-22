@@ -8,6 +8,7 @@ except:
     sys.exit(1)
 
 import settings
+from operator import itemgetter
 
 
 # import grass.script as grass
@@ -21,6 +22,19 @@ import dbObj
 import trim
 import combine
 from greencitieslog import log
+
+    
+def getBand(fname):
+    """ Check which band is in a filename"""
+    if 'b03.' in fname:
+        return 3
+    if 'b04.' in fname:
+        return 4
+    if 'b07.' in fname:
+        return 7
+    assert False
+
+
 import gcswift
 
 
@@ -41,29 +55,29 @@ import re
 
 def checkValidImageSpec(identifierAsList):
     geomSpecOK = re.match("p[0-9][0-9][0-9]r[0-9][0-9][0-9]", identifierAsList[0])
-    dateSpecOK = re.match("7dt[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]", identifierAsList[1])
+    dateSpecOK = re.match("[5-7]dt[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]", identifierAsList[1])
     bandSpecOK = re.match("b[0-9][0-9]", identifierAsList[3])
     return geomSpecOK and dateSpecOK and bandSpecOK
 
 def diagnoseBadSpec(identifierAsList, rawSpec):
-    print "bad specifier:", rawSpec
+    log("bad specifier: " + rawSpec)
     if len(identifierAsList) != 4:
-        print "length of derived list must be 4, not", len(identifierAsList)
+        log("length of derived list must be 4, not " + len(identifierAsList))
         return
     geomSpecOK = re.match("p[0-9][0-9][0-9]r[0-9][0-9][0-9]", identifierAsList[0])
-    dateSpecOK = re.match("7dt[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]", identifierAsList[1])
+    dateSpecOK = re.match("[5-7]dt[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]", identifierAsList[1])
     bandSpecOK = re.match("b[0-9][0-9]", identifierAsList[3])
     if not geomSpecOK:
-        print "bad geometry specifier", identifierAsList[0]
+        log("bad geometry specifier " + identifierAsList[0])
     if not dateSpecOK:
-        print "bad date specifier", identifierAsList[1]
+        log("bad date specifier " + identifierAsList[1])
     if not bandSpecOK:
-        print "bad band specifier", identifierAsList[3]
+        log("bad band specifier " + identifierAsList[3])
 
 
 #
 # build an image identifier from a list of the form:
-# "pnnnrnnn","7dtyyyymmdd","LL","b0n".  This expands to a filename of the
+# "pnnnrnnn","ndtyyyymmdd","LL","b0n".  This expands to a filename of the
 # form
 # s = pieces[0]+"_"+pieces[1]+"."+pieces[2]+"."+pieces[3]+".tif.gz"
 # caller has checked this...
@@ -126,11 +140,7 @@ class GrassLandsat:
             toremove += self.img.fname+" "+self.img.imgname+" "
         toremove += str(self.gid)+"* "+"tmp2/"+str(self.gid)+"* "
 
-        ## print "rm -rf", toremove
-        ## command = "rm -rf "+toremove
-        ## p = subprocess.Popen(command, shell=True, 
-        ##                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+        
 
     def check_bad_record(self, obj):
         """Does this record have the world wrap around bug? if so, discount"""
@@ -173,34 +183,16 @@ class GrassLandsat:
         for r in records:
             is_bad, bb = self.check_bad_record(json.loads(r[1]))
             if is_bad:
-                print "Warning: Skipping", r[0], "because of wraparound bug. Coords:",bb
+                log("Warning: Skipping " +  r[0] + " because of wraparound bug. Coords: " + str(bb))
                 continue
             else:
-                print "Info: Processing", r[0]
+                log("Info: Proccessing " + r[0])
+
 
             pieces = r[0].split('_')
             if len(pieces) == 4:
-                # we only want 7dt for landsat 7 (7),decade set (d) and triband (t)
-
-                # date = pieces[1][3:]
-            #     if '7dt' in pieces[1]:
-            #         # make sure dates line up
-            #         if not decided_date:
-            #             decided_date = date
-            #         else:
-            #             assert date == decided_date, "Adding images from two time peroids"
-
-            #         s = pieces[0]+"_"+pieces[1]+"."+pieces[2]+"."+pieces[3]+".tif.gz"
-            #         self.files.append(s)
-            #         # if this is a new prefix add it to the bucket list so we can dl from swift
-            #         if pieces[0] not in self.buckets:
-            #             self.buckets.append(pieces[0])
-            #     else:
-            #         print "Skipping", r[0]
-            # else:
-            #     raise Exception("Invalid image name in database:" + r[0])
-
-                if '7dt' in pieces[1] and checkValidImageSpec(pieces):
+                # we only want 5dt or 7dt for landsat 7 (7),decade set (d) and triband (t)
+                if 'dt' in pieces[1] and checkValidImageSpec(pieces):
                     images.append(imageID(pieces))
                 else:
                     diagnoseBadSpec(pieces, r[0])
@@ -230,34 +222,28 @@ class GrassLandsat:
         
 
         # print "total images", len(images), "total unsubsumed images", len(images1), "total connected images", len(self.images)
-        print "total images", len(images), "total unsubsumed images",  len(self.images)
+        log("total images %d total subsumed images %d" % (len(images), len(self.images)))
 
         for image in self.images:
             self.files.append(image.fileName)
             self.buckets.append((image.bucket, image.fileName))
            
 
-        ## s = pieces[0]+"_"+pieces[1]+"."+pieces[2]+"."+pieces[3]+".tif.gz"
-        ##             self.files.append(s)
-        ##             # if this is a new prefix add it to the bucket list so we can dl from swift
-        ##             if pieces[0] not in self.buckets:
-        ##                 self.buckets.append(pieces[0])
-
-        # assert(len(self.files)) == 3, "Currently can't stitch together images, skipping " + str(self.gid)
-        print len(self.files), "images intersect the city", self.city
+        
+        log( "%d images intersect the city %d" % (len(self.files),self.city))
 
         return len(self.files)
 
     def checkImages(self):
         if len(self.images) == 0:
-            print "No images for", self.city
+            log("No images for " + self.city)
             return
         if len(self.images) <= 3: return
         for image in self.images:
             hasNeighbor = reduce(lambda x, y: x or y, [otherImage.overlaps(image) for otherImage in self.images])
             if hasNeighbor: continue
-            print "Isolated image for", self.city
-            for myImage in self.images: print myImage.path, myImage.row
+            log("Isolated image for " + self.city)
+            for myImage in self.images: log("(%d, %d)" % (myImage.path, myImage.row))
             return
 
     
@@ -267,52 +253,17 @@ class GrassLandsat:
         assert(len(self.files))
         assert(len(self.buckets))
 
-        print "getting images from swift!"
-
-        ## for b in self.buckets:
-        ##     havebucket = 0
-        ##     for f in self.files:
-        ##         if b in f:
-        ##             if os.path.exists(f):
-        ##                 print "Skipping bucket "+b+" as we already have it!"
-        ##                 havebucket = 1
-        ##     if not havebucket:
-
-        ##         command = "swift -A "+settings.SWIFT_PROXY+" -U "+settings.SWIFT_USER+" -K "+settings.SWIFT_PWD+" download "+b
-        ##         # spawna shell that executes swift, we set the sid of the shell so
-        ##         #  we can kill it and all its children with os.killpg
-        ##         p = subprocess.Popen(command, shell=True, 
-        ##                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        ##                              preexec_fn=os.setsid) 
-
-        ##         try:
-        ##             signal.signal(signal.SIGALRM, alarm_handler)
-        ##             signal.alarm(3*60)  # we will timeout after 3 minutes 
-
-        ##             p.wait()
-        ##             signal.alarm(0)  # reset the alarm
-        ##         except Alarm:
-        ##             os.killpg(p.pid, signal.SIGTERM)
-        ##             # raise an assertion so we can continue execution after 
-        ##             #  (should really have our own exception but fk it)
-        ##             raise AssertionError("Timeout gettimg images from swift")
-
-        ##         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
-
-        ## print "Complete!"
-        ## self.havefiles = 1
-
+        log("getting images from swift!")
         
         havebucket = False
         for b, f in self.buckets:
             if os.path.exists(f):
-                print "Skipping file "+f+" as we already have it!"
+                log("Skipping file "+f+" as we already have it!")
                 continue
             
             gcswift.swift("download", b, f)
-          
 
-        print "Complete!"
+        log("Complete!")
         self.havefiles = True
 
 
@@ -320,21 +271,13 @@ class GrassLandsat:
     def combineIntoPng(self):
         """ """
 
-        def getBand(fname):
-            """ Check which band is in a filename"""
-            if 'b03.' in fname:
-                return 3
-            if 'b04.' in fname:
-                return 4
-            if 'b07.' in fname:
-                return 7
-            assert False
+        
 
         def getMostRecentSet(fnames):
             """ """
             dates = []
             for f in fnames:
-                # we are always encounter '7dt' before the date
+                # we are always encounter 'dt' before the date
                 fdate = f.split('t')[1].split('.')[0]
                 if fdate not in dates:
                     dates.append(int(fdate))
@@ -352,7 +295,7 @@ class GrassLandsat:
             """ """
             tiffs = []
             cwd = os.getcwd()
-            print "Decompressing files"
+            log("Decompressing files")
             try:
                 for f in files:
                     tname = f.rstrip('.gz')
@@ -367,7 +310,7 @@ class GrassLandsat:
             except IOError as e:
                 raise AssertionError(e)
 
-            print "Complete!"
+            log("Complete!")
             return tiffs
 
         assert(self.havefiles)
@@ -378,95 +321,9 @@ class GrassLandsat:
         #print fnames
 
         if len(fnames) > 3:
-
-            print "Combining images"
+            log("Combining images")
             fnames = combine.combine_bands(fnames, str(self.gid))
 
-           ##  # need this to reproject later!
-        ##     nproj = trim.get_projection(fnames[0])
-
-        ##     # for each bucket we combine 3 bands and normalize the colour
-        ##     for (b, old_f) in self.buckets:
-        ##         l = []
-        ##         for f in fnames:
-        ##             if b in f:
-        ##                 l.append(f)
-                
-        ##         #print l
-
-
-        ##         # p = grass.run_command("r.in.gdal", input=l[0], 
-        ##         #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
-
-        ##         # p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
-        ##         # for f in l[1:]:
-        ##         #     p = grass.run_command("r.in.gdal", input=f, 
-        ##         #                           output=pre+"."+str(getBand(f)) )       
-
-        ##         # # equalize colour values, eg. min green = min blue etc
-        ##         # p = grass.run_command("i.landsat.rgb", red=pre+".7",
-        ##         #                       green=pre+".4", blue=pre+".3")
-
-        ##         # # combine bands into one image
-        ##         # p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
-        ##         #                       blue=pre+".3", output=pre+".rgb")
-
-        ##         outtiff = b+"tmp_grass.png.tif"
-        ##         outtiffs.append(outtiff)
-        ##         # p = grass.run_command("r.out.tiff", input=pre+".rgb", output=outtiff)
-
-        ##         # # reset the map so we dont fail creating a location
-        ##         # p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")     
-
-        ##     # print "Combining images"
-        ##     # fnames = combine.combine_single(outtiffs, str(self.gid))
-
-        ##     # assert len(fnames) == 1
-
-        ##     # print "Getting shapefile for", str(self.gid)
-        ##     # shpname = trim.getShapefile(self.gid)
-        ##     # #try:
-        ##     # trim.crop(shpname, fnames[0], prefix="trim_", new_projcode=nproj)
-        ##     # fnames = ["trim_"+name for name in fnames]
-        ##     # #except AssertionError as e:
-        ##     # #    print e
-
-        ##     # #This is a crappy way to convert to a png! But oh well
-        ##     # pre = str(self.gid)
-        ##     # p = grass.run_command("r.in.gdal", input=fnames[0], 
-        ##     #                       output=pre+"."+str(getBand(fnames[0])), location=pre)
-        ##     # outpng = str(self.gid)+"_grass.png"
-        ##     # p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
-
-        ## else:
-        ##     print "Getting shapefile for", str(self.gid)
-        ##     shpname = trim.getShapefile(self.gid)
-        ##     #try:
-        ##     trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_")
-        ##     fnames = ["trim_"+name for name in fnames]
-        ##     #except AssertionError as e:
-        ##     #    print e
-
-        ##     pre = str(self.gid)
-
-        ##     #read images into grass
-        ##     p = grass.run_command("r.in.gdal", input=fnames[0], 
-        ##                           output=pre+"."+str(getBand(fnames[0])), location=pre)
-        ##     p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
-        ##     for f in fnames[1:]:
-        ##         p = grass.run_command("r.in.gdal", input=f, 
-        ##                               output=pre+"."+str(getBand(f)) )       
-
-        ##     # equalize colour values, eg. min green = min blue etc
-        ##     p = grass.run_command("i.landsat.rgb", red=pre+".7",
-        ##                           green=pre+".4", blue=pre+".3")
-
-        ##     # combine bands into one image
-        ##     p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
-        ##                           blue=pre+".3", output=pre+".rgb")
-
-        ##     outpng = str(self.gid)+"_grass.png"
-        ##     p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
 
         log("Getting shapefile for", str(self.gid))
 
@@ -477,65 +334,53 @@ class GrassLandsat:
         #except AssertionError as e:
         #    print e
 
+        namesAndBands = [(fname, getBand(fname)) for fname in fnames]
+        namesAndBands = sorted(namesAndBands, key=itemgetter(1), reverse=True)
+        fnames = [fname for (fname, band) in namesAndBands]
+
         pre = str(self.gid)
-        outpng = str(self.gid)+"_grass.png"
+        allbandsTIF = str(self.gid)+"_allbands.tif"
+        allbandsPNG = str(self.gid)+"_allbands.png"
 
-        mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -separate -of PNG -o '
+        mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -separate  -o '
 
-        mergeCmd += outpng
+        mergeCmd += allbandsTIF
 
         for filename in fnames: mergeCmd += ' ' + filename
 
-        print "creating...", outpng, "with", mergeCmd
+        log("creating... " + allbandsTIF +  " with "+ mergeCmd)
 
         p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         p.wait()
         output = p.stdout.read()
         assert p.returncode == 0, "Creation of merged bands Failed"
-        print output
+        log(output)
 
-        #read images into grass
-        ## p = grass.run_command("r.in.gdal", input=fnames[0], 
-        ##                       output=pre+"."+str(getBand(fnames[0])), location=pre)
-        ## p = grass.run_command("g.mapset", location=pre, mapset="PERMANENT")
-        ## for f in fnames[1:]:
-        ##     p = grass.run_command("r.in.gdal", input=f, 
-        ##                           output=pre+"."+str(getBand(f)) )       
+        #
+        # Now convert to PNG
+        #
 
-        ## # equalize colour values, eg. min green = min blue etc
-        ## # p = grass.run_command("i.landsat.rgb", red=pre+".7",
-        ## #                      green=pre+".4", blue=pre+".3")
+        translateCmd = "/usr/local/bin/gdal_translate -of png -ot Byte -scale %s %s" % (allbandsTIF, allbandsPNG)
+        log("creating... " +  allbandsPNG + " with " + translateCmd)
 
-        ## # combine bands into one image
-        ## print "Running r.composite"
-        ## p = grass.run_command("r.composite", red=pre+".7", green=pre+".4",
-        ##                       blue=pre+".3", output=pre+".rgb")
-        ## print p
-        ## assert p == 0, "r.composite failed"
-
-        ## print "Creating " + pre + "_grass.png"
-
-        ## outpng = str(self.gid)+"_grass.png"
-        ## p = grass.run_command("r.out.png", input=pre+".rgb", output=outpng)
-        ## print p
-        ## assert p == 0, "r.out.png failed"
-
-        ## # reset the map so we dont fail creating a location
-        ## p = grass.run_command("g.mapset", location="landsat7", mapset="PERMANENT")
-        ## assert p == 0, "g.mapset failed"
+        p = Popen(translateCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+        p.wait()
+        output = p.stdout.read()
+        assert p.returncode == 0, "Creation of png  Failed"
+        log(output)
 
         # we give it 1) the name of the png created from grass 
         #  and 2) the name the greenspace calc will create
-        pngimg = pngImg(outpng, pre+".png")
+        pngimg = pngImg(allbandsPNG, pre+".png")
         pngimg.bbox = self.bbox
         self.img = pngimg
             
 
     def uploadToSwift(self):
-        print "Uploading processed image to swift"
+        log("Uploading processed image to swift")
         p = swift.do_swift_command(settings.SWIFT_PROXY, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
-        print "Complete!"
+        log("Complete!")
         
 
 
@@ -554,7 +399,7 @@ class pngImg:
         self.imgname = imgn
 
     def readImgData(self):
-        print "Attempting to read image data from", self.fname
+        log("Attempting to read image data from " + self.fname)
         try:
             f = open(self.fname, 'rb')
             imgData = f.read()
@@ -562,7 +407,7 @@ class pngImg:
             f.close()
             self.px_w, self.px_h, self.rgbs, self.metadata = image.asRGBA()
             self.rgbs = list(self.rgbs)
-            print "Complete!"
+            log("Complete!")
         except IOError as e:
             print "Error:", str(e)
             raise AssertionError(str(e)) # crappy but this is all i catch atm
@@ -574,13 +419,13 @@ class pngImg:
         return (self.bbox.ymax - self.bbox.ymin) / self.px_h
 
     def writeImg(self):
-        print "Attemping to write png", self.imgname
+        log("Attemping to write png " + self.imgname)
         try:
             wt = png.Writer(width=self.px_w, height=self.px_h, alpha=True, bitdepth=8)
             f = open(self.imgname, 'wb')
             wt.write(f, self.rgbs)
             f.close()
-            print "Complete!"
+            log("Complete!")
         except IOError as e:
             print "Error:", str(e)
             raise AssertionError(str(e))

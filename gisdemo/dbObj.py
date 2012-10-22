@@ -2,12 +2,14 @@ import psycopg2
 import settings
 
 PY2PG_TIMESTAMP_FORMAT = "YYYY-MM-DD HH24:MI:SS:MS"
+
 cluster_query =  ""
 CITY_TABLE = {'canada':"cities", 'us':"us_cities", 'all':"map",}
 ID_COL = "map.gid"
 NAME_COL = "map.name"
 GEOM_COL = "map.the_geom"
 GREEN_COL = "map.greenspace"
+
 
 IMG_TABLE = "processed"
 IMG_NAME_COL = "file_path"
@@ -32,6 +34,10 @@ class pgConnection:
                                          password=settings.DB_PASS)
         except psycopg2.ProgrammingError as e:
             print "Failed to connect to database:", str(e)
+            raise # may want to raise some other error or somebody?
+        except psycopg2.OperationalError as e:
+            print "Failed to connect to database:", str(e)
+            print "host", settings.DB_HOST, "database", settings.GIS_DATABASE, "user", settings.DB_USER, "password", settings.DB_PASS
             raise # may want to raise some other error or somebody?
 
 
@@ -69,6 +75,7 @@ class pgConnection:
         #where = " WHERE gid = 25237" # boston
         #where = " WHERE gid > 19093 AND gid < 19099" # this is boston
         #where = " WHERE name LIKE 'BOSTON' OR name LIKE 'LONDON' OR name LIKE 'CANCUN'"
+        #where = " WHERE name='KOLBASOVKA'"
         where = " WHERE "+GREEN_COL+"=0" + \
         "AND " + "ST_Intersects( ST_Transform(map.the_geom, 4326), cluster.the_geom)"
 		
