@@ -191,9 +191,9 @@ def swift_transfer(dlproxy, upproxy, imglistfile):
     # screw the threading it doesnt work like i though it would
     for b in dllist:
         try:
-            download_bucket(b, dlproxy)
-            if b in uplist:
-                upload_bucket(b, upproxy)
+            dlfailed = download_bucket(b, dlproxy)
+            if not dlfailed:
+                upfailed = upload_bucket(b, upproxy)
         except Exception as e:
             print e
 
