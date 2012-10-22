@@ -45,7 +45,7 @@ if __name__ == '__main__':
     print "Running with "+str(options.num_cities)+" cities and "+str(options.num_mappers)+" mappers"
     here = os.path.dirname(os.path.realpath(__file__))+"/"
     greenspace.init()
-    cities = greenspace.get_cities("all", options.num_cities)
+    cities = greenspace.get_cities(1, options.num_cities)
     input_files = []
     fds = []
     for n in xrange(options.num_mappers):
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     def start_server():
 	httpd.serve_forever()
     threading.Thread(target=start_server).start()
-    input_files = ["http://disco1:" + str(PORT) + "/" + os.path.basename(name) for name in input_files]
+    input_files = ["http://node0:" + str(PORT) + "/" + os.path.basename(name) for name in input_files]
     print input_files
 
     print "Setting up Disco"
@@ -82,6 +82,7 @@ if __name__ == '__main__':
                   "trim.py",
                   "dbObj.py",
                   "combine.py",
+                  "gcswift.py"
                   ]
     target_dir = here
             

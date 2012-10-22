@@ -8,7 +8,7 @@ if [ "$(whoami)" != 'root' ]; then
 fi
 
 set -o errexit
-apt-get -y --force-yes install python-pip python-dev build-essential
+apt-get -y --force-yes install python-pip python-dev build-essential python-numpy python-numpy-dev python-scipy proj
 apt-get -y --force-yes install libpq-dev
 pip install psycopg2
 pip install pypng
