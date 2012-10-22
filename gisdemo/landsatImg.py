@@ -222,7 +222,7 @@ class GrassLandsat:
         
 
         # print "total images", len(images), "total unsubsumed images", len(images1), "total connected images", len(self.images)
-        log("total images %d total subsumed images %d" % (len(images), len(self.images)))
+        log("total images %s total subsumed images %s"%(len(images), len(self.images)))
 
         for image in self.images:
             self.files.append(image.fileName)
@@ -230,7 +230,7 @@ class GrassLandsat:
            
 
         
-        log( "%d images intersect the city %d" % (len(self.files),self.city))
+        log( "%s images intersect the city %s" % (len(self.files),self.city))
 
         return len(self.files)
 
