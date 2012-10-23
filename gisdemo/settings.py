@@ -55,5 +55,10 @@ os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 os.environ['LOCATION_NAME'] = "greenspace"
 
 # Place for Temporary Files
+MACHINE_TMP_DIR = '/mnt/disk1'
+
+# This will be overwritten for this job in the entry point to the program -- set
+# to a value here just to avoid dumb python errors
 TEMP_FILE_DIR = '/mnt/disk1'
+
 
