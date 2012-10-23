@@ -28,7 +28,8 @@ START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
 SERV_NAME_COL = "server_name"
 #cityURLPrefix = "node1.gisdemo.vikelab.emulab.net/cityFiles"
-cityURLPrefix = "green.cities.trans-cloud.net/cityFiles"
+#cityURLPrefix = "green.cities.trans-cloud.net/cityFiles"
+cityURLPrefix = "198.55.35.2:8080/v1/AUTH_system/completed"
 
 cityFilePrefix = "/var/www/cityFiles/"
 blankFileName = "blank.jpg"
@@ -85,12 +86,12 @@ try:
             assert gid > 0, "Invalid GID"
             cityEndTimeStr = cityEndTime.strftime("%Y-%m-%d %H:%M")
             assert len(str(cityEndTime)) > 1, "No City End time"
-            if not fileName: 
-                passedFileName = blankFileName
-            elif os.path.exists(cityFilePrefix+fileName): 
-                passedFileName = fileName
-            else: 
-                passedFileName = blankFileName
+            ## if not fileName: 
+            ##     passedFileName = blankFileName
+            ## elif os.path.exists(cityFilePrefix+fileName): 
+            ##     passedFileName = fileName
+            ## else: 
+            ##     passedFileName = blankFileName
         #serverName = serverName[serverName.rindex("/")+1:]
         
             response += '{"name": "%s", "processedTime": "%s", "imageURL": "http://%s/%s", "serverName":"%s", "greenspace":"%s","point":"%s", "poly":"%s"},' % (cityName, cityEndTimeStr, cityURLPrefix, passedFileName, serverName, greenspace, point, poly)
