@@ -129,7 +129,7 @@ class GrassLandsat:
         self.files = []
         self.img = None
         self.havefiles = False
-        self.shapefile_tmpDir=tempfile.mkdtemp()
+        self.shapefile_tmpDir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
 
 
     def __del__(self):
