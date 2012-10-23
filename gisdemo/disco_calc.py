@@ -14,11 +14,12 @@ import settings
 import tempfile
 
 def mapper(entry, params):
-    try:
-        import os, json
+    #try:
+        import os, json, tempfile, traceback
         print os.getpid()
         settings.TEMP_FILE_DIR = tempfile.mkdtemp(prefix='mapJob', dir=settings.MACHINE_TMP_DIR)
         os.chdir(settings.TEMP_FILE_DIR)
+        greencitieslog.start()
         try:
             id, name, poly, bb1, bb2, bb3, bb4 = json.loads(entry)   
         except Exception as e:
@@ -27,12 +28,19 @@ def mapper(entry, params):
         try:
             greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all")
         except Exception as e:
-            print str(e)
-
-        print name, id
+            greencitieslog.log("Failed with:", str(e), "at", traceback.format_exc())
+            return ()
+        finally:
+            greencitieslog.close()
+        print name, id, "processed correctly."
         return ()
-    except Exception as e:
-        print "Failed!!!!!!!"
+    #except Exception as e:
+    #    print "Failed!!!!!!!"
+    #    return ()
+
+
+
+
 def mapper_init(x,y):
     print "Mapper Init"
     greenspace.init()
@@ -96,19 +104,22 @@ if __name__ == '__main__':
         print "import ",x[0]
     print "Making Job"        
     print input_files
-    worker = Worker(required_modules= rest,
+    worker = Worker(required_modules=rest,
                     master='http://disco1:8989',
                     input=input_files, 
-                    map=mapper, 
-                    save=False, 
-                    map_init=mapper_init)
+                    map=mapper,  
+                    map_init=mapper_init,
+		    sort=False)
     job = Job(name="GreenSpace",worker=worker)
     
     print "Running Job"
     job.run()
 
     print "Job run"
-    job.wait(show=True)
+    r = job.wait(show=True)
     print "Done Job"
+
+    for status, reason in result_iterator(r):
+        print status, reason
 
     httpd.shutdown()
