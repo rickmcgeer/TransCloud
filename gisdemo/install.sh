@@ -18,7 +18,8 @@ wget http://download.osgeo.org/gdal/gdal-1.9.1.tar.gz
 tar zxf gdal-1.9.1.tar.gz
 cd gdal-1.9.1
 ./configure --with-python --prefix=/usr/local
-make -j8 all install
+make -j8 all
+make install
 ldconfig
 
 
