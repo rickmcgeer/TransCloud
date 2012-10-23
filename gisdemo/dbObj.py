@@ -139,16 +139,13 @@ class pgConnection:
         st_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
         end_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
 
-        greenTbl = "UPDATE "+CITY_TABLE[region]\
-            +" SET "+GREEN_COL+"=" + str(greenspace)\
-            +" WHERE "+ID_COL+"=" + str(gid) + ";"
+        greenTbl = "UPDATE map" + " SET greenspace =" + str(greenspace) + " WHERE gid = " + str(gid) + ";"
 
-        imageTbl = "UPDATE "+IMG_TABLE\
-            +" SET "+IMG_NAME_COL+"='"+imgName+"', "\
+        imageTbl = "UPDATE " + IMG_TABLE +" SET " + IMG_NAME_COL + "='" + imgName+ "', "\
             +START_T_COL+"="+st_time+", "\
             +END_T_COL+"="+end_time+", "\
             +SERV_NAME_COL+"='"+servName+"'"\
-            +" WHERE "+ID_COL+"=" + str(gid) + ";"
+            +" WHERE gid" + "=" + str(gid) + ";"
 
         return greenTbl + imageTbl
 

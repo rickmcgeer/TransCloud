@@ -195,7 +195,9 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
 
 def process_city(gid, cityname, convex_hull, xmin_box, location):
 
-    assert (gid is not None and cityname is not None and convex_hull is not None), "Process city inputs are None"
+    assert (gid is not None and convex_hull is not None), "Process city inputs are None"
+    if cityname == None:
+        cityname = "No Name with ID:" + str(gid)
     greencitieslog.prefix = cityname
     # box is floats: [xmin, ymin, xmax, ymax]
     box = xmin_box
@@ -209,9 +211,8 @@ def process_city(gid, cityname, convex_hull, xmin_box, location):
 
     start_t = datetime.datetime.now()
 
-    log("New storage class")
     lsimg = landsatImg.GrassLandsat(gid, cityname, box, coord_sys, location)
-    print "pgConn:", pgConn
+
     log("Getting Image List")
     lsimg.getImgList(pgConn)
 
