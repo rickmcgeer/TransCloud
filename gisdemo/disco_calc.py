@@ -11,11 +11,13 @@ import SocketServer
 import threading
 import optparse
 import settings
-
+import tempfile
 
 def mapper(entry, params):
     try:
         import os, json
+        print os.getpid()
+        settings.TEMP_FILE_DIR = tempfile.mkdtemp(prefix='mapJob', dir=settings.MACHINE_TMP_DIR)
         os.chdir(settings.TEMP_FILE_DIR)
         try:
             id, name, poly, bb1, bb2, bb3, bb4 = json.loads(entry)   
