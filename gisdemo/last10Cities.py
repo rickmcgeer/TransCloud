@@ -94,7 +94,7 @@ try:
             ##     passedFileName = blankFileName
         #serverName = serverName[serverName.rindex("/")+1:]
         
-            response += '{"name": "%s", "processedTime": "%s", "imageURL": "http://%s/%s", "serverName":"%s", "greenspace":"%s","point":"%s", "poly":"%s"},' % (cityName, cityEndTimeStr, cityURLPrefix, passedFileName, serverName, greenspace, point, poly)
+            response += '{"name": "%s", "processedTime": "%s", "imageURL": "http://%s/%s", "serverName":"%s", "greenspace":"%s","point":"%s", "poly":"%s"},' % (cityName, cityEndTimeStr, cityURLPrefix, fileName, serverName, greenspace, point, poly)
         except Exception,  e:
             print str(e)
     response = response[:-1] # trim off the last ','
