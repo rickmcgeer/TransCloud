@@ -1,5 +1,6 @@
 from disco.core import Job, result_iterator
 from disco.worker.classic.worker import Worker
+import disco.worker.classic.func
 import disco
 import sys
 import os
@@ -13,10 +14,11 @@ import optparse
 import settings
 import tempfile
 
+
+
 def mapper(entry, params):
     #try:
         import os, json, tempfile, traceback
-        print os.getpid()
         settings.TEMP_FILE_DIR = tempfile.mkdtemp(prefix='mapJob', dir=settings.MACHINE_TMP_DIR)
         os.chdir(settings.TEMP_FILE_DIR)
         greencitieslog.start()
@@ -24,21 +26,17 @@ def mapper(entry, params):
             id, name, poly, bb1, bb2, bb3, bb4 = json.loads(entry)   
         except Exception as e:
             print "JSON failed", entry
-            return ()
+	    return [("JSON failure",entry)]
         try:
             greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all")
         except Exception as e:
-            greencitieslog.log("Failed with:", str(e), "at", traceback.format_exc())
-            return ()
+            msg = "Failed with:", str(e) + "at:\n" + str(traceback.format_exc())
+            greencitieslog.log(msg)
+	    return [("Failure",msg)]
         finally:
             greencitieslog.close()
-        print name, id, "processed correctly."
-        return ()
-    #except Exception as e:
-    #    print "Failed!!!!!!!"
-    #    return ()
-
-
+        print name, id, "processed."
+        return [("Success",str(id) + " " + name)]
 
 
 def mapper_init(x,y):
@@ -109,17 +107,20 @@ if __name__ == '__main__':
                     input=input_files, 
                     map=mapper,  
                     map_init=mapper_init,
-		    sort=False)
+		    sort=False,
+		    reduce=disco.worker.classic.func.nop_reduce)
     job = Job(name="GreenSpace",worker=worker)
     
     print "Running Job"
     job.run()
-
-    print "Job run"
-    r = job.wait(show=True)
-    print "Done Job"
+    try:
+	    print "Job run"
+	    r = job.wait(show=True)
+	    print "Done Job"
+    finally:
+	    httpd.shutdown()
 
     for status, reason in result_iterator(r):
         print status, reason
 
-    httpd.shutdown()
+
