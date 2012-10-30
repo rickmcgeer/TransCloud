@@ -388,7 +388,8 @@ class GrassLandsat:
 
     def uploadToSwift(self):
         log("Uploading processed image to swift")
-        p = swift.do_swift_command(settings.SWIFT_PROXY, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
+        p = gcswift.do_swift_command(settings.SWIFT_PROXY2, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
+        log("Swift finished with ", p.returncode)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         log("Complete!")
         
