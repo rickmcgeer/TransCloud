@@ -254,7 +254,7 @@ def process_city(gid, cityname, convex_hull, xmin_box, location):
     log("Cleanup")
     del lsimg
 
-
+    os.unlink(settings.TEMP_FILE_DIR)
     log("RESULT:",gid, cityname, greenspace)
 
 
