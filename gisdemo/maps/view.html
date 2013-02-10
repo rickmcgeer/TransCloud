@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+ 
+    <link rel="stylesheet" href="style.css" type="text/css">
+        <style type="text/css">
+            html, body, #map {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            #text {
+                position: absolute;
+                bottom: 1em;
+                left: 1em;
+                width: 512px;
+                z-index: 20000;
+                background-color: white;
+                padding: 0 0.5em 0.5em 0.5em;
+            }
+        </style>
+   <script src="../maps/Firebug/firebug.js"></script> 
+    <script src="./OpenLayers.debug.js"></script>
+
+
+    <script type="text/javascript">
+
+var styles = new OpenLayers.StyleMap({
+                "default": new OpenLayers.Style(null, {
+                    rules: [
+                        new OpenLayers.Rule({
+                            symbolizer: {
+                                "Point": {
+                                    pointRadius: 5,
+                                    graphicName: "square",
+                                    fillColor: "white",
+                                    fillOpacity: 0.25,
+                                    strokeWidth: 1,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#3333aa"
+                                },
+                                "Line": {
+                                    strokeWidth: 3,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#6666aa"
+                                },
+                                "Polygon": {
+                                    fillOpacity: 0.75,
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    fillColor: "#ff9900",
+                                    strokeColor: "#ffffff",
+                                           label : "${name}", 
+            fontColor: "#000000",
+                    fontSize: "12px",
+                    fontFamily: "Courier New, monospace",
+                    fontWeight: "bold",
+                    labelAlign: "center",
+                    labelOutlineColor: "white",
+                    labelOutlineWidth: 3
+                                }
+                            }
+                        })
+                    ]
+                }),
+                "select": new OpenLayers.Style(null, {
+                    rules: [
+                        new OpenLayers.Rule({
+                            symbolizer: {
+                                "Point": {
+                                    pointRadius: 5,
+                                    graphicName: "square",
+                                    fillColor: "white",
+                                    fillOpacity: 0.25,
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Line": {
+                                    strokeWidth: 3,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Polygon": {
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    fillColor: "#0000ff",
+                                    strokeColor: "#0000ff"
+                                }
+                            }
+                        })
+                    ]
+                }),
+                "temporary": new OpenLayers.Style(null, {
+                    rules: [
+                        new OpenLayers.Rule({
+                            symbolizer: {
+                                "Point": {
+                                    graphicName: "square",
+                                    pointRadius: 5,
+                                    fillColor: "white",
+                                    fillOpacity: 0.25,
+                                    strokeWidth: 2,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Line": {
+                                    strokeWidth: 3,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Polygon": {
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff",
+                                    fillColor: "#0000ff"
+                                }
+                            }
+                        })
+                    ]
+                })
+<!-- , context: { -->
+<!--       width: function(feature) { -->
+<!--         return (feature.cluster) ? 2 : 1; -->
+<!--       } -->
+<!--     } -->
+ 
+            });
+            var styles2 = new OpenLayers.StyleMap({
+                "default": new OpenLayers.Style(null, {
+                    rules: [
+                        new OpenLayers.Rule({
+                            symbolizer: {
+                                "Point": {
+                                    pointRadius: 5,
+                                    graphicName: "square",
+                                    fillColor: "white",
+                                    fillOpacity: 0.25,
+                                    strokeWidth: 1,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#3333aa"
+                                },
+                                "Line": {
+                                    strokeWidth: 3,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#6666aa"
+                                },
+                                "Polygon": {
+                                    fillOpacity: 0.75,
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    fillColor: "#ffff00",
+                                    strokeColor: "#ffffff"
+                                }
+                            }
+                        })
+                    ]
+                }),
+                "select": new OpenLayers.Style(null, {
+                    rules: [
+                        new OpenLayers.Rule({
+                            symbolizer: {
+                                "Point": {
+                                    pointRadius: 5,
+                                    graphicName: "square",
+                                    fillColor: "white",
+                                    fillOpacity: 0.25,
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Line": {
+                                    strokeWidth: 3,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Polygon": {
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    fillColor: "#0000ff",
+                                    strokeColor: "#0000ff"
+                                }
+                            }
+                        })
+                    ]
+                }),
+                "temporary": new OpenLayers.Style(null, {
+                    rules: [
+                        new OpenLayers.Rule({
+                            symbolizer: {
+                                "Point": {
+                                    graphicName: "square",
+                                    pointRadius: 5,
+                                    fillColor: "white",
+                                    fillOpacity: 0.25,
+                                    strokeWidth: 2,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Line": {
+                                    strokeWidth: 3,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff"
+                                },
+                                "Polygon": {
+                                    strokeWidth: 2,
+                                    strokeOpacity: 1,
+                                    strokeColor: "#0000ff",
+                                    fillColor: "#0000ff"
+                                }
+                            }
+                        })
+                    ]
+                })
+            });
+
+
+
+        var lon = -124;
+        var lat = 54;
+        var zoom = 6;
+        var map;
+
+        var bingkey = 'AsN6eEPp8cjIxqSJnKHBUFRYh1n7r_MLJ0ntbB6UxlXHm81B5ALhH3C1C7QWGaUA';
+
+
+	function onPopupClose(evt) {
+            selectControl.unselect(selectedFeature);
+        }
+        function onFeatureSelect(feature) {
+            selectedFeature = feature;
+	    var myStr = "<div style='font-size:.8em'>Feature: " + feature.id +"<br>Area: " + feature.geometry.getArea()+"</div>"
+	    // OpenLayers.Console.log(myStr);
+            popup = new OpenLayers.Popup.FramedCloud("chicken", 
+                                     feature.geometry.getBounds().getCenterLonLat(),
+                                     null,
+                                     "<div style='font-size:.8em'>Feature: " + feature.id +"<br>Area: " + feature.geometry.getArea()+"</div>",
+                                     null, true, onPopupClose);
+            feature.popup = popup;
+            map.addPopup(popup);
+        }
+        function onFeatureUnselect(feature) {
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            feature.popup = null;
+        }    
+
+
+        function init(){
+
+            // Avoid pink error tiles
+            OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;   
+            OpenLayers.Util.onImageLoadErrorColor = "transparent";
+            
+var options = {
+      projection: new OpenLayers.Projection("EPSG:900913"),
+      displayProjection: new OpenLayers.Projection("EPSG:4326"),
+      units: "m",
+      numZoomLevels: 20,
+      maxResolution: 156543.0339,
+      maxExtent: new OpenLayers.Bounds(-20037508, -20037508,
+                                              20037508, 20037508.34)
+  };
+
+
+map = new OpenLayers.Map('map', options);
+            map.addControl(new OpenLayers.Control.LayerSwitcher());
+
+           map.addControl(new OpenLayers.Control.MousePosition());
+           map.addControl(new OpenLayers.Control.PanZoom());
+map.addControl(new OpenLayers.Control.Permalink());
+map.addControl(new OpenLayers.Control.Navigation());
+<!-- // create Google Satellite layer -->
+<!-- var gsat = new OpenLayers.Layer.Google( -->
+<!-- "Google Satellite", -->
+<!-- {type: G_SATELLITE_MAP, 'sphericalMercator': true, numZoomLevels: 20} -->
+<!-- ); -->
+
+
+ 
+           var aerial = new OpenLayers.Layer.Bing({
+                name: "Aerial",
+                key: bingkey,
+                type: "Aerial",
+            });
+            map.addLayer(aerial);
+
+     	    var proj = new OpenLayers.Projection("EPSG:4326");
+	    var point = new OpenLayers.LonLat(lon, lat);
+	    point.transform(proj, map.getProjectionObject());
+            map.setCenter(point, zoom);
+ 
+	   var clusters = new OpenLayers.Layer.WMS("Cluster Boundries",
+           "http://green.cities.trans-cloud.net:8080/geoserver/greencities/wms", 
+            {'layers': 'greencities:clusters', transparent: true, version:'1.3.0'},
+            {isBaseLayer: false},
+	    {singleTile: true}
+        );
+	   clusters.setVisibility(false);
+
+           map.addLayer(clusters);
+
+	   var images = new OpenLayers.Layer.WMS("Images",
+           "http://green.cities.trans-cloud.net:8080/geoserver/wms", 
+            {'layers': 'greencities:tiff4326', transparent: true},
+            {isBaseLayer: false}
+        );
+
+           map.addLayer(images);
+	   images.setVisibility(false);
+
+	   var cities = new OpenLayers.Layer.WMS("Cities",
+           "http://green.cities.trans-cloud.net:8080/geoserver/wms", 
+            {'layers': 'greencities:cities', transparent: true},
+            {isBaseLayer: false}
+        );
+
+	    map.addLayer(cities);
+	  
+
+          var selectControl= new OpenLayers.Control.WMSGetFeatureInfo({
+            url: 'http://green.cities.trans-cloud.net:8080/geoserver/wms',
+            title: 'Identify features by clicking',
+            queryVisible: true,
+            eventListeners: {
+                getfeatureinfo: function(event) {
+		    var cityIndex = event.text.indexOf("cities.");
+		    if (cityIndex < 0) return;
+	            var cityString = event.text.substr(cityIndex + 7, 10);
+		    var endOfString = cityString.indexOf('<');
+	            var cityNumber = cityString.substr(0, endOfString);
+		    var restOfString = event.text.substr(cityIndex + 7);
+		    var startOfCityName = restOfString.indexOf("<td>");
+		    var cityNameString = restOfString.substr(startOfCityName + 4);
+		    var endOfName = cityNameString.indexOf('<');
+		    var cityName = cityNameString.substr(0, endOfName);
+		    var greenValueString = cityNameString.substr(endOfName);
+		    var startOfValueIndex = greenValueString.indexOf("<td>");
+		    var valueString = greenValueString.substr(startOfValueIndex + 4);
+		    var endValueIndex = valueString.indexOf("<");
+		    var valueAsString = valueString.substr(0, endValueIndex);
+		    var greenValue = Math.round(parseFloat(valueAsString) * 1000)/10; // .22573 becomes 22.6%
+
+
+		    var imgURL = '<img src="' + 'http://198.55.35.2:8080/v1/AUTH_system/completed/' + cityNumber + '.png"/>';
+		    var htmlBody = '<body>'+'<h1>'+ cityName + ': ' + greenValue + '%</h1>' + imgURL+ '</body>';
+		    var htmlText = '<html><head></head>' + htmlBody + '</html>';
+	     
+                    map.addPopup(new OpenLayers.Popup.FramedCloud(
+                        "chicken", 
+                        map.getLonLatFromPixel(event.xy),
+                        null,
+                        htmlText,
+                        null,
+                        true
+                    ));
+                }
+            }
+        });
+	   /* var control = new OpenLayers.Control.GetFeature({
+                protocol: OpenLayers.Protocol.WFS.fromWMSLayer(cities),
+                box: true,
+                hover: true,
+                multipleKey: "shiftKey",
+                toggleKey: "ctrlKey"
+            });
+
+	  var select, hover;
+	   select = new OpenLayers.Layer.Vector("Selection", {styleMap: 
+                new OpenLayers.Style(OpenLayers.Feature.Vector.style["select"])
+            });
+            hover = new OpenLayers.Layer.Vector("Hover");
+            map.addLayers([ hover, select]);
+            
+
+            control.events.register("featureselected", this, function(e) {
+                select.addFeatures([e.feature]);
+            }); */
+            /* var selectControl = new OpenLayers.Control.SelectFeature(cities,
+                {onSelect: onFeatureSelect, onUnselect: onFeatureUnselect}); */
+            <!-- control.events.register("featureunselected", this, function(e) { -->
+            <!--     select.removeFeatures([e.feature]); -->
+            <!-- }); -->
+            <!-- control.events.register("hoverfeature", this, function(e) { -->
+            <!--     hover.addFeatures([e.feature]); -->
+            <!-- }); -->
+            <!-- control.events.register("outfeature", this, function(e) { -->
+            <!--     hover.removeFeatures([e.feature]); -->
+            <!-- }); -->
+            /* map.addControl(control);
+            control.activate(); */
+            map.addControl(selectControl);
+	    selectControl.activate();
+
+          
+ 
+        }
+    </script>
+  </head>
+  <body onload="init()">
+
+        <div id="map"></div>
+
+<!--          <div id="text">
+              <h1 id="title">GreenCities Demo</h1>
+
+              <div id="tags">
+                css, style, fullscreen, window, margin, padding, scrollbar
+              </div>
+
+              <p id="shortdesc">
+	      A demonstration of TransGeo, an open-source multisite GIS Cloud developed at the University of Victoria
+            </p>
+
+            <div id="docs">
+                <p>
+                Big Data jobs are a key use case for federating clouds at multiple sites.
+In this project, we are developing a prototype open-source system to demonstrate
+Big Data processing at multiple sites.  This system uses a single PostGIS
+database as a repository for meta-data, and landsat (or other) satellite
+image data in Swift repositories, and distributed Disco jobs to do the analysis
+ 
+            </div>
+-->           
+        </div>
+
+    </body>
+</html>
