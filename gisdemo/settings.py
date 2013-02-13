@@ -1,7 +1,7 @@
-CLUSTERS={'HP':'198.55.35.55', 'EMULAB':'155.98.38.233'}
+CLUSTERS={'HP':'198.55.35.2'}
 
 
-SWIFT_PROXY1 = CLUSTERS['EMULAB']
+SWIFT_PROXY1 = CLUSTERS['HP']
 SWIFT_PROXY2 = CLUSTERS['HP']
 SWIFT_USER = "system:gis"
 SWIFT_PWD = "uvicgis"
@@ -28,6 +28,7 @@ GIS_DATABASE = "world"
 
 import os
 import sys
+import greencitieslog
 
 # export GISDBASE=$HOME/grassdata
 os.environ['GISDBASE'] = str(os.path.join(os.environ['HOME'], 'grassdata'))
@@ -55,10 +56,10 @@ os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 os.environ['LOCATION_NAME'] = "greenspace"
 
 # Place for Temporary Files
-MACHINE_TMP_DIR = '/mnt/disk1'
+MACHINE_TMP_DIR = '/tmp/'
 
 # This will be overwritten for this job in the entry point to the program -- set
 # to a value here just to avoid dumb python errors
-TEMP_FILE_DIR = '/mnt/disk1'
+TEMP_FILE_DIR = '/tmp/'
 
 
