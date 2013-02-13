@@ -1,0 +1,54 @@
+from fabric.api import *
+from fabric.contrib.console import confirm
+import os
+
+env.use_ssh_config=True
+
+here = os.path.realpath(__file__)
+
+zipfile= 'my_project.tar.gz'
+
+
+env.roledefs = {
+    'uvic': ['sebulba.cs.uvic.ca','genericuser@grack06.uvic.trans-cloud.net'],
+    'northwestern': [],
+}
+
+env.passwords = {'genericuser@grack06.uvic.trans-cloud.net':'cleb020', 'sebulba.cs.uvic.ca':'enec869'}
+
+
+def test():
+    local("py.test mq/mq.py mq/taskmanager.py")
+
+def pack():
+    local('find . -name "*.pyc" -exec rm -rf {} \;')
+    local('find . -name "__pycache__" -exec rm -rf {} \;')
+    local('rm -rf /tmp/'+zipfile)
+    local('tar czf /tmp/'+zipfile+' .')
+
+# where to install on the remote machine
+deploy_path='/usr/local/src/greencities/'
+
+
+@roles('uvic')
+def deploy():
+    pack()
+    put('/tmp/'+zipfile, '/tmp/')
+    sudo('rm -rf '+deploy_path)
+    sudo('mkdir '+deploy_path)
+    sudo('chmod -R 777 '+deploy_path)
+    with cd(deploy_path):
+        sudo('tar xzf /tmp/'+zipfile)
+        run('py.test mq/mq.py mq/taskmanager.py')
+
+@roles('uvic')
+def install_deps():
+    with settings(warn_only=True):
+        sudo('apt-get update')
+    sudo('apt-get -y install python-pip python-dev python-py libpq-dev')
+    pkgs = ['pypng','pytest','python-swiftclient','iron-mq', 'psycopg2']
+    sudo('pip install --upgrade pip')
+    sudo('pip install --upgrade virtualenv')
+    for pkg in pkgs:
+        sudo('pip install '+pkg)
+ 
