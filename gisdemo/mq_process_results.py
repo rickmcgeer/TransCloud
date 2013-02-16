@@ -22,20 +22,28 @@ def submit_result(greenspace_val, gid, cityname, stime, etime, imgname, serverna
 
         greenspace.pgConn.performUpdate(update_stmnt)
 
-def process_results():
+
+def process_results(prefix="", testing=False):
+    submitted = []
     try:
-        client = taskmanager.TaskClient(queue=taskmanager.RESULT_QUEUE_NAME)
-        greenspace.init()
+        client = taskmanager.TaskClient(queue=prefix+taskmanager.RESULT_QUEUE_NAME)
+	if not testing:
+		greenspace.init()
+
         while(True):
             try:
                 print "Getting new task:"
-                new_job, jobid = client.blocking_get_task()
+                new_job, jobid = client.get_task()
+		if new_job == None:
+			return submitted
 
                 print new_job
                 new_job = json.loads(new_job['result'])
-    
-                submit_result(**new_job)
-                print "Submitted:", new_job
+
+		if not testing:
+			submit_result(**new_job)
+		submitted.append(new_job)
+
                 client.report_done(jobid)
             except Exception as e:
                 print str(e)

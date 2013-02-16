@@ -14,9 +14,6 @@ import greencitieslog
 import landsatImg
 import dbObj
 
-
-
-
 # NOTE: these should really be in dbObj.py but ahm lay z
 # these correspond to the selected column num in the SQL statement
 GID = 0
@@ -254,8 +251,8 @@ def process_city(gid, cityname, convex_hull, xmin_box, location, testing=False):
         
         
     end_t = datetime.datetime.now()
-    result_dict = {'gid':gid,
-                   'cityname':cityname,
+    result_dict = {'id':gid,
+                   'name':cityname,
                    'greenspace_val':greenspace,
                    'stime':start_t.isoformat(),
                    'etime':end_t.isoformat(),
@@ -274,7 +271,6 @@ def get_cities(location, num_cities=10):
     return records
 
 def main(location):
-	
     global pgConn
     records = get_cities(location)
     os.chdir(settings.TEMP_FILE_DIR)
@@ -309,7 +305,6 @@ def init():
 
 def close():
     greencitieslog.close()
-
 
 if __name__ == '__main__':
     init()

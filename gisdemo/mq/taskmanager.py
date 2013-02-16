@@ -53,6 +53,9 @@ class TaskManager():
             self.clear(key)
         mq.clear_queue( self.test_prefix+RESULT_QUEUE_NAME)
 
+    def get_size(self, site):
+        return mq.sizeof(self.myqueue(site))
+
 
 RESULT_QUEUE_NAME="global_results_queue"
 
@@ -61,6 +64,8 @@ class TaskClient():
         mq.setup()
         self.prefix=prefix
         self.queue = prefix+queue
+
+    
 
     def queuename(self):
         print self.queue
@@ -72,6 +77,10 @@ class TaskClient():
             return None, None
         task = json.loads(jobstr)
         return task, jobid
+    
+    def get_size(self):
+        return mq.sizeof(self.queuename())
+
 
     def blocking_get_task(self):
         delay = 1

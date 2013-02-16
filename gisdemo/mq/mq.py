@@ -79,7 +79,11 @@ def clear_queue(queue):
         _ironmq.clearQueue(queue_name=queue)
     except      :
         print "Warning: tried to clear a queue which does not exisit", queue
-    
+
+
+def sizeof(queue):
+    return _ironmq.getQueueDetails(queue_name=queue)['size']
+
 
 def test_jobqueue():
     """Hook for the unit tests"""
