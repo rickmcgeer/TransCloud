@@ -4,6 +4,7 @@ import re
 import dbObj
 import settings
 
+
 def get_projection(fil):
     command = "gdalinfo " + fil
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -18,6 +19,8 @@ def reproject_shapefile(shapefile, new_projcode):
     new_fil = "./tmp2/"+ shapefile
     if os.path.exists(new_fil):
         return new_fil
+    assert os.path.exists(shapefile), "Shapefile does not exist!"
+
     base,ext = shapefile.split(".")
     cmd =  'ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" tmp2 ' + shapefile
     print cmd
