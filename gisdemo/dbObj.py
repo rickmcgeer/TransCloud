@@ -139,16 +139,13 @@ class pgConnection:
         st_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
         end_time = "to_timestamp('"+str(start)+"', '"+PY2PG_TIMESTAMP_FORMAT+"')"
 
-        greenTbl = "UPDATE "+CITY_TABLE[region]\
-            +" SET "+GREEN_COL+"=" + str(greenspace)\
-            +" WHERE "+ID_COL+"=" + str(gid) + ";"
+        greenTbl = "UPDATE map" + " SET greenspace =" + str(greenspace) + " WHERE gid = " + str(gid) + ";"
 
-        imageTbl = "UPDATE "+IMG_TABLE\
-            +" SET "+IMG_NAME_COL+"='"+imgName+"', "\
+        imageTbl = "UPDATE " + IMG_TABLE +" SET " + IMG_NAME_COL + "='" + imgName+ "', "\
             +START_T_COL+"="+st_time+", "\
             +END_T_COL+"="+end_time+", "\
             +SERV_NAME_COL+"='"+servName+"'"\
-            +" WHERE "+ID_COL+"=" + str(gid) + ";"
+            +" WHERE gid" + "=" + str(gid) + ";"
 
         return greenTbl + imageTbl
 
@@ -171,9 +168,18 @@ class pgConnection:
             return
 
 
-if __name__ == "__main__":
-    db = pgConnection()
+def test_db():
+    try:
+        db = pgConnection()
+    except Exception as e:
+        assert False, "Database connection failed:"+str(e)
+    assert db!=None, "Database returned no handle."
+
     q = db.createClusterQuery("SRID=4326;POINT(-43.23456 72.4567772)")
     assert db.performSelect(q)[0] == 1
+
     
-    
+    select_query = pgConn.createSelectQuery(1, 10)
+    assert len(select_query) > 0 and "SELECT" in select_query and ";" in select_query, "poorly formed database query"
+    records = pgConn.performSelect(select_query)
+    assert len(records) == 10, "Did not get the right number of cities back"

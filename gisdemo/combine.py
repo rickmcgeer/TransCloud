@@ -12,16 +12,17 @@ import shutil
 from subprocess import Popen, PIPE, STDOUT
 import tempfile
 import settings
-
+from greencitieslog import log
 #
 # I think _uncompress, _stitch_with_master and _remove_nearblack are now dead code...
 #
 def _uncompress(file_path):
     cmd = '/usr/local/bin/gdal_translate %s %s.uncompressed.tif' % (file_path, file_path)
+    log("Calling:",cmd)
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     p.wait()
-    output = p.stdout.read()
-    log(output)
+    out,err = p.communicate()
+    log("Gdal_transulate", out, err)
     assert p.returncode == 0, "Uncompress Failed"
     return '%s.uncompressed.tif' % file_path
 

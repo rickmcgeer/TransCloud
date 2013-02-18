@@ -22,6 +22,7 @@ import dbObj
 import trim
 import combine
 from greencitieslog import log
+import tempfile
 
     
 def getBand(fname):
@@ -128,6 +129,7 @@ class GrassLandsat:
         self.files = []
         self.img = None
         self.havefiles = False
+        self.shapefile_tmpDir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
 
 
     def __del__(self):
@@ -138,7 +140,7 @@ class GrassLandsat:
             toremove += "*"+b+"* "
         if self.img:
             toremove += self.img.fname+" "+self.img.imgname+" "
-        toremove += str(self.gid)+"* "+"tmp2/"+str(self.gid)+"* "
+        toremove += str(self.gid)+"* "+ self.shapefile_tmpDir + "/"+str(self.gid)+"* "
 
         
 
@@ -222,7 +224,7 @@ class GrassLandsat:
         
 
         # print "total images", len(images), "total unsubsumed images", len(images1), "total connected images", len(self.images)
-        log("total images %d total subsumed images %d" % (len(images), len(self.images)))
+        log("total images %s total subsumed images %s"%(len(images), len(self.images)))
 
         for image in self.images:
             self.files.append(image.fileName)
@@ -230,7 +232,7 @@ class GrassLandsat:
            
 
         
-        log( "%d images intersect the city %d" % (len(self.files),self.city))
+        log( "%s images intersect the city %s" % (len(self.files),self.city))
 
         return len(self.files)
 
@@ -253,12 +255,10 @@ class GrassLandsat:
         assert(len(self.files))
         assert(len(self.buckets))
 
-        log("getting images from swift!")
-        
         havebucket = False
         for b, f in self.buckets:
             if os.path.exists(f):
-                log("Skipping file "+f+" as we already have it!")
+                # Skipping file "+f+" as we already have it!
                 continue
             
             gcswift.swift("download", b, f)
@@ -293,6 +293,7 @@ class GrassLandsat:
 
         def decompressTiffs(files):
             """ """
+            import zlib
             tiffs = []
             cwd = os.getcwd()
             log("Decompressing files")
@@ -308,9 +309,18 @@ class GrassLandsat:
                         outf.write(dcmpdata)
                         outf.close()
             except IOError as e:
+                # might be corrupt - delete now so not cached
+                for f in files:
+                    print "Corrupt files, unlinking:", f
+                    os.unlink(f)
                 raise AssertionError(e)
-
-            log("Complete!")
+            except zlib.error as e:
+                # might be corrupt - delete now so not cached
+                for f in files:
+                    print "Corrupt files, unlinking:", f
+                    os.unlink(f)
+                raise AssertionError(e)
+            log("Decompressing files done")
             return tiffs
 
         assert(self.havefiles)
@@ -329,7 +339,7 @@ class GrassLandsat:
 
         shpname = trim.getShapefile(self.gid)
         #try:
-        trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_")
+        trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.shapefile_tmpDir)
         fnames = ["trim_"+name for name in fnames]
         #except AssertionError as e:
         #    print e
@@ -378,7 +388,8 @@ class GrassLandsat:
 
     def uploadToSwift(self):
         log("Uploading processed image to swift")
-        p = swift.do_swift_command(settings.SWIFT_PROXY, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
+        p = gcswift.do_swift_command(settings.SWIFT_PROXY2, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
+        log("Swift finished with ", p.returncode)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         log("Complete!")
         

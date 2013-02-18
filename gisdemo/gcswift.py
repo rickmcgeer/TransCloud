@@ -13,19 +13,21 @@ class Alarm(Exception):
 def alarm_handler(signum, frame):
     raise Alarm
 
+def _to_proxy_url(ip):
+    return "http://" + ip + ":8080/auth/v1.0"
 
 def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
 
   if type(args) == list or type(args)==tuple:
-      print args
       args = ' '.join(args)
-  command = "swift -A "+swift_proxy+" -U "+settings.SWIFT_USER+ \
-    " -K "+settings.SWIFT_PWD+ " " + \
+  if "http://" not in swift_proxy:
+      swift_proxy = _to_proxy_url(swift_proxy)
+
+  command = "swift -A " + swift_proxy + " -U " + settings.SWIFT_USER + \
+    " -K " + settings.SWIFT_PWD + " " + \
     operation + " " + \
     bucket + " " + \
     args
-
-  print command
 
   # spawn a shell that executes swift, we set the sid of the shell so
   #  we can kill it and all its children with os.killpg
@@ -58,7 +60,7 @@ def swift(operation, bucket, *args):
   """
   # if the image is migging, upload it
   cache = False
-  process = do_swift_command("http://"+settings.SWIFT_PROXY1+":8080/auth/v1.0", \
+  process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), \
                                  operation, bucket, True, *args)
   if process.returncode != 0:
     message = process.communicate()[1]
@@ -68,12 +70,12 @@ def swift(operation, bucket, *args):
         cache = True
 
 
-    process = do_swift_command("http://"+settings.SWIFT_PROXY2+":8080/auth/v1.0", operation, bucket, True, *args)
+    process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), operation, bucket, True, *args)
   assert process.returncode == 0, "Failed on swift host %s with %s" % \
       (settings.SWIFT_PROXY2, process.communicate()[1])
   if cache:
       print "Uploading the image to local cluster..."
-      process = do_swift_command("http://"+settings.SWIFT_PROXY1+":8080/auth/v1.0", "upload", bucket, True, *args)
+      process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), "upload", bucket, True, *args)
       if process.returncode != 0:
           message = process.communicate()[1]
           print "Uploading failed." + message

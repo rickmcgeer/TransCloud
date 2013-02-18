@@ -3,42 +3,40 @@ import os
 import re
 import dbObj
 import settings
+from greencitieslog import log
 
 
 def get_projection(fil):
     command = "gdalinfo " + fil
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     p.wait()
-    assert p.returncode == 0
+    assert p.returncode == 0, "Gdal info failed."
     out, err = p.communicate()
     auth = [x.strip() for x in out.split("\n") if 'AUTHORITY["' in x][-1]
     return auth.split('"')[3]
     
 
-def reproject_shapefile(shapefile, new_projcode):
-    new_fil = "./tmp2/"+ shapefile
-    if os.path.exists(new_fil):
-        return new_fil
-    assert os.path.exists(shapefile), "Shapefile does not exist!"
-
+def reproject_shapefile(shapefile, new_projcode, shapefile_tmpDir):
+    new_fil = shapefile_tmpDir + "/"+ shapefile
     base,ext = shapefile.split(".")
-    cmd =  'ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" tmp2 ' + shapefile
-    print cmd
+    cmd =  'ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" '  + new_fil  + " " + shapefile
+    log("Running:", cmd)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     p.wait()
-    assert p.returncode == 0, "Reprojection failed - Probably a SRS missmatch..."
     out, err = p.communicate()
-    print out
+    log("ogr2ogr said:", out, err)
+    assert p.returncode == 0, "Reprojection failed - Probably a SRS missmatch..."
     return new_fil
     
 
-def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_", new_projcode=None):
+def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_", new_projcode=None, shapefile_tmpDir="tmp2"):
     layername =  shapefile.split(".")[0]
     if not new_projcode:
         new_projcode = get_projection(raster)
-    new_shapefile = reproject_shapefile(shapefile, new_projcode)
+    new_shapefile = reproject_shapefile(shapefile, new_projcode, shapefile_tmpDir)
 
     command = "ogrinfo  %s %s" % (new_shapefile,layername)
+    print "Getting shape info", command
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     p.wait()
     out, err = p.communicate()
@@ -52,16 +50,19 @@ def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_", new_projc
 
     command_prefix = "gdal_translate -projwin " + bb_str + " -of GTiff "
     command = command_prefix + raster + " "+ prefix+raster
+    print "Crop command", command
   
   
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
 
     if raster2:
         command2 = command_prefix + raster2 + " "+prefix+raster2
+        print "Crop command", command2
         q = subprocess.Popen(command2, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
 
     if raster3:
         command3 = command_prefix + raster3 + " "+prefix+raster3
+        print "Crop command", command3
         r = subprocess.Popen(command3, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
 
 
@@ -116,9 +117,9 @@ def getShapefile(gid):
 if __name__ == "__main__":
     assert get_projection("p145r032_7dt20060730.SR.b03.tif") == "32644", "Did not get the correct projection"
     
-    assert reproject_shapefile("19094.shp", "32617") == "./tmp2/19094.shp"
+    assert reproject_shapefile("19094.shp", "32617", "tmp2") == "./tmp2/19094.shp"
 
-    crop("19094.shp", "p019r026_7dt20050708.SR.b03.tif", prefix="new_")
+    crop("19094.shp", "p019r026_7dt20050708.SR.b03.tif", prefix="new_", shapefile_tmpDir="tmp2")
 
     #getShapefile(23839)
 
