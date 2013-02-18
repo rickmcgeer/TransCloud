@@ -5,6 +5,7 @@ import dbObj
 import settings
 from greencitieslog import log
 
+
 def get_projection(fil):
     command = "gdalinfo " + fil
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)

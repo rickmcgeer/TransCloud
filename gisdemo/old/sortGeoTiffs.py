@@ -1,7 +1,25 @@
 from osgeo import osr, gdal
 from gdalconst import *
 import os
+import shutil
 
+def convert_bytes(bytes):
+    bytes = float(bytes)
+    if bytes >= 1099511627776:
+        terabytes = bytes / 1099511627776
+        size = '%.2fT' % terabytes
+    elif bytes >= 1073741824:
+        gigabytes = bytes / 1073741824
+        size = '%.2fG' % gigabytes
+    elif bytes >= 1048576:
+        megabytes = bytes / 1048576
+        size = '%.2fM' % megabytes
+    elif bytes >= 1024:
+        kilobytes = bytes / 1024
+        size = '%.2fK' % kilobytes
+    else:
+        size = '%.2fb' % bytes
+    return size
 
 def getLatLon(file):
 
@@ -39,15 +57,64 @@ def getLatLon(file):
     latlong = transform.TransformPoint(minx,miny) 
     return latlong
 dir = "/home/cmatthew/tmp/ls7tmp/"
+_in = 0
+out = 0
+count = 0
+tiff_count = 0
+
+def move(file, dir, f):
+    f_name = f[:-3]
+    prefix_old = dir + f_name 
+    prefix_new = dir + "higher_lats/" + f_name 
+    print prefix_old, prefix_new
+    
+    print ">>", prefix_old+"tif", prefix_new+"tif"
+    print ">>", prefix_old+"tifw", prefix_new+"tifw"
+    print ">>", prefix_old+"aux", prefix_new+"aux"
+#    print ">>", prefix_old+"txt", prefix_new+"txt"
+
+    try:
+        print "1", os.stat(prefix_old+"tif")
+        print "2", os.stat(prefix_old+"tifw")
+        print "3", os.stat(prefix_old+"aux")
+#        print "4", os.stat(prefix_old+"txt")
+    except:
+        pass
+    
+    try:
+        shutil.move(prefix_old+"tif", prefix_new+"tif")
+    except:
+        print "Failed:", prefix_old+"tif"
+    try:
+        shutil.move(prefix_old+"tifw", prefix_new+"tifw")
+    except:
+        print "Failed:", prefix_old+"tifw"
+    try:
+        shutil.move(prefix_old+"aux", prefix_new+"aux")
+    except:
+        "Failed:", prefix_old+"aux"
+    # try:
+    #     shutil.move(prefix_old+"txt", prefix_new+"txt")
+    # except:
+    #     "Failed:", prefix_old+"txt"
+
+
 for f in os.listdir(dir):
+    count += 1
+    file = dir + f
+    # print file
     if f[-3:] == "tif":
-        file = dir + f
-        lat =  getLatLon(file)[1]
-
+        tiff_count += 1
+        try:
+            lat =  getLatLon(file)[1]
+        except:
+            print "Skipping:", file
+            continue
         if lat < 55:
-            print "Keep", file
+            #print "Keep", file
+            _in += os.path.getsize(file)
+        else:
+            out += os.path.getsize(file)
+            move(file, dir, f)
 
-        else:    
-            print "Trash", file
-
-
+print count, tiff_count, convert_bytes(_in), convert_bytes(out), convert_bytes(_in + out)

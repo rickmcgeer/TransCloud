@@ -1,15 +1,15 @@
-CLUSTERS={'HP':'198.55.35.2'}
+CLUSTERS={'UVIC':'142.104.195.225', 'UVIC2':'142.104.195.226'}
 
 
-SWIFT_PROXY1 = CLUSTERS['HP']
-SWIFT_PROXY2 = CLUSTERS['HP']
+SWIFT_PROXY1 = CLUSTERS['UVIC']
+SWIFT_PROXY2 = CLUSTERS['UVIC2']
 SWIFT_USER = "system:gis"
 SWIFT_PWD = "uvicgis"
 SWIFT_PNG_BUCKET = "completed"
 
 # if the first proxy fails, fall back to this one
 # currently set to HP
-DEFAULT_SWIFT_HOST = "198.55.35.2"
+DEFAULT_SWIFT_HOST = "142.104.195.226"
 
 
 IMG_LOC = "/tmp/"
