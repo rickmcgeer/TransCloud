@@ -4,7 +4,7 @@ import signal
 import commands
 import subprocess
 import settings
-
+from subprocess import call
 
 class Alarm(Exception):
     pass
@@ -80,5 +80,11 @@ def swift(operation, bucket, *args):
           message = process.communicate()[1]
           print "Uploading failed." + message
 
-if __name__ == '__main__':   
-  swift("download", "p233r094", 'p233r094_7dt20040310.SR.b03.tif.gz', 'p233r094_7dt20040310.SR.b04.tif.gz')
+def test_gcswift():
+    fn = 'p233r094_7dt20040310.SR.b03.tif.gz'
+    swift("download", "p233r094", fn, fn)
+    assert os.path.exists(fn), "File was not created"
+    assert os.path.getsize(fn) > 1000000, "File is not very big!"
+    swift("download", "p233r094", fn+'.md5', fn+'.md5')
+    rc = call("md5sum -c " + fn + ".md5")
+    print rc
