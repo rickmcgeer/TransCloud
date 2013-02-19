@@ -5,6 +5,7 @@ import dbObj
 import settings
 from greencitieslog import log
 
+
 def get_projection(fil):
     command = "gdalinfo " + fil
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -113,7 +114,7 @@ def getShapefile(gid):
     return shpname
 
 
-if __name__ == "__main__":
+def test_trim():
     assert get_projection("p145r032_7dt20060730.SR.b03.tif") == "32644", "Did not get the correct projection"
     
     assert reproject_shapefile("19094.shp", "32617", "tmp2") == "./tmp2/19094.shp"

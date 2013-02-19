@@ -138,15 +138,13 @@ def combine_single(allfiles, gid="new"):
         shutil.rmtree(d[1])
     return done
 
-if __name__ == "__main__":
+def test_combine():
 
-    #test_files = ['p011r031_5dt20050724.SR.b03.tif.gz', 'p011r031_5dt20050724.SR.b04.tif.gz', 'p011r031_5dt20050724.SR.b07.tif.gz', 'p012r030_7dt20061014.SR.b03.tif.gz', 'p012r030_7dt20061014.SR.b04.tif.gz', 'p012r030_7dt20061014.SR.b07.tif.gz', 'p012r031_7dt20060928.SR.b03.tif.gz', 'p012r031_7dt20060928.SR.b04.tif.gz', 'p012r031_7dt20060928.SR.b07.tif.gz', 'p013r030_5dt20050924.SR.b03.tif.gz', 'p013r030_5dt20050924.SR.b04.tif.gz', 'p013r030_5dt20050924.SR.b07.tif.gz']
+    test_files = ['p011r031_5dt20050724.SR.b03.tif.gz', 'p011r031_5dt20050724.SR.b04.tif.gz', 'p011r031_5dt20050724.SR.b07.tif.gz', 'p012r030_7dt20061014.SR.b03.tif.gz', 'p012r030_7dt20061014.SR.b04.tif.gz', 'p012r030_7dt20061014.SR.b07.tif.gz', 'p012r031_7dt20060928.SR.b03.tif.gz', 'p012r031_7dt20060928.SR.b04.tif.gz', 'p012r031_7dt20060928.SR.b07.tif.gz', 'p013r030_5dt20050924.SR.b03.tif.gz', 'p013r030_5dt20050924.SR.b04.tif.gz', 'p013r030_5dt20050924.SR.b07.tif.gz']
 
-    test_files = ['p012r030_7dt20061014.SR.b03.tif', 'p012r030_7dt20061014.SR.b04.tif', 'p012r030_7dt20061014.SR.b07.tif', 'p012r031_7dt20060928.SR.b03.tif', 'p012r031_7dt20060928.SR.b04.tif', 'p012r031_7dt20060928.SR.b07.tif']
-
-    #assert grab_pathrow_band_time(test_files[0]) == ('p011r031','b03', '20050724', '5dt'), "Problem parsing pathrow band"
-    #assert grab_pathrow_band_time(test_files[1]) == ('p011r031','b04', '20050724', '5dt'), "Problem parsing pathrow band"
-    #assert grab_pathrow_band_time(test_files[11]) == ('p013r030','b07', '20050924', '5dt'), "Problem parsing pathrow band"
+    assert grab_pathrow_band_time(test_files[0]) == ('p011r031','b03', '20050724', '5dt'), "Problem parsing pathrow band"
+    assert grab_pathrow_band_time(test_files[1]) == ('p011r031','b04', '20050724', '5dt'), "Problem parsing pathrow band"
+    assert grab_pathrow_band_time(test_files[11]) == ('p013r030','b07', '20050924', '5dt'), "Problem parsing pathrow band"
 
 
-    combine_bands(test_files)
+    # combine_bands(test_files)

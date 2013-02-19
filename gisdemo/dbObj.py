@@ -168,9 +168,21 @@ class pgConnection:
             return
 
 
-if __name__ == "__main__":
-    db = pgConnection()
+def test_db():
+    try:
+        db = pgConnection()
+    except Exception as e:
+        assert False, "Database connection failed:"+str(e)
+    assert db!=None, "Database returned no handle."
+
     q = db.createClusterQuery("SRID=4326;POINT(-43.23456 72.4567772)")
-    assert db.performSelect(q)[0] == 1
+    result =  db.performSelect(q)[0]
+    print result
+    assert result[0] == 1
+    assert result[1] == 'north_america'
     
+    select_query = db.createSelectQuery(1, 10)
     
+    assert len(select_query) > 0 and "SELECT" in select_query and ";" in select_query, "poorly formed database query"
+    records = db.performSelect(select_query)
+    assert len(records) == 10, "Did not get the right number of cities back"

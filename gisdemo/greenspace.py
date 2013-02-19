@@ -14,9 +14,6 @@ import greencitieslog
 import landsatImg
 import dbObj
 
-
-
-
 # NOTE: these should really be in dbObj.py but ahm lay z
 # these correspond to the selected column num in the SQL statement
 GID = 0
@@ -193,7 +190,7 @@ def get_img_size(long_min, lat_min, long_max, lat_max):
     return (x_pixels, y_pixels)
 
 
-def process_city(gid, cityname, convex_hull, xmin_box, location):
+def process_city(gid, cityname, convex_hull, xmin_box, location, testing=False):
 
     assert (gid is not None and convex_hull is not None), "Process city inputs are None"
     if cityname == None:
@@ -210,53 +207,60 @@ def process_city(gid, cityname, convex_hull, xmin_box, location):
     coord_sys = "EPSG:" + dbObj.GEOG
 
     start_t = datetime.datetime.now()
+    imgname = "missing"
+    greenspace = 0.0
+    servername = socket.gethostname()
+    if not testing:
+        lsimg = landsatImg.GrassLandsat(gid, cityname, box, coord_sys, location)
 
-    lsimg = landsatImg.GrassLandsat(gid, cityname, box, coord_sys, location)
+        log("Getting Image List")
+        lsimg.getImgList(pgConn)
 
-    log("Getting Image List")
-    lsimg.getImgList(pgConn)
+        log("Getting Images from Swift")
+        lsimg.getSwiftImgs()
 
-    log("Getting Images from Swift")
-    lsimg.getSwiftImgs()
+        log("Combine into PNG")
+        lsimg.combineIntoPng()
 
-    log("Combine into PNG")
-    lsimg.combineIntoPng()
+        log("Read Image Data")
+        lsimg.img.readImgData()
 
-    log("Read Image Data")
-    lsimg.img.readImgData()
+        # get polygon as list of points (ie, not a string)
+        log("Extracting Polygon points")
+        polygon = wkt_to_list(convex_hull)
 
-    # get polygon as list of points (ie, not a string)
-    log("Extracting Polygon points")
-    polygon = wkt_to_list(convex_hull)
+        log("Calculating Greenspace")
+        greenspace = calc_greenspace(lsimg.img, polygon)
 
-    log("Calculating Greenspace")
-    greenspace = calc_greenspace(lsimg.img, polygon)
+        log("Greenvalue of " ,str(greenspace), " was found")
 
-    log("Greenvalue of " ,str(greenspace), " was found")
 
-    # dont insert if we have no greenspace
-    if greenspace:
-        
-        end_t = datetime.datetime.now()
+        del lsimg
 
-        # append update statement to string
-        update_stmnt = pgConn.createUpdateStmnt(greenspace,
-                                                lsimg.gid, lsimg.city,
-                                                start_t, end_t,
-                                                lsimg.img.imgname,
-                                                servname, location)
-
+        os.unlink(settings.TEMP_FILE_DIR)
+        log("RESULT:",gid, cityname, greenvalue)
+    # pgConn.createUpdateStmnt(greenspace,
+    #                                             lsimg.gid, lsimg.city,
+    #                                             start_t, end_t,
+    #                                             lsimg.img.imgname,
+    #                                             servname, location)
         lsimg.uploadToSwift()
-        pgConn.performUpdate(update_stmnt)
+        imgname = lsimg.img.imgname
     else:
-        log("Skipping database update and image sync because green value was None")
-
-    log("Cleanup")
-    del lsimg
-
-    os.unlink(settings.TEMP_FILE_DIR)
-    log("RESULT:",gid, cityname, greenspace)
-
+        print "warning testing mode"
+        
+        
+    end_t = datetime.datetime.now()
+    result_dict = {'id':gid,
+                   'name':cityname,
+                   'greenspace_val':greenspace,
+                   'stime':start_t.isoformat(),
+                   'etime':end_t.isoformat(),
+                   'imgname':imgname,
+                   'servername':servername,
+                   'location':location
+                   }
+    return result_dict
 
 def get_cities(location, num_cities=10):
     
@@ -267,7 +271,6 @@ def get_cities(location, num_cities=10):
     return records
 
 def main(location):
-	
     global pgConn
     records = get_cities(location)
     os.chdir(settings.TEMP_FILE_DIR)
@@ -302,7 +305,6 @@ def init():
 
 def close():
     greencitieslog.close()
-
 
 if __name__ == '__main__':
     init()
