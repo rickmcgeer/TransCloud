@@ -4,7 +4,7 @@ import signal
 import commands
 import subprocess
 import settings
-from subprocess import call
+from subprocess import check_call
 
 class Alarm(Exception):
     pass
@@ -28,7 +28,6 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
     operation + " " + \
     bucket + " " + \
     args
-
   # spawn a shell that executes swift, we set the sid of the shell so
   #  we can kill it and all its children with os.killpg
   p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
@@ -71,20 +70,31 @@ def swift(operation, bucket, *args):
 
 
     process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), operation, bucket, True, *args)
-  assert process.returncode == 0, "Failed on swift host %s with %s" % \
-      (settings.SWIFT_PROXY2, process.communicate()[1])
+  assert process.returncode == 0, "Failed on swift host %s with %s %s" % \
+      (settings.SWIFT_PROXY2, process.communicate()[1], _to_proxy_url(settings.SWIFT_PROXY2))
   if cache:
       print "Uploading the image to local cluster..."
       process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), "upload", bucket, True, *args)
       if process.returncode != 0:
           message = process.communicate()[1]
-          print "Uploading failed." + message
+          print "Uploading failed.", str(message), _to_proxy_url(settings.SWIFT_PROXY1), "upload", bucket, 
+
 
 def test_gcswift():
-    fn = 'p233r094_7dt20040310.SR.b03.tif.gz'
-    swift("download", "p233r094", fn, fn)
-    assert os.path.exists(fn), "File was not created"
-    assert os.path.getsize(fn) > 1000000, "File is not very big!"
-    swift("download", "p233r094", fn+'.md5', fn+'.md5')
-    rc = call("md5sum -c " + fn + ".md5")
-    print rc
+    os.chdir("/tmp/")
+    fn = 'p104r015_5dt20070726.SR.b03.tif.gz'
+    try:
+        swift("download", "p104r015", fn, fn)
+        assert os.path.exists(fn), "File was not created"
+        assert os.path.getsize(fn) > 1000000, "File is not very big!"
+        swift("download", "p104r015", fn+'.md5', fn+'.md5')
+        assert os.path.exists(fn+'.md5'), "MD5 File was not created"
+        assert os.path.getsize(fn+'.md5') > 10, "MD5 File is not very big!"
+
+        try:
+            check_call(["md5sum","-c",fn+".md5"])
+        except OSError:
+            pass # md5sum command is not found
+    finally:
+        os.unlink(fn)
+        os.unlink(fn+'.md5')

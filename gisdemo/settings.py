@@ -21,7 +21,7 @@ PRINT_DBG_STR = True # print to stdout
 LOG_NAME = "green.log"
 
 # database constants
-DB_HOST = "green.cities.trans-cloud.net"
+DB_HOST = "grack06.uvic.trans-cloud.net"
 DB_USER = "root"
 DB_PASS = ""
 GIS_DATABASE = "world"

@@ -28,7 +28,7 @@ def process_cities(testing_prefix="", testing=False):
             id, name, poly, bb1, bb2, bb3, bb4 = json.loads(new_job['data'])   
             if not testing:
                 greenspace.init()
-                green_results = greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all", testing=True)
+                green_results = greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all", testing=testing)
             else:
                 green_results = mq_calc.FAKE_RESULT
 
