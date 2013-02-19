@@ -20,8 +20,10 @@ env.passwords = {'genericuser@grack06.uvic.trans-cloud.net':'cleb020',
                  'genericuser@grack05.uvic.trans-cloud.net':'cleb020',
                  'sebulba.cs.uvic.ca':'enec869'}
 
+testable_files = "gcswift.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py"
+
 def test():
-    local("py.test mq/mq.py mq/taskmanager.py")
+    local("py.test "+testable_files)
 
 def pack():
     local('find . -name "*.pyc" -exec rm -rf {} \;')
@@ -42,7 +44,14 @@ def deploy():
     sudo('chmod -R 777 '+deploy_path)
     with cd(deploy_path):
         sudo('tar xzf /tmp/'+ZIPFILE)
-        run('py.test mq/mq.py mq/taskmanager.py mq_test.py dbObj.py')
+        run('py.test '+ testable_files)
+
+@roles('test')
+def test_everywhere():
+    pack()
+    deploy()
+    with cd(deploy_path):
+        run('py.test '+ testable_files)
 
 
 @roles('uvic')
@@ -59,6 +68,7 @@ def install_deps():
 
 @roles('test')
 def run_workers():
+    deploy()
     with cd(deploy_path):
         run('python mq_calc.py -c 15')
         run('python mq_client.py')
