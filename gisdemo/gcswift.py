@@ -46,6 +46,7 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
     operation + " " + \
     bucket + " " + \
     args
+  # print command
   # spawn a shell that executes swift, we set the sid of the shell so
   #  we can kill it and all its children with os.killpg
   p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
@@ -162,7 +163,7 @@ def clear_room_in_dir(dir, size_to_clear, file_list_by_atime = None):
             size_cleared = size_cleared + size
         except OSError:
             continue
-        if size_cleared > size_to_clear:
+        if size_cleared >= size_to_clear:
             return
 
 #
@@ -185,7 +186,7 @@ class FileCache:
         self.max_size_in_kbytes = max_size_in_kbytes
         if(not os.path.exists(self.directory)):
             try:
-                os.mkdir(self.directory, 0x777)
+                os.mkdir(self.directory)
             except OSError:
                 print "Failed to create directory ", self.directory, " and it does not exist"
         self.file_whitelist = []
@@ -222,7 +223,7 @@ class FileCache:
 
     def cleanup_cache(self, respect_file_whitelist = False):
         files_by_atime = files_by_access_time(self.directory)
-        max_size_in_bytes = self.max_size-in_kbytes << 10 # convert from kbytes to bytes
+        max_size_in_bytes = self.max_size_in_kbytes << 10 # convert from kbytes to bytes
         total_size = get_dir_size(self.directory, files_by_atime)
         if (total_size <= max_size_in_bytes): return
         if respect_file_whitelist:
@@ -300,7 +301,7 @@ def test_file_cache():
     if not (file_cache.in_cache('file_4')):
         print 'Test 3: File file_4 not in cache'
 
-        file_cache.cleanup_cache(respect_file_whitelist = True)
+    file_cache.cleanup_cache(respect_file_whitelist = True)
 
     #
     # files 2 and 3 should not be in the cache, file 4 in
