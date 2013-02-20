@@ -4,6 +4,8 @@ import signal
 import commands
 import subprocess
 import settings
+import shutil
+import time
 from subprocess import check_call
 
 class SwiftFailure(Exception):
@@ -128,3 +130,189 @@ def test_all_images():
             else:
                 break
             warn("Path %s has no rows"%(p))
+
+#
+# List files by access time.  Given a directory, return a list of triples
+# (access_time, file_name, size), sorted in increasing order by access time.  This
+# probably needs more error-checking, where file_name is fully qualified (e.g., /tmp/foo, not foo)
+# and size is in bytes
+#
+def files_by_access_time(dir):
+    files = os.listdir(dir)
+    file_list_by_atime = []
+    for file_name in files:
+        full_file_name = dir + "/" + file_name
+        file_info = os.lstat(full_file_name)
+        file_list_by_atime.append((file_info.st_atime, full_file_name, file_info.st_size))
+    return sorted(file_list_by_atime, key=lambda file_tuple: file_tuple[0])
+
+#
+# Clear at least size_to_clear bytes from a directory, Least-Recently-Used
+# Uses files_by_access_time to get the list.  Note file_list_by_atime is returned by
+# files_by_access_time.  Note size_to_clear should be in BYTES.
+# 
+#
+def clear_room_in_dir(dir, size_to_clear, file_list_by_atime = None):
+    if not file_list_by_atime:
+        file_list_by_atime = files_by_access_time(dir)
+    size_cleared = 0
+    for (atime, full_file_name, size) in file_list_by_atime:
+        try:
+            os.remove(full_file_name)
+            size_cleared = size_cleared + size
+        except OSError:
+            continue
+        if size_cleared > size_to_clear:
+            return
+
+#
+# get the total size of a directory.  returns in BYTES
+#
+def get_dir_size(dir, file_list_by_atime = None):
+    if not file_list_by_atime:
+        file_list_by_atime = files_by_access_time(dir)
+    total_size = 0
+    for (atime, full_file_name, size) in file_list_by_atime:
+        total_size = total_size + size
+    return total_size
+
+#
+# A class is probably overkill here, but it organizes the code nicely...
+#
+class FileCache:
+    def __init__(self, directory=settings.file_cache_directory, max_size_in_kbytes = settings.file_cache_size_in_kbytes):
+        self.directory = directory
+        self.max_size_in_kbytes = max_size_in_kbytes
+        if(not os.path.exists(self.directory)):
+            try:
+                os.mkdir(self.directory, 0x777)
+            except OSError:
+                print "Failed to create directory ", self.directory, " and it does not exist"
+        self.file_whitelist = []
+
+    #
+    # get and cache a file, and return the file descriptor to the open file, suitable for reading
+    # returns None if the directory doesn't exist, or we couldn't download the file, or we couldn't
+    # open it
+    #
+
+    def get_file(self, bucket, file_name):
+        file_path = self.directory + "/" + file_name
+        if(not os.path.exists(self.directory)):
+            print "Directory ", self.directory, " does not exist"
+        if os.path.exists(self.directory + "/" + file_name):
+            # set the path's utime so LRU's don't get it
+            os.utime(file_path)
+        else:
+            os.chdir(self.directory) # so swift downloads to the right directory
+            swift("download", bucket, file_name, file_name)
+            if (not os.path.exists(file_path)):
+                print "File " + file_name + " was not downloaded from swift from bucket " + bucket
+                return None
+        self.file_whitelist.append(file_path)
+        file_handle = open(file_path, "rb")
+        if file_handle == None:
+            print "Failed to open " + file_path
+            return None
+        return file_handle
+
+    #
+    # clear the cache down to max_size_in_kbytes, least-recently-used.
+    #
+
+    def cleanup_cache(self, respect_file_whitelist = False):
+        files_by_atime = files_by_access_time(self.directory)
+        max_size_in_bytes = self.max_size-in_kbytes << 10 # convert from kbytes to bytes
+        total_size = get_dir_size(self.directory, files_by_atime)
+        if (total_size <= max_size_in_bytes): return
+        if respect_file_whitelist:
+            files_to_comb = []
+            for (atime, filepath, size) in files_by_atime:
+                if not (filepath in self.file_whitelist):
+                    files_to_comb.append((atime, filepath, size))
+        else: files_to_comb = files_by_atime
+        clear_room_in_dir(self.directory, total_size - max_size_in_bytes, files_to_comb)
+
+    # returns true iff file (not qualified: foo instead of /tmp/foo) is in cache
+
+    def in_cache(self, file):
+        return os.path.exists(self.directory + "/" + file)
+
+    def clear_whitelist(self):
+        self.file_whitelist = []
+
+    
+        
+            
+            
+
+def rm_error(function, path, excinfo):
+    print "failed to remove directory " + settings.file_cache_directory + ". Error on path " + path
+#
+# preconditions: bucket test_file_cache has 10 files, file_1...file_10, where
+# file i is of size i * 1024 bytes, and 
+#
+        
+        
+def test_file_cache():
+    # Clean up the directory if it exists
+    if os.path.exists(settings.file_cache_directory):
+        shutil.rmtree(settings.file_cache_directory, rm_error) 
+    file_cache = FileCache(max_size_in_kbytes = 5) # small for testing
+
+    # initial experiment...
+    files_to_download = ['file_1', 'file_2', 'file_3']
+
+    # download them, with a 20 second break between each one
+
+    for file_name in files_to_download:
+        foo = file_cache.get_file('test_file_cache', file_name)
+        if (not foo):
+            print "Test 1: No file handle returned for file " + file_name
+        foo.close()  # close the file handle
+        time.sleep(20) # sleep for a bit to get a spread on the access time
+
+    # each should be in the cache
+
+    for file_name in files_to_download:
+        if not(file_cache.in_cache(file_name)):
+            print  "Test 1: No file " + file_name + " in cache"
+
+    file_cache.cleanup_cache()
+
+    #
+    # files 2 and 3 should be in the cache, file 1 out
+    #
+    for file_name in ['file_2', 'file_3']:
+        if not(file_cache.in_cache(file_name)):
+            print  "Test 2: No file " + file_name + " in cache"
+
+    if file_cache.in_cache('file_1'):
+        print "Test 1: File file_1 not removed from cache"
+
+    #
+    # clean the whitelist for a new download
+    #
+
+    file_cache.clear_whitelist()
+    foo = file_cache.get_file('test_file_cache', 'file_4')
+    foo.close()
+    if not (file_cache.in_cache('file_4')):
+        print 'Test 3: File file_4 not in cache'
+
+        file_cache.cleanup_cache(respect_file_whitelist = True)
+
+    #
+    # files 2 and 3 should not be in the cache, file 4 in
+    #
+
+    if not (file_cache.in_cache('file_4')):
+        print 'Test 4: File file_4 not in cache'
+
+    for file_name in ['file_2', 'file_3']:
+        if file_cache.in_cache(file_name):
+            print  "Test 4: File " + file_name + " in cache"
+     
+     
+         
+     
