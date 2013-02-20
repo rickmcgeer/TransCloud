@@ -185,4 +185,4 @@ def test_db():
     
     assert len(select_query) > 0 and "SELECT" in select_query and ";" in select_query, "poorly formed database query"
     records = db.performSelect(select_query)
-    assert len(records) == 10, "Did not get the right number of cities back"
+    assert len(records) == 10, "Did not get the right number of cities back, got %d instead of 10\nQuery:\n%s"%(len(records), select_query)
