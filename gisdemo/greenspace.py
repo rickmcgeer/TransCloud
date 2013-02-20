@@ -233,12 +233,8 @@ def process_city(gid, cityname, convex_hull, xmin_box, location, testing=False):
         greenspace = calc_greenspace(lsimg.img, polygon)
 
         log("Greenvalue of " ,str(greenspace), " was found")
-
-
-        del lsimg
-
-        os.unlink(settings.TEMP_FILE_DIR)
-        log("RESULT:",gid, cityname, greenvalue)
+        
+        log("RESULT:",gid, cityname, greenspace)
     # pgConn.createUpdateStmnt(greenspace,
     #                                             lsimg.gid, lsimg.city,
     #                                             start_t, end_t,
@@ -246,6 +242,7 @@ def process_city(gid, cityname, convex_hull, xmin_box, location, testing=False):
     #                                             servname, location)
         lsimg.uploadToSwift()
         imgname = lsimg.img.imgname
+        del lsimg
     else:
         print "warning testing mode"
         
