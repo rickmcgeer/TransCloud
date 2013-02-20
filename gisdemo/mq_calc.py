@@ -38,7 +38,7 @@ def populate_cities(ncities, testing_prefix="", testing=False):
     
     if not testing:
          greenspace.init()
-         cities = greenspace.get_cities(1, ncities)
+         cities = greenspace.get_cities(2, ncities)
     else:
          for i in xrange(0,ncities):
               cities.append(FAKE_CITY)
