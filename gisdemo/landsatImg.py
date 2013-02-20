@@ -352,7 +352,7 @@ class GrassLandsat:
         #try:
         trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.shapefile_tmpDir)
         fnames = ["trim_"+name for name in fnames]
-        log("New fnames are: " + " ".join(fnames)]
+        log("New fnames are: " + " ".join(fnames))
         #except AssertionError as e:
         #    print e
 
