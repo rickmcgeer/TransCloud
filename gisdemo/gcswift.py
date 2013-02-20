@@ -201,6 +201,7 @@ class FileCache:
         file_path = self.directory + "/" + file_name
         if(not os.path.exists(self.directory)):
             print "Directory ", self.directory, " does not exist"
+            return None
         if os.path.exists(self.directory + "/" + file_name):
             # set the path's utime so LRU's don't get it
             os.utime(file_path)
@@ -211,11 +212,12 @@ class FileCache:
                 print "File " + file_name + " was not downloaded from swift from bucket " + bucket
                 return None
         self.file_whitelist.append(file_path)
-        file_handle = open(file_path, "rb")
-        if file_handle == None:
-            print "Failed to open " + file_path
-            return None
-        return file_handle
+        return file_path
+        ## file_handle = open(file_path, "rb")
+        ## if file_handle == None:
+        ##     print "Failed to open " + file_path
+        ##     return None
+        ## return file_handle
 
     #
     # clear the cache down to max_size_in_kbytes, least-recently-used.
@@ -269,8 +271,7 @@ def test_file_cache():
     for file_name in files_to_download:
         foo = file_cache.get_file('test_file_cache', file_name)
         if (not foo):
-            print "Test 1: No file handle returned for file " + file_name
-        foo.close()  # close the file handle
+            print "Test 1: No file path returned for file " + file_name
         time.sleep(20) # sleep for a bit to get a spread on the access time
 
     # each should be in the cache
@@ -297,7 +298,6 @@ def test_file_cache():
 
     file_cache.clear_whitelist()
     foo = file_cache.get_file('test_file_cache', 'file_4')
-    foo.close()
     if not (file_cache.in_cache('file_4')):
         print 'Test 3: File file_4 not in cache'
 
