@@ -8,7 +8,7 @@ prefix = ""
 def start():
     global LOG_FILE
     try:
-        LOG_FILE = open(settings.LOG_NAME, 'a')
+        LOG_FILE = open(settings.LOG_NAME, 'w')
     except IOError as e:
         print "Failed to open Log:", e, "\nLogging to stderr"
         LOG_FILE = sys.stderr
