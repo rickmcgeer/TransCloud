@@ -20,14 +20,16 @@ env.passwords = {'genericuser@grack06.uvic.trans-cloud.net':'cleb020',
                  'genericuser@grack05.uvic.trans-cloud.net':'cleb020',
                  'sebulba.cs.uvic.ca':'enec869'}
 
-testable_files = "gcswift.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py"
+testable_files = "combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py"
 
 def test():
     local("py.test "+testable_files)
 
 def pack():
-    local('find . -name "*.pyc" -exec rm -rf {} \;')
-    local('find . -name "__pycache__" -exec rm -rf {} \;')
+    with settings(warn_only=True):
+        local('find . -name "*.pyc" -exec rm -rf {} \;')
+        local('find . -name "__pycache__" -exec rm -rf {} \;')
+        local('rm -rf green.log')
     local('rm -rf /tmp/'+ZIPFILE)
     local('tar czf /tmp/'+ZIPFILE+' .')
 
@@ -44,7 +46,7 @@ def deploy():
     sudo('chmod -R 777 '+deploy_path)
     with cd(deploy_path):
         sudo('tar xzf /tmp/'+ZIPFILE)
-        run('py.test '+ testable_files)
+
 
 @roles('test')
 def test_everywhere():
@@ -54,24 +56,48 @@ def test_everywhere():
         run('py.test '+ testable_files)
 
 
-@roles('uvic')
+@roles('test')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
-    sudo('apt-get -y install python-pip python-dev python-py libpq-dev')
+    sudo('apt-get -y --force-yes install python-pip python-dev python-py libpq-dev build-essential python-numpy python-numpy-dev python-scipy proj')
     pkgs = ['pypng','pytest','python-swiftclient','iron-mq', 'psycopg2']
     sudo('pip install --upgrade pip')
     sudo('pip install --upgrade virtualenv')
     for pkg in pkgs:
         sudo('pip install '+pkg)
+    run('wget http://download.osgeo.org/gdal/gdal-1.9.1.tar.gz')
+    run('tar zxf gdal-1.9.1.tar.gz')
+    with cd('gdal-1.9.1'):
+        run('./configure --with-python --prefix=/usr/local')
+        run('make -j8 all')
+        sudo('make install')
+        sudo('ldconfig')
+        
+
+@roles('test')
+def run_start():
+    deploy()
+    with cd(deploy_path):
+        run('python mq_calc.py -c 15')
+        
 
 
 @roles('test')
 def run_workers():
     deploy()
     with cd(deploy_path):
-        run('python mq_calc.py -c 15')
         run('python mq_client.py')
+
+@roles('test')
+def run_results():
+    deploy()
+    with cd(deploy_path):
+        with settings(warn_only=True):
+            sudo('rm -rf green.log')
+        run('python mq_process_results.py')
+
+
 
 @hosts('sebulba')
 def update_to_swift():
