@@ -130,6 +130,7 @@ class GrassLandsat:
         self.img = None
         self.havefiles = False
         self.shapefile_tmpDir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
+        self.file_cache = gcswift.FileCache()
 
 
     def __del__(self):
@@ -234,6 +235,8 @@ class GrassLandsat:
         
         log( "%s images intersect the city %s" % (len(self.files),self.city))
 
+        log( "At the end of  getImgs, files are " + " ".join(self.files))
+
         return len(self.files)
 
     def checkImages(self):
@@ -254,6 +257,8 @@ class GrassLandsat:
 
         assert(len(self.files))
         assert(len(self.buckets))
+        cwd = os.getcwd()
+        log("In getSwiftImgs, current directory is " + cwd)
 
         havebucket = False
         for b, f in self.buckets:
@@ -263,6 +268,7 @@ class GrassLandsat:
             
             gcswift.swift("download", b, f)
 
+        log(" At the end of getSwiftImgs, files are "  + " ".join(self.files))
         log("Complete!")
         self.havefiles = True
 
@@ -288,6 +294,8 @@ class GrassLandsat:
                 if maxdate in f:
                     newfiles.append(f)
 
+            log(" in getMostRecentSet, newfiles are " + " ".join(newfiles))
+
             return newfiles
 
 
@@ -296,6 +304,7 @@ class GrassLandsat:
             import zlib
             tiffs = []
             cwd = os.getcwd()
+            log("In decompressTiffs, cwd is " + cwd)
             log("Decompressing files")
             try:
                 for f in files:
@@ -320,6 +329,7 @@ class GrassLandsat:
                     print "Corrupt files, unlinking:", f
                     os.unlink(f)
                 raise AssertionError(e)
+            log(" At the end of decompressTiffs, files are: "  + " ".join(files) + ".  Tiffs are:" + " ".join(tiffs))
             log("Decompressing files done")
             return tiffs
 
@@ -338,9 +348,11 @@ class GrassLandsat:
         log("Getting shapefile for", str(self.gid))
 
         shpname = trim.getShapefile(self.gid)
+        log("Shapefile is " + shpname)
         #try:
         trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.shapefile_tmpDir)
         fnames = ["trim_"+name for name in fnames]
+        log("New fnames are: " + " ".join(fnames)]
         #except AssertionError as e:
         #    print e
 
