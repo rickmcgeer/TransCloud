@@ -6,6 +6,22 @@ import subprocess
 import settings
 from subprocess import check_call
 
+class SwiftFailure(Exception):
+    def __init__(self, message, swift_url):
+        # Call the base class constructor with the parameters it needs
+        Exception.__init__(self, message)
+        # Now for your custom code...
+        self.swift_url = swift_url
+
+class MissingSwiftFile(SwiftFailure):
+   def __init__(self, message, swift_url):
+        # Call the base class constructor with the parameters it needs
+        SwiftFailure.__init__(self, message, swift_url)
+
+
+
+
+
 class Alarm(Exception):
     pass
 
@@ -44,7 +60,7 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
       os.killpg(p.pid, signal.SIGTERM)
       # raise an assertion so we can continue execution after 
       #  (should really have our own exception but fk it)
-      raise AssertionError("Timeout "+operation+"ing swift images")
+      raise SwiftError("Timeout "+operation+"ing swift images", command)
   else:
       p.wait()
 
@@ -70,15 +86,12 @@ def swift(operation, bucket, *args):
 
 
     process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), operation, bucket, True, *args)
-  assert process.returncode == 0, "Failed on swift host %s with %s %s" % \
-      (settings.SWIFT_PROXY2, process.communicate()[1], _to_proxy_url(settings.SWIFT_PROXY2))
-  if cache:
-      print "Uploading the image to local cluster..."
-      process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), "upload", bucket, True, *args)
-      if process.returncode != 0:
-          message = process.communicate()[1]
-          print "Uploading failed.", str(message), _to_proxy_url(settings.SWIFT_PROXY1), "upload", bucket, 
-
+    if process.returncode != 0:
+        message = process.communicate()[1]
+        if operation == "download" and "Object" in message and "not found" in message:
+            raise MissingSwiftFile(message, _to_proxy_url(settings.SWIFT_PROXY2))
+        else:
+            raise SwiftFailure(message, _to_proxy_url(settings.SWIFT_PROXY2))
 
 def test_gcswift():
     os.chdir("/tmp/")
@@ -98,3 +111,20 @@ def test_gcswift():
     finally:
         os.unlink(fn)
         os.unlink(fn+'.md5')
+
+def test_all_images():
+    """Check that every path has at least one row bucket"""
+    from warnings import warn
+    return
+    paths =  "p091 p098 p105 p112 p119 p126 p133 p140 p147 p154 p161 p168 p175 p182 p189 p196 p203 p210 p217 p224 p231 p092 p099 p106 p113 p120 p127 p134 p141 p148 p155 p162 p169 p176 p183 p190 p197 p204 p211 p218 p225 p232 p093 p100 p107 p114 p121 p128 p135 p142 p149 p156 p163 p170 p177 p184 p191 p198 p205 p212 p219 p226 p233 p094 p101 p108 p115 p122 p129 p136 p143 p150 p157 p164 p171 p178 p185 p192 p199 p206 p213 p220 p227 p095 p102 p109 p116 p123 p130 p137 p144 p151 p158 p165 p172 p179 p186 p193 p200 p207 p214 p221 p228 p096 p103 p110 p117 p124 p131 p138 p145 p152 p159 p166 p173 p180 p187 p194 p201 p208 p215 p222 p229 p097 p104 p111 p118 p125 p132 p139 p146 p153 p160 p167 p174 p181 p188 p195 p202 p209 p216 p223 p230"
+    for p in paths.split(" "):
+        for r in xrange(1,248):
+            bucket = "%sr%03d"%(p,r)
+            print bucket
+            try:
+                swift("stat", bucket)
+            except MissingSwiftFile:
+                continue
+            else:
+                break
+            warn("Path %s has no rows"%(p))
