@@ -242,7 +242,11 @@ def process_city(gid, cityname, convex_hull, xmin_box, location, testing=False):
     #                                             servname, location)
         lsimg.uploadToSwift()
         imgname = lsimg.img.imgname
+        # only in for test
+        tmp_directory = lsimg.file_manager.tmp_file_dir
         del lsimg
+        if os.path.exists(tmp_directory):
+            print 'Cleanup failed to delete ' + tmp_directory
     else:
         print "warning testing mode"
         
@@ -312,6 +316,7 @@ def test_greencity():
     init()
     gdict = process_city(9554, "BOL'SHAYA KAZINKA", "POLYGON((40.0881958007812 50.2370834350586,40.0603332519531 50.2511100769043,40.0602493286133 50.2524719238281,40.1050834655762 50.2676658630371,40.1071929931641 50.2677230834961,40.1189460754395 50.2620277404785,40.119026184082 50.2601928710938,40.0881958007812 50.2370834350586))", (40.0602493286133,50.2370834350586,40.119026184082,50.2677230834961), all, False)
     assert gdict['greenspace_val'] ==  0.68678949431595449, "Did did not get correct greenspace. got:%s"%(str(gdict))
+    
 
 if __name__ == '__main__':
     init()

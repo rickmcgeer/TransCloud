@@ -4,6 +4,7 @@ import re
 import dbObj
 import settings
 from greencitieslog import log
+import gcswift
 
 
 def get_projection(fil):
@@ -16,11 +17,13 @@ def get_projection(fil):
     return auth.split('"')[3]
     
 
-def reproject_shapefile(shapefile, new_projcode, shapefile_tmpDir):
+def reproject_shapefile(full_shapefile, shapefile, new_projcode, shapefile_tmpDir):
+    os.mkdir(shapefile_tmpDir)
     new_fil = shapefile_tmpDir + "/"+ shapefile
     base,ext = shapefile.split(".")
-    cmd =  'ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" '  + new_fil  + " " + shapefile
+    cmd =  'ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:' + new_projcode + '" '  + new_fil  + " " + full_shapefile
     log("Running:", cmd)
+    # print "Running: " + cmd
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     p.wait()
     out, err = p.communicate()
@@ -29,14 +32,16 @@ def reproject_shapefile(shapefile, new_projcode, shapefile_tmpDir):
     return new_fil
     
 
-def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_", new_projcode=None, shapefile_tmpDir="tmp2"):
+def crop(shapefile_full, raster_full, raster2_full=None, raster3_full=None, prefix="new_", new_projcode=None, shapefile_tmpDir="tmp2"):
+    shapefile = gcswift.get_raw_file_name(shapefile_full)
+    raster = gcswift.get_raw_file_name(raster_full)
     layername =  shapefile.split(".")[0]
     if not new_projcode:
-        new_projcode = get_projection(raster)
-    new_shapefile = reproject_shapefile(shapefile, new_projcode, shapefile_tmpDir)
+        new_projcode = get_projection(raster_full)
+    new_shapefile = reproject_shapefile(shapefile_full, shapefile, new_projcode, shapefile_tmpDir)
 
     command = "ogrinfo  %s %s" % (new_shapefile,layername)
-    print "Getting shape info", command
+    # print "Getting shape info", command
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     p.wait()
     out, err = p.communicate()
@@ -47,38 +52,42 @@ def crop(shapefile, raster, raster2=None, raster3=None, prefix="new_", new_projc
     bb = re.findall(r"[0-9.]*[0-9]+", line)
     bb = [bb[0], bb[3], bb[2], bb[1]]
     bb_str = " ".join(bb)
+    dir_name = gcswift.get_dir_name(raster_full)
+    full_prefix = dir_name + "/" + prefix
 
     command_prefix = "gdal_translate -projwin " + bb_str + " -of GTiff "
-    command = command_prefix + raster + " "+ prefix+raster
-    print "Crop command", command
+    command = command_prefix + raster_full + " " + full_prefix + raster
+    # print "Crop command", command
   
   
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
 
-    if raster2:
-        command2 = command_prefix + raster2 + " "+prefix+raster2
-        print "Crop command", command2
+    if raster2_full:
+        raster2 = gcswift.get_raw_file_name(raster2_full)
+        command2 = command_prefix + raster2_full + " "+ full_prefix+raster2
+        # print "Crop command", command2
         q = subprocess.Popen(command2, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
 
-    if raster3:
-        command3 = command_prefix + raster3 + " "+prefix+raster3
-        print "Crop command", command3
+    if raster3_full:
+        raster3 = gcswift.get_raw_file_name(raster3_full)
+        command3 = command_prefix + raster3_full + " "+full_prefix+raster3
+        # print "Crop command", command3
         r = subprocess.Popen(command3, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
 
 
     p.wait()
     assert p.returncode == 0, "Failed with %s"%(p.communicate()[0])
-    if raster2:
+    if raster2_full:
         q.wait()
         assert q.returncode == 0
-    if raster3:
+    if raster3_full:
         r.wait()
         assert r.returncode == 0
         
     out, err = p.communicate()
     
-    print "done"
-    print out,err
+    # print "done"
+    # print out,err
     
 
     
@@ -90,9 +99,9 @@ def test():
 
 
 
-def getShapefile(gid):
+def getShapefile(tmp_dir_name, gid):
     
-    shpname = str(gid)+'.shp'
+    shpname = tmp_dir_name + "/" + str(gid)+'.shp'
 
     if os.path.exists(shpname):
         return shpname
@@ -104,7 +113,7 @@ def getShapefile(gid):
 
     command = 'ogr2ogr -f "ESRI Shapefile" ' + shpname + ' PG:"'+pginfo +'" -sql "'+sql+'"'
 
-    print command
+    # print command
 
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,  stderr=subprocess.PIPE)
     p.wait()

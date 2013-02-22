@@ -129,19 +129,22 @@ class GrassLandsat:
         self.files = []
         self.img = None
         self.havefiles = False
-        self.shapefile_tmpDir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
-        self.file_cache = gcswift.FileCache()
+        # self.shapefile_tmpDir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
+        self.file_manager = gcswift.FileManager()
 
+
+    ## def __del__(self):
+    ##     # this is where we should remove all the temp stuff
+    ##     toremove = os.path.join(os.environ['GISDBASE'], str(self.gid))+" "
+
+    ##     for (b, f) in self.buckets:
+    ##         toremove += "*"+b+"* "
+    ##     if self.img:
+    ##         toremove += self.img.fname+" "+self.img.imgname+" "
+    ##     toremove += str(self.gid)+"* "+ self.shapefile_tmpDir + "/"+str(self.gid)+"* "
 
     def __del__(self):
-        # this is where we should remove all the temp stuff
-        toremove = os.path.join(os.environ['GISDBASE'], str(self.gid))+" "
-
-        for (b, f) in self.buckets:
-            toremove += "*"+b+"* "
-        if self.img:
-            toremove += self.img.fname+" "+self.img.imgname+" "
-        toremove += str(self.gid)+"* "+ self.shapefile_tmpDir + "/"+str(self.gid)+"* "
+        self.file_manager.cleanup()
 
         
 
@@ -261,12 +264,16 @@ class GrassLandsat:
         log("In getSwiftImgs, current directory is " + cwd)
 
         havebucket = False
+        local_files = []
         for b, f in self.buckets:
-            if os.path.exists(f):
-                # Skipping file "+f+" as we already have it!
-                continue
+            ## if os.path.exists(f):
+            ##     # Skipping file "+f+" as we already have it!
+            ##     continue
             
-            gcswift.swift("download", b, f)
+            ## gcswift.swift("download", b, f)
+            local_files.append(self.file_manager.get_file(b, f))
+        self.files = local_files
+            
 
         log(" At the end of getSwiftImgs, files are "  + " ".join(self.files))
         log("Complete!")
@@ -308,10 +315,13 @@ class GrassLandsat:
             log("Decompressing files")
             try:
                 for f in files:
-                    tname = f.rstrip('.gz')
+                    # tname = f.rstrip('.gz')
+                    tname = self.file_manager.get_tiff_name(f)
                     tiffs.append(tname)
+                    # print "In decompress_tiffs: file is " + f + " tname is " + tname
                     if not os.path.exists(tname):
-                        inf = gzip.GzipFile(os.path.join(cwd, f), 'rb')
+                        # inf = gzip.GzipFile(os.path.join(cwd, f), 'rb')
+                        inf = gzip.GzipFile(f, 'rb')
                         dcmpdata = inf.read()
                         inf.close()
                         outf = open(tname, "w") # try catches????
@@ -342,16 +352,17 @@ class GrassLandsat:
 
         if len(fnames) > 3:
             log("Combining images")
-            fnames = combine.combine_bands(fnames, str(self.gid))
+            fnames = combine.combine_bands(fnames, self.file_manager, str(self.gid))
 
 
         log("Getting shapefile for", str(self.gid))
 
-        shpname = trim.getShapefile(self.gid)
+        shpname = trim.getShapefile(self.file_manager.tmp_file_dir, self.gid)
         log("Shapefile is " + shpname)
         #try:
-        trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.shapefile_tmpDir)
-        fnames = ["trim_"+name for name in fnames]
+        trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.file_manager.shapefile_tmpDir)
+        dir_name = gcswift.get_dir_name(fnames[0])
+        fnames = [dir_name + "/trim_"+gcswift.get_raw_file_name(name) for name in fnames]
         log("New fnames are: " + " ".join(fnames))
         #except AssertionError as e:
         #    print e
@@ -360,9 +371,9 @@ class GrassLandsat:
         namesAndBands = sorted(namesAndBands, key=itemgetter(1), reverse=True)
         fnames = [fname for (fname, band) in namesAndBands]
 
-        pre = str(self.gid)
-        allbandsTIF = str(self.gid)+"_allbands.tif"
-        allbandsPNG = str(self.gid)+"_allbands.png"
+        pre = self.file_manager.tmp_file_dir + "/" + str(self.gid)
+        allbandsTIF = pre +"_allbands.tif"
+        allbandsPNG = pre +"_allbands.png"
 
         mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -separate  -o '
 
@@ -393,17 +404,21 @@ class GrassLandsat:
 
         # we give it 1) the name of the png created from grass 
         #  and 2) the name the greenspace calc will create
-        pngimg = pngImg(allbandsPNG, pre+".png")
+        pngimg = pngImg(allbandsPNG, str(self.gid) + "_allbands.png")
         pngimg.bbox = self.bbox
         self.img = pngimg
             
 
     def uploadToSwift(self):
-        log("Uploading processed image to swift")
+        log("Uploading processed image " + self.img.imgname + " to swift")
+        cwd = os.getcwd()
+        os.chdir(self.file_manager.tmp_file_dir)
+        # print "Current working directory is " + os.getcwd()
         p = gcswift.do_swift_command(settings.SWIFT_PROXY2, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         log("Swift finished with ", p.returncode)
         assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
         log("Complete!")
+        os.chdir(cwd)
         
 
 
@@ -452,3 +467,8 @@ class pngImg:
         except IOError as e:
             print "Error:", str(e)
             raise AssertionError(str(e))
+
+
+    
+
+    

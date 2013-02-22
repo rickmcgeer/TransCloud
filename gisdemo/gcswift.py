@@ -7,6 +7,7 @@ import settings
 import shutil
 import time
 from subprocess import check_call
+import tempfile
 
 class SwiftFailure(Exception):
     def __init__(self, message, swift_url):
@@ -204,7 +205,7 @@ class FileCache:
             return None
         if os.path.exists(self.directory + "/" + file_name):
             # set the path's utime so LRU's don't get it
-            os.utime(file_path)
+            os.utime(file_path, None)
         else:
             os.chdir(self.directory) # so swift downloads to the right directory
             swift("download", bucket, file_name, file_name)
@@ -314,6 +315,37 @@ def test_file_cache():
         if file_cache.in_cache(file_name):
             print  "Test 4: File " + file_name + " in cache"
      
-     
+
+def get_raw_file_name(fname):
+    return (fname.split("/"))[-1]
+
+def get_dir_name(fname):
+    return "/".join(fname.split("/")[0:-1])
+
+def errorhandler(function, path, execinfo):
+    log('Failed to remove temp directory ' + path)
          
      
+class FileManager:
+    def __init__(self):
+        self.file_cache = FileCache()
+        self.tmp_file_dir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
+        self.shapefile_tmpDir = self.tmp_file_dir + "/tmp"
+
+    def get_file(self, bucket, file_name):
+        return self.file_cache.get_file(bucket, file_name)
+
+    def get_tiff_name(self, file_name):
+        raw_file_name = get_raw_file_name(file_name)
+        tiff_file_name = raw_file_name.rstrip('.gz')
+        return self.tmp_file_dir + "/" + tiff_file_name
+
+    def cleanup(self):
+        self.file_cache.cleanup_cache()
+        shutil.rmtree(self.tmp_file_dir, onerror=errorhandler)
+ 
+
+    
+        
+        
+        
