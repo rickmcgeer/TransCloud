@@ -321,6 +321,9 @@ def get_raw_file_name(fname):
 
 def get_dir_name(fname):
     return "/".join(fname.split("/")[0:-1])
+
+def errorhandler(function, path, execinfo):
+    log('Failed to remove temp directory ' + path)
          
      
 class FileManager:
@@ -337,6 +340,9 @@ class FileManager:
         tiff_file_name = raw_file_name.rstrip('.gz')
         return self.tmp_file_dir + "/" + tiff_file_name
 
+    def cleanup(self):
+        self.file_cache.cleanup_cache()
+        shutil.rmtree(self.tmp_file_dir, onerror=errorhandler)
  
 
     

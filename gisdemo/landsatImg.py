@@ -143,6 +143,9 @@ class GrassLandsat:
     ##         toremove += self.img.fname+" "+self.img.imgname+" "
     ##     toremove += str(self.gid)+"* "+ self.shapefile_tmpDir + "/"+str(self.gid)+"* "
 
+    def __del__(self):
+        self.file_manager.cleanup()
+
         
 
     def check_bad_record(self, obj):
