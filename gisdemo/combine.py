@@ -27,44 +27,47 @@ def _uncompress(file_path):
     return '%s.uncompressed.tif' % file_path
 
 
-def _remove_nearblack(file_path):
-    cmd = '/usr/bin/nearblack -near 20 %s' % file_path
-    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-    p.wait()
-    output = p.stdout.read()
-    log(output)
-    assert p.returncode == 0, "GDalWarp Failed"
+## def _remove_nearblack(file_path):
+##     cmd = '/usr/bin/nearblack -near 20 %s' % file_path
+##     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+##     p.wait()
+##     output = p.stdout.read()
+##     log(output)
+##     assert p.returncode == 0, "GDalWarp Failed"
     
 
 
-def _stitch_with_master(file_path, master_path):
-    master_path = master_path.strip()
-    if not os.path.exists(master_path):
-        log("First file")
-        shutil.copyfile(file_path, master_path)
-        return
-    else:
-        log(os.path.exists(master_path))
+## def _stitch_with_master(file_path, master_path):
+##     master_path = master_path.strip()
+##     if not os.path.exists(master_path):
+##         log("First file")
+##         shutil.copyfile(file_path, master_path)
+##         return
+##     else:
+##         log(os.path.exists(master_path))
 
-    tmp_master  = master_path.strip()+".temp.tif"
-    cmd = '/usr/bin/gdalwarp -multi -srcnodata 0 %s %s %s' % (file_path, master_path, tmp_master)
-    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-    p.wait()
-    output = p.stdout.read()
-    assert p.returncode == 0, "GDalWarp Failed"
-    log(output)
-    shutil.copyfile(tmp_master, master_path)
-    os.remove(tmp_master)
+##     tmp_master  = master_path.strip()+".temp.tif"
+##     cmd = '/usr/bin/gdalwarp -multi -srcnodata 0 %s %s %s' % (file_path, master_path, tmp_master)
+##     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+##     p.wait()
+##     output = p.stdout.read()
+##     assert p.returncode == 0, "GDalWarp Failed"
+##     log(output)
+##     shutil.copyfile(tmp_master, master_path)
+##     os.remove(tmp_master)
 
+import gcswift
 
 def _compose_tiff(new, path):
     master_path = path + "/"+new + ".tif"
+    #  "in _compose_tiff, master is " + master_path
 
     myFiles = []
     for filename in sorted(os.listdir(path)):
         file_path = os.path.join(path, filename)
         uncompressed_file = _uncompress(file_path)
         myFiles.append(uncompressed_file)
+        # print "decompressed file is " + uncompressed_file + " for compressed file " + file_path
 
     mergeCmd = '/usr/local/bin/gdal_merge.py -n -9999 -a_nodata -9999 -of GTIFF -o '
     mergeCmd += master_path
@@ -72,6 +75,7 @@ def _compose_tiff(new, path):
         mergeCmd += ' ' + filename
 
     log("Merging..." + mergeCmd)
+    # print "Merging..." + mergeCmd
 
     p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     p.wait()
@@ -91,21 +95,33 @@ def grab_pathrow_band_time(name):
     return rc
 
 
-def combine_bands(allfiles, gid="new"):
+def combine_bands(allfiles, file_manager, gid="new"):
     target = []
-    if gid != "new" and os.path.exists(gid+"_b03.tif"):
-        return [gid+"_b03.tif", gid+"_b04.tif", gid+"_b07.tif"]
+    dirName = gcswift.get_dir_name(allfiles[0])
+    assert dirName == file_manager.tmp_file_dir, "band directory " + dirName + " ought to be equal to " + file_manager.tmp_file_dir
+    if gid != "new" and os.path.exists(dirName + "/" + gid+"_b03.tif"):
+        prefix = dirName + "/" + gid
+        return [prefix + "_b03.tif", prefix + "_b04.tif", prefix + "_b07.tif"]
 
-    for fname in allfiles:
+    
+    assert dirName == file_manager.tmp_file_dir, "band directory " + dirName + " ought to be equal to " + file_manager.tmp_file_dir
+
+    for full_name in allfiles:
+        fname = gcswift.get_raw_file_name(full_name)
         info = grab_pathrow_band_time(fname)
         if info[3] != '7dt' and info[3] != '5dt':
             log("Skipping non-landsat 5/7 image" + fname)
         else:
             target.append((fname, info))
+            
+    cwd = os.getcwd()
+    os.chdir(dirName)
 
-    temps = {'b03':tempfile.mkdtemp(prefix='landsatb03', dir=settings.TEMP_FILE_DIR),
-             'b04':tempfile.mkdtemp(prefix='landsatb04', dir=settings.TEMP_FILE_DIR),
-             'b07':tempfile.mkdtemp(prefix='landsatb07', dir=settings.TEMP_FILE_DIR)}
+    # all operations now are local to dirName
+    
+    temps = {'b03':tempfile.mkdtemp(prefix='landsatb03', dir=file_manager.tmp_file_dir),
+             'b04':tempfile.mkdtemp(prefix='landsatb04', dir=file_manager.tmp_file_dir),
+             'b07':tempfile.mkdtemp(prefix='landsatb07', dir=file_manager.tmp_file_dir)}
 
     for f in target:
         shutil.copy(f[0], temps[f[1][1]]+"/"+f[0])
@@ -116,27 +132,33 @@ def combine_bands(allfiles, gid="new"):
         done.append(new.split('/')[-1])
         shutil.copy(new,".")
         shutil.rmtree(d[1])
-    return done
+    # return done
+    os.chdir(cwd)
+    # Return the absolute paths
+    result = []
+    for item in done:
+        result.append(dirName + "/" + item)
+    return result
 
 
-def combine_single(allfiles, gid="new"):
-    target = []
-    for f in allfiles:
-        if 'grass' in f:
-            target.append(f)
+## def combine_single(allfiles, gid="new"):
+##     target = []
+##     for f in allfiles:
+##         if 'grass' in f:
+##             target.append(f)
 
-    temps = {'all':tempfile.mkdtemp(prefix='landsatb03')}
+##     temps = {'all':tempfile.mkdtemp(prefix='landsatb03')}
 
-    for f in target:
-        shutil.copy(f, temps['all']+"/"+f)
+##     for f in target:
+##         shutil.copy(f, temps['all']+"/"+f)
 
-    done = []
-    for d in temps.items():
-        new = _compose_tiff(gid+d[0], d[1])
-        done.append(new.split('/')[-1])
-        shutil.copy(new,".")
-        shutil.rmtree(d[1])
-    return done
+##     done = []
+##     for d in temps.items():
+##         new = _compose_tiff(gid+d[0], d[1])
+##         done.append(new.split('/')[-1])
+##         shutil.copy(new,".")
+##         shutil.rmtree(d[1])
+##     return done
 
 def test_combine():
 
@@ -148,3 +170,5 @@ def test_combine():
 
 
     # combine_bands(test_files)
+
+
