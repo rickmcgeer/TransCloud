@@ -1,30 +1,47 @@
 from fabric.api import *
 from fabric.contrib.console import confirm
 import os
-
+from clusters import *
 env.use_ssh_config=True
 
-here = os.path.realpath(__file__)
+here = os.path.dirname(os.path.realpath(__file__))
 
 ZIPFILE= 'my_project.tar.gz'
 
 env.roledefs = {
-    #    'uvic': ['sebulba.cs.uvic.ca','genericuser@grack06.uvic.trans-cloud.net'],
-    'uvic': [ 'cmatthew@sebulba.cs.uvic.ca','genericuser@grack06.uvic.trans-cloud.net','genericuser@grack05.uvic.trans-cloud.net'],
-    'northwestern': [],
-    'test':['genericuser@grack06.uvic.trans-cloud.net'],
-    'sebulba':[ 'cmatthew@sebulba.cs.uvic.ca']
+    'brussels':brussels_cluster,
+    'uvic':uvic_cluster,
+    'emulab':emulab_cluster,
+    'server':[grack06],
+    'workers':uvic_cluster + emulab_cluster,
+
+    'sebulba':[sebulba]
 }
 
-env.passwords = {'genericuser@grack06.uvic.trans-cloud.net':'cleb020',
-                 'genericuser@grack05.uvic.trans-cloud.net':'cleb020',
-                 'sebulba.cs.uvic.ca':'enec869'}
+env.key_filename = here+'/transgeo'
 
-testable_files = "combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py"
+env.passwords = {grack06:'cleb020',
+                 grack05:'cleb020',
+                 grack04:'cleb020',
+                 grack03:'cleb020',
+                 grack02:'cleb020',
+                 grack01:'cleb020',
+                 sebulba:'enec869',
+                 br01:'',
+                 br02:'',
+                 br03:''}
+
+testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
 
 def test():
     local("py.test "+testable_files)
 
+@roles('emulab')
+def disk_space():
+    with settings(warn_only=True):
+        run('df -h')
+    sudo('chmod -R 777 /mnt/')
+    
 def pack():
     with settings(warn_only=True):
         local('find . -name "*.pyc" -exec rm -rf {} \;')
@@ -35,6 +52,11 @@ def pack():
 
 # where to install on the remote machine
 deploy_path='/usr/local/src/greencities/'
+
+@roles('brussels')
+def route():
+    with settings(warn_only=True):
+        sudo('/share/nat.sh')
 
 
 @roles('uvic')
@@ -47,21 +69,21 @@ def deploy():
     with cd(deploy_path):
         sudo('tar xzf /tmp/'+ZIPFILE)
 
-
-@roles('test')
+@hosts(sebulba)
+#@roles('brussels')
 def test_everywhere():
     pack()
     deploy()
     with cd(deploy_path):
         run('py.test '+ testable_files)
 
-
-@roles('test')
+@parallel
+@roles('emulab')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
-    sudo('apt-get -y --force-yes install python-pip python-dev python-py libpq-dev build-essential python-numpy python-numpy-dev python-scipy proj')
-    pkgs = ['pypng','pytest','python-swiftclient','iron-mq', 'psycopg2']
+    sudo('apt-get -y --force-yes install python-pip python-dev libpq-dev build-essential python-numpy python-numpy-dev python-scipy proj')
+    pkgs = ['pypng','pytest','python-swiftclient','iron-mq', 'psycopg2','py']
     sudo('pip install --upgrade pip')
     sudo('pip install --upgrade virtualenv')
     for pkg in pkgs:
@@ -72,34 +94,38 @@ def install_deps():
         run('./configure --with-python --prefix=/usr/local')
         run('make -j8 all')
         sudo('make install')
+        run('make clean')
         sudo('ldconfig')
-        
 
-@roles('test')
+@roles('server')
 def run_start():
     deploy()
     with cd(deploy_path):
-        run('python mq_calc.py -c 15')
-        
+        run('python mq_calc.py -c 2')
 
-
-@roles('test')
+@parallel
+@roles('workers')
 def run_workers():
     deploy()
     with cd(deploy_path):
         run('python mq_client.py')
 
-@roles('test')
+@roles('server')
 def run_results():
     deploy()
     with cd(deploy_path):
         with settings(warn_only=True):
             sudo('rm -rf green.log')
         run('python mq_process_results.py')
-
-
+        run('echo Errors')
+        run('cat error.log')
 
 @hosts('sebulba')
 def update_to_swift():
         with cd(deploy_path):
             run('python send_swift_images.py')
+
+def all():
+    execute(run_start)
+    execute(run_workers)
+    execute(run_results)
