@@ -11,8 +11,8 @@ SWIFT_PNG_BUCKET = "completed"
 # currently set to HP
 DEFAULT_SWIFT_HOST = "142.104.195.226"
 
+PRODUCTION_MODE=True
 
-IMG_LOC = "/tmp/"
 IMG_EXT = ".png"
 
 PRINT_DBG_STR = True # print to stdout
@@ -55,12 +55,13 @@ os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 
 os.environ['LOCATION_NAME'] = "greenspace"
 
+import clusters
 # Place for Temporary Files
-MACHINE_TMP_DIR = '/tmp/'
+MACHINE_TMP_DIR = clusters.get_cluster_tmp_location()
 
 # This will be overwritten for this job in the entry point to the program -- set
 # to a value here just to avoid dumb python errors
-TEMP_FILE_DIR = '/tmp/'
+TEMP_FILE_DIR = clusters.get_cluster_tmp_location()
 
 #
 # File cache and file cache size.  This should probably be set by the deployment engine

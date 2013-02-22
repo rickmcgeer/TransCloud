@@ -35,6 +35,11 @@ def process_cities(testing_prefix="", testing=False):
                 green_results = mq_calc.FAKE_RESULT
         except gcswift.MissingSwiftFile as e:
             client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+        except Exception as e:
+            if settings.PRODUCTION_MODE:
+                client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+            else:
+                raise e
         else:
             client.report_done(jobid, {'task':'greencity', 'result':json.dumps(green_results)})
         ndone += 1

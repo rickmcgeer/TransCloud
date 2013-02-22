@@ -27,6 +27,7 @@ import traceback
 
 def process_results(prefix="", testing=False):
     submitted = []
+    error_log = open("error.log", 'w')
     try:
         client = taskmanager.TaskClient(queue=prefix+taskmanager.RESULT_QUEUE_NAME)
 	if not testing:
@@ -45,7 +46,9 @@ def process_results(prefix="", testing=False):
                                 submit_result(**job)
                         submitted.append(job)
                 else:
-                        print new_job['result'], "on",new_job['name'],"with", new_job['message']
+                        message =  new_job['result'] + " on " + new_job['name'] + "failed with " + new_job['message'] + "\n"
+                        print message,
+                        error_log.write(message)
                         submitted.append(new_job)
 
                 client.report_done(jobid)
@@ -58,6 +61,7 @@ def process_results(prefix="", testing=False):
                         raise e
     finally:
         greenspace.close()
+        error_log.close()
 
 if __name__ == '__main__':
     

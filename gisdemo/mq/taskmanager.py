@@ -4,11 +4,25 @@ import socket
 import sys
 import time
 
-_sites={1:"cs.UVic.CA", 2:"uvic.trans-cloud.net"}
+_sites={1:"cs.UVic.CA", 2:"uvic.trans-cloud.net", 3:"emulab.net", 4:".ibbt.be"}
 
-_ip_to_site={'142.104':_sites[1]}
+_ip_to_site={'142.104':_sites[1], '155.98':_sites[3], '10.2':_sites[4]}
+
+_decided_site_name = None
 
 def  get_local_site_name():
+    """Try and decide which cluster this machine is running in
+    I do this by checking the IP address and take the first digits
+    and deduce the cluster from that.
+
+    Cache results so that we don't have to connect a bunch of times.
+    """
+    global _decided_site_name
+
+    # Have we dont this before?
+    if _decided_site_name != None:
+        return _decided_site_name
+    
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("python.org",80))
 
@@ -18,9 +32,12 @@ def  get_local_site_name():
     front = ip.split(".")[0:2]
     front = '.'.join(front)
  
-    str = _ip_to_site[front]
+    site_name = _ip_to_site[front]
+
+    _decided_site_name = site_name
     
-    return str
+    return site_name
+
 
 def test_getsitename():
     site = get_local_site_name()
@@ -29,23 +46,39 @@ def test_getsitename():
     assert "." in site, "Site must have at least one dot/"
     assert site in _sites.values(), "Site name was not in our list!"
 
+
 def get_queue_name(site):
     return _sites[site]
 
 
+def get_site_num(name):
+    for num, site_name in _sites.iteritems():
+        if name == site_name:
+            return num
+    assert False, "Tried to access a site name which does not exist."
+
+
 class TaskManager():
+    """Task Manager is an abstraction on top of message
+    queues.  It allows tasks to be set to all the clusters.
+    Task clients can then pick up cluster specific messages.
+    Task manager also supports one results queue to send
+    messages back.
+    """
     def __init__(self,prefix=""):
         mq.setup()
         self.test_prefix = prefix
         
-    def add_task(self, jobobj, site):
-        assert site in _sites, "Site not in sites list"
+    def add_task(self, jobobj, site=None):
+        site = self._get_site(site)
         mq.push_job( json.dumps(jobobj), self.myqueue(site))
 
     def clear(self, site):
+        site = self._get_site(site)
         mq.clear_queue( self.myqueue(site))
 
-    def myqueue(self,site):
+    def myqueue(self,site=None):
+        site=self._get_site(site)
         return self.test_prefix + get_queue_name(site)
 
     def reset(self):
@@ -53,7 +86,14 @@ class TaskManager():
             self.clear(key)
         mq.clear_queue( self.test_prefix+RESULT_QUEUE_NAME)
 
-    def get_size(self, site):
+    def _get_site(self, site):
+        if site == None:
+            site =  get_site_num(get_local_site_name())
+        assert site in _sites, "Site not in sites list"
+        return site
+    
+    def get_size(self, site=None):
+        site=self._get_site(site)
         return mq.sizeof(self.myqueue(site))
 
 
@@ -64,8 +104,6 @@ class TaskClient():
         mq.setup()
         self.prefix=prefix
         self.queue = prefix+queue
-
-    
 
     def queuename(self):
         print self.queue
@@ -114,9 +152,9 @@ def test_TaskManager():
     job = {'task': 'greencities', 'city':1}
     job2 = {'task': 'greencities', 'city':2}
     job3 = {'task': 'greencities', 'city':3}
-    tm.add_task(job,1)
-    tm.add_task(job2,1)
-    tm.add_task(job3,1)
+    tm.add_task(job)
+    tm.add_task(job2)
+    tm.add_task(job3)
 
     time.sleep(1)
     remote_client = TaskClient(prefix="testing_")

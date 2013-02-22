@@ -4,7 +4,7 @@ import mq_process_results
 
 def test_mq_calculation():
     PREFIX="testing_calc_"
-    ncities = 25
+    ncities = 5
     size = mq_calc.populate_cities(ncities, testing_prefix=PREFIX, testing=True)
     assert size == ncities, "There were not messages in the queue: %d"%(size)
 

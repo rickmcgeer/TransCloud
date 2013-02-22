@@ -5,6 +5,7 @@ import json
 import optparse
 import settings
 import tempfile
+import clusters
 
 sys.path.insert(0, './mq/')
 
@@ -29,6 +30,10 @@ FAKE_CITY = {'id':100,
                    'bb4':100
                    }
 
+NORTH_AMERICA=1
+EUROPE=2
+
+
 def populate_cities(ncities, testing_prefix="", testing=False):
      # get command line options
   
@@ -36,20 +41,40 @@ def populate_cities(ncities, testing_prefix="", testing=False):
     here = os.path.dirname(os.path.realpath(__file__))+"/"
     cities = []
     
-    if not testing:
-         greenspace.init()
-         cities = greenspace.get_cities(2, ncities)
-    else:
+
+    greenspace.init()
+    for cluster_nums in xrange(1,5): # these are the map clusters, not machine clusters 
+         cities.append(greenspace.get_cities(cluster_nums, ncities))
+    if testing:
+         cities = []
          for i in xrange(0,ncities):
-              cities.append(FAKE_CITY)
+              cities.append([FAKE_CITY])
+
+    print cities
 
     manager = taskmanager.TaskManager(prefix=testing_prefix)
     manager.reset()
-    for i,c in enumerate(cities):
-         job = json.dumps(c ,separators=(',',':'))
-         manager.add_task({'task':'greencities','data':job},1)
+    for i,city_batches in enumerate(cities):
+         for city in city_batches:
+              job = json.dumps(city ,separators=(',',':'))
+              
+              if testing:
+                   manager.add_task({'task':'greencities','data':job})
+              else:
+                   manager.add_task({'task':'greencities','data':job}, decide_cluster(i))
+              
 
-    return manager.get_size(1)
+    return manager.get_size()
+
+
+def decide_cluster(map_cluster):
+     """Given a map cluster, get a machine cluster number.  Basically schedule map clusters to machine clusters."""
+     cluster_id = (map_cluster%len(clusters.all_clusters)) + 1
+     return cluster_id
+
+def test_decide_cluster():
+     for i in xrange(1,6):
+          assert 1 <= decide_cluster(i) <= len(clusters.all_clusters) 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
