@@ -4,9 +4,9 @@ import socket
 import sys
 import time
 
-_sites={1:"cs.UVic.CA", 2:"uvic.trans-cloud.net", 3:"emulab.net", 4:".ibbt.be"}
+_sites={1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be"}
 
-_ip_to_site={'142.104':_sites[1], '155.98':_sites[3], '10.2':_sites[4]}
+_ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3]}
 
 _decided_site_name = None
 
@@ -149,9 +149,9 @@ def test_TaskManager():
     tm.reset()
     # Push in three jobs and test
 
-    job = {'task': 'greencities', 'city':1}
-    job2 = {'task': 'greencities', 'city':2}
-    job3 = {'task': 'greencities', 'city':3}
+    job = {'task': 'greencities', 'city': 1}
+    job2 = {'task': 'greencities', 'city': 2}
+    job3 = {'task': 'greencities', 'city': 3}
     tm.add_task(job)
     tm.add_task(job2)
     tm.add_task(job3)

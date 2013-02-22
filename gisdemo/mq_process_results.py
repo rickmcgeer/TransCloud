@@ -27,7 +27,7 @@ import traceback
 
 def process_results(prefix="", testing=False):
     submitted = []
-    error_log = open("error.log", 'w')
+    error_log = open("/tmp/error.log", 'w')
     try:
         client = taskmanager.TaskClient(queue=prefix+taskmanager.RESULT_QUEUE_NAME)
 	if not testing:

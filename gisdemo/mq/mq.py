@@ -57,7 +57,6 @@ def push_job(message, queue, timeout=120):
         print "Pushing onto", queue, "message:", message
     _ironmq.postMessage(queue_name=queue, messages=[{'body': message, 'timeout': timeout}])
 
-
 def get_job(queue):
     msgs = _ironmq.getMessage(queue_name=queue, max=1)
     if len(msgs['messages'])==0:

@@ -1,3 +1,6 @@
+
+import clusters
+
 CLUSTERS={'UVIC':'142.104.195.225', 'UVIC2':'142.104.195.226'}
 
 
@@ -11,8 +14,10 @@ SWIFT_PNG_BUCKET = "completed"
 # currently set to HP
 DEFAULT_SWIFT_HOST = "142.104.195.226"
 
+# Try your best to keep alive.
 PRODUCTION_MODE=True
 
+IMG_TMP= clusters.get_cluster_tmp_location()
 IMG_EXT = ".png"
 
 PRINT_DBG_STR = True # print to stdout
@@ -55,7 +60,6 @@ os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
 
 os.environ['LOCATION_NAME'] = "greenspace"
 
-import clusters
 # Place for Temporary Files
 MACHINE_TMP_DIR = clusters.get_cluster_tmp_location()
 

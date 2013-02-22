@@ -13,7 +13,7 @@ env.roledefs = {
     'uvic':uvic_cluster,
     'emulab':emulab_cluster,
     'server':[grack06],
-    'workers':uvic_cluster + emulab_cluster,
+    'workers':uvic_cluster + emulab_cluster + brussels_cluster,
 
     'sebulba':[sebulba]
 }
@@ -33,15 +33,21 @@ env.passwords = {grack06:'cleb020',
 
 testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
 
+
 def test():
     local("py.test "+testable_files)
 
-@roles('emulab')
+
+@roles('brussels')
 def disk_space():
     with settings(warn_only=True):
         run('df -h')
     sudo('chmod -R 777 /mnt/')
-    
+
+def style():
+    local('pep8 *.py ./mq/*.py')
+    local('pylint *.py ./mq/*.py')
+
 def pack():
     with settings(warn_only=True):
         local('find . -name "*.pyc" -exec rm -rf {} \;')
@@ -52,6 +58,7 @@ def pack():
 
 # where to install on the remote machine
 deploy_path='/usr/local/src/greencities/'
+
 
 @roles('brussels')
 def route():
@@ -68,6 +75,7 @@ def deploy():
     sudo('chmod -R 777 '+deploy_path)
     with cd(deploy_path):
         sudo('tar xzf /tmp/'+ZIPFILE)
+    sudo('chmod -R 777 '+deploy_path)
 
 @hosts(sebulba)
 #@roles('brussels')
@@ -76,6 +84,24 @@ def test_everywhere():
     deploy()
     with cd(deploy_path):
         run('py.test '+ testable_files)
+
+@roles('workers')
+def clean_up_gdal():
+    with cd('gdal-1.9.1'):
+        run('make clean')
+
+@roles('workers')
+def clean_up_tmps():
+    with cd('/tmp/'):
+        sudo('rm -rf landsat*')
+        sudo('rm -rf p*')
+        sudo('rm -rf *.tif')
+        sudo('rm -rf *.png*')
+        sudo('rm -rf *.dbf')
+        sudo('rm -rf *.shp')
+        sudo('rm -rf *.shx')
+        sudo('rm -rf green.log')
+        sudo('rm -rf tmp*')
 
 @parallel
 @roles('emulab')
@@ -101,7 +127,8 @@ def install_deps():
 def run_start():
     deploy()
     with cd(deploy_path):
-        run('python mq_calc.py -c 2')
+        run('python mq_calc.py -c 500')
+#@hosts([br01])
 
 @parallel
 @roles('workers')
@@ -118,7 +145,7 @@ def run_results():
             sudo('rm -rf green.log')
         run('python mq_process_results.py')
         run('echo Errors')
-        run('cat error.log')
+        run('cat /tmp/error.log')
 
 @hosts('sebulba')
 def update_to_swift():
