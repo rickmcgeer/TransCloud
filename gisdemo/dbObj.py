@@ -177,7 +177,7 @@ def test_db():
 
     q = db.createClusterQuery("SRID=4326;POINT(-43.23456 72.4567772)")
     result =  db.performSelect(q)[0]
-    print result
+
     assert result[0] == 1
     assert result[1] == 'north_america'
     
