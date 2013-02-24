@@ -4,8 +4,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="./theme/default/style.css" type="text/css">
+    <link rel="stylesheet" href="./theme/default/google.css" type="text/css">
  
     <link rel="stylesheet" href="style.css" type="text/css">
+
         <style type="text/css">
             html, body, #map {
                 margin: 0;
@@ -23,7 +26,8 @@
                 padding: 0 0.5em 0.5em 0.5em;
             }
         </style>
-   <!-- <script src="../maps/Firebug/firebug.js"></script> -->
+    <!-- <script src='http://maps.google.com/maps?file=api&amp;v=2&amp;key=AIzaSyDuEZ79WbTO1bJIz8lpYBKSVyTF4vu4LUs'></script> -->
+    <script src="http://maps.google.com/maps/api/js?v=3&amp;sensor=false"></script>
     <script src="./OpenLayers.debug.js"></script>
 
 
@@ -265,7 +269,7 @@ var options = {
   };
 
 
-map = new OpenLayers.Map('map', options);
+map = new OpenLayers.Map('greencities_map', options);
             map.addControl(new OpenLayers.Control.LayerSwitcher());
 
            map.addControl(new OpenLayers.Control.MousePosition());
@@ -292,9 +296,8 @@ map.addControl(new OpenLayers.Control.Navigation());
 	    point.transform(proj, map.getProjectionObject());
             map.setCenter(point, zoom);
  
-	   var clusters = new OpenLayers.Layer.WMS("Cluster Boundaries",
-	    // "http://green.cities.trans-cloud.net:8080/geoserver/greencities/wms", 
-	     "http://grack06.uvic.trans-cloud.net:8080/geoserver/greencities/wms",
+	   var clusters = new OpenLayers.Layer.WMS("Cluster Boundries",
+           "http://grack06.uvic.trans-cloud.net:8080/geoserver/greencities/wms", 
             {'layers': 'greencities:clusters', transparent: true, version:'1.3.0'},
             {isBaseLayer: false},
 	    {singleTile: true}
@@ -304,8 +307,7 @@ map.addControl(new OpenLayers.Control.Navigation());
            map.addLayer(clusters);
 
 	   var images = new OpenLayers.Layer.WMS("Images",
-           // "http://green.cities.trans-cloud.net:8080/geoserver/wms",
-	    "http://grack06.uvic.trans-cloud.net:8080/geoserver/wms", 
+           "http://grack06.uvic.trans-cloud.net:8080/geoserver/wms", 
             {'layers': 'greencities:tiff4326', transparent: true},
             {isBaseLayer: false}
         );
@@ -314,8 +316,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 	   images.setVisibility(false);
 
 	   var cities = new OpenLayers.Layer.WMS("Cities",
-           //"http://green.cities.trans-cloud.net:8080/geoserver/wms", 
-            "http://grack06.uvic.trans-cloud.net:8080/geoserver/wms", 
+           "http://grack06.uvic.trans-cloud.net:8080/geoserver/wms", 
             {'layers': 'greencities:cities', transparent: true},
             {isBaseLayer: false}
         );
@@ -324,7 +325,6 @@ map.addControl(new OpenLayers.Control.Navigation());
 	  
 
           var selectControl= new OpenLayers.Control.WMSGetFeatureInfo({
-            // url: 'http://green.cities.trans-cloud.net:8080/geoserver/wms',
             url: 'http://grack06.uvic.trans-cloud.net:8080/geoserver/wms',
             title: 'Identify features by clicking',
             queryVisible: true,
@@ -348,8 +348,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    var greenValue = Math.round(parseFloat(valueAsString) * 1000)/10; // .22573 becomes 22.6%
 
 
-		    // var imgURL = '<img src="' + 'http://198.55.35.2:8080/v1/AUTH_system/completed/' + cityNumber + '.png"/>';
-		      var imgURL = '<img src="' + 'http://142.104.195.225:8080/v1/AUTH_system/completed/' + cityNumber + '.png"/>';
+		    var imgURL = '<img src="' + 'http://198.55.35.2:8080/v1/AUTH_system/completed/' + cityNumber + '.png"/>';
 		    var htmlBody = '<body>'+'<h1>'+ cityName + ': ' + greenValue + '%</h1>' + imgURL+ '</body>';
 		    var htmlText = '<html><head></head>' + htmlBody + '</html>';
 	     
@@ -398,15 +397,81 @@ map.addControl(new OpenLayers.Control.Navigation());
             control.activate(); */
             map.addControl(selectControl);
 	    selectControl.activate();
+	    var trans_geo_map = new OpenLayers.Map('right_map');
+            /* var g_hybrid =  new OpenLayers.Layer.Google(
+                "Google Hybrid",
+                // {type: G_HYBRID_MAP, numZoomLevels: 20}
+		{type: google.maps.MapTypeId.HYBRID, numZoomLevels:20}
+            );
+	    trans_geo_map.addLayer(g_hybrid);
+	    trans_geo_map.setCenter(new OpenLayers.LonLat(-110.0, 45.0).transform('EPSG:4326', 'EPSG:3857'), 1); */
+	    var trans_geo_base_layer = new OpenLayers.Layer.WMS("OpenLayers WMS", "http://vmap0.tiles.osgeo.org/wms/vmap0", {layers: 'basic'} );
+	    trans_geo_map.addLayer(trans_geo_base_layer);
+	    map.setCenter(new OpenLayers.LonLat(-50.0, 45.0), 2);
 
-          
+	    var trans_geo_site_markers = new OpenLayers.Layer.Markers("Sites");
+	    trans_geo_map.addLayer(trans_geo_site_markers);
+	    trans_geo_map.setCenter(new OpenLayers.LonLat(8.0, 45.0), 1);
+
+	    var sites =  {"University of Victoria": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": 23, "workers": 10, "nodes": 5},
+			  "University of Tokyo": { "LonLat":new OpenLayers.LonLat(139.762359,35.714218), "cities": 12, "workers": 4, "nodes": 2},
+			  "TU-Kaiserslautern": { "LonLat":new OpenLayers.LonLat(7.755167,49.424053),  "cities": 18, "workers": 20, "nodes": 10},
+			  "University of Ghent": { "LonLat":new OpenLayers.LonLat(3.720546,51.053481), "cities": 23, "workers": 10, "nodes": 5},
+			  "University of Utah": { "LonLat":new OpenLayers.LonLat(-111.830006,40.758375), "cities": 46, "workers": 16, "nodes": 8},
+			  "Northwestern University": { "LonLat":new OpenLayers.LonLat(-87.619379,41.895361), "cities": 186, "workers": 20, "nodes": 5}
+			 };
+            var marker_size = new OpenLayers.Size(21,25);
+	    var marker_offset = new OpenLayers.Pixel(-(marker_size.w/2), -marker_size.h);
+	    var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png', marker_size, marker_offset);
+            for (var site in sites) {
+		var site_data = sites[site];
+		var lonlat = site_data["LonLat"];
+		var marker = new OpenLayers.Marker(lonlat, icon.clone());
+		marker.site = site_data;
+		trans_geo_site_markers.addMarker(marker);
+	    }
  
         }
     </script>
+    <style type="text/css">
+       #map_panel {
+           width:1100px;
+           height:100%;
+           margin-left:auto;
+           margin-right:auto;
+       }
+       #greencities_map {
+           width:700px;
+           height:100%;
+           margin-left:0;
+           margin-right:auto;
+           float:left;
+       }
+       #right_map {
+           width : 400px;
+           height:30%;
+           position:absolute;
+	   top:0;
+	   right:0;
+       }
+       #right_bottom {
+           width:400px;
+           height: 70%;
+           position:absolute;
+	   bottom:0;
+	   right:0
+       }  
+    </style>
   </head>
   <body onload="init()">
 
-        <div id="map"></div>
+      <div id = "map_panel">
+        <div id="greencities_map"></div>
+        <div id="right_map"></div>
+        <div id="right_bottom"></div>
+        
+</div>
+     </div>
 
 <!--          <div id="text">
               <h1 id="title">GreenCities Demo</h1>
@@ -429,7 +494,7 @@ image data in Swift repositories, and distributed Disco jobs to do the analysis
  
             </div>
 -->           
-        </div>
+
 
     </body>
 </html>
