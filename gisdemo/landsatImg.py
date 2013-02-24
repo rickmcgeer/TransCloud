@@ -404,7 +404,8 @@ class GrassLandsat:
 
         # we give it 1) the name of the png created from grass 
         #  and 2) the name the greenspace calc will create
-        pngimg = pngImg(allbandsPNG, str(self.gid) + "_allbands.png")
+        # and 3) the directory where they will be stored
+        pngimg = pngImg(allbandsPNG, str(self.gid) + ".png", self.file_manager.tmp_dir_file)
         pngimg.bbox = self.bbox
         self.img = pngimg
             
@@ -432,14 +433,16 @@ class pngImg:
     px_h = None
     bbox = None
 
-    def __init__(self, fn, imgn):
+    def __init__(self, fn, imgn, file_dir):
         self.fname = fn
         self.imgname = imgn
+        self.file_dir = file_dir
 
     def readImgData(self):
-        log("Attempting to read image data from " + self.fname)
+        file_name = self.file_dir + "/" + self.fname
+        log("Attempting to read image data from " + file_name)
         try:
-            f = open(self.fname, 'rb')
+            f = open(file_name, 'rb')
             imgData = f.read()
             image = png.Reader(bytes=imgData)
             f.close()
@@ -457,10 +460,11 @@ class pngImg:
         return (self.bbox.ymax - self.bbox.ymin) / self.px_h
 
     def writeImg(self):
-        log("Attemping to write png " + self.imgname)
+        file_name = self.file_dir + "/" + self.imgname
+        log("Attemping to write png " + file_name
         try:
             wt = png.Writer(width=self.px_w, height=self.px_h, alpha=True, bitdepth=8)
-            f = open(self.imgname, 'wb')
+            f = open(file_name, 'wb')
             wt.write(f, self.rgbs)
             f.close()
             log("Complete!")
