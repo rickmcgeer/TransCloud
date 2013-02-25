@@ -30,7 +30,8 @@ def process_cities(testing_prefix="", testing=False):
         try:
             if not testing:
                 greenspace.init()
-                green_results = greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),"all", testing=testing)
+                location = taskmanager.get_local_site_name()
+                green_results = greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),location, testing=testing)
             else:
                 green_results = mq_calc.FAKE_RESULT
         except gcswift.MissingSwiftFile as e:
