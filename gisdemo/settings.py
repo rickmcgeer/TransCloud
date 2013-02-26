@@ -71,7 +71,7 @@ TEMP_FILE_DIR = clusters.get_cluster_tmp_location()
 # File cache and file cache size.  This should probably be set by the deployment engine
 # rather than hard-coded
 #
-file_cache_directory = "/tmp/swift_file_cache"
+file_cache_directory = TEMP_FILE_DIR + "swift_file_cache"
 file_cache_size_in_kbytes = 1 << 26 # 1 << 26 kbytes = 1 << 36 bytes = 1 << 4 gbytes = 16 gbytes
 
 
