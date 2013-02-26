@@ -8,6 +8,7 @@ import shutil
 import time
 from subprocess import check_call
 import tempfile
+import stat
 
 class SwiftFailure(Exception):
     def __init__(self, message, swift_url):
@@ -189,7 +190,11 @@ class FileCache:
             try:
                 os.mkdir(self.directory)
             except OSError:
-                print "Failed to create directory ", self.directory, " and it does not exist"
+                print "Failed to create directory " +  self.directory + " and it does not exist"
+        try:
+            os.chmod(self.directory, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        except OSERROR:
+            print "Failed to change mode of " + self.directory + " to 777"
         self.file_whitelist = []
 
     #
@@ -330,6 +335,10 @@ class FileManager:
     def __init__(self):
         self.file_cache = FileCache()
         self.tmp_file_dir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
+        try:
+            os.chmod(self.tmp_file_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        except OSERROR:
+            print "Failed to change mode of " + self.tmp_file_dir + " to 777"
         self.shapefile_tmpDir = self.tmp_file_dir + "/tmp"
 
     def get_file(self, bucket, file_name):
