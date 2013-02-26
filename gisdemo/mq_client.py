@@ -37,6 +37,7 @@ def process_cities(testing_prefix="", testing=False):
                 green_results = mq_calc.FAKE_RESULT
         except IOError as e:
             # no matter what, on ioerror die, we are probably out of space.
+            sys.exit(1)
             raise e
         except gcswift.MissingSwiftFile as e:
             client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
