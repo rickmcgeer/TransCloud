@@ -461,7 +461,7 @@ class pngImg:
 
     def writeImg(self):
         file_name = self.file_dir + "/" + self.imgname
-        log("Attemping to write png " + file_name
+        log("Attemping to write png " + file_name)
         try:
             wt = png.Writer(width=self.px_w, height=self.px_h, alpha=True, bitdepth=8)
             f = open(file_name, 'wb')
