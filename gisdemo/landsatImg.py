@@ -439,7 +439,7 @@ class pngImg:
         self.file_dir = file_dir
 
     def readImgData(self):
-        file_name = self.file_dir + "/" + self.fname
+        file_name =  self.fname
         log("Attempting to read image data from " + file_name)
         try:
             f = open(file_name, 'rb')
