@@ -65,7 +65,7 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
       os.killpg(p.pid, signal.SIGTERM)
       # raise an assertion so we can continue execution after 
       #  (should really have our own exception but fk it)
-      raise SwiftError("Timeout "+operation+"ing swift images", command)
+      raise SwiftFailure("Timeout "+operation+"ing swift images", command)
   else:
       p.wait()
 
