@@ -2,6 +2,7 @@ import sys
 import os
 import greencitieslog
 import greenspace
+import landsatImg
 import json
 import optparse
 import settings
@@ -34,8 +35,15 @@ def process_cities(testing_prefix="", testing=False):
                 green_results = greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),location, testing=testing)
             else:
                 green_results = mq_calc.FAKE_RESULT
+        except IOError as e:
+            # no matter what, on ioerror die, we are probably out of space.
+            sys.exit(1)
+            raise e
         except gcswift.MissingSwiftFile as e:
             client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+        except landsatImg.MissingCoverage as e:
+            client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+
         except Exception as e:
             if settings.PRODUCTION_MODE:
                 client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})

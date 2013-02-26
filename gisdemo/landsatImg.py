@@ -24,6 +24,12 @@ import combine
 from greencitieslog import log
 import tempfile
 
+
+
+class MissingCoverage(Exception):
+    pass
+
+
     
 def getBand(fname):
     """ Check which band is in a filename"""
@@ -180,7 +186,8 @@ class GrassLandsat:
             "from (select ST_Transform(the_geom, 4326) as the_geom from map where gid = "+str(self.gid)+") as map , tiff4326 where ST_Intersects(map.the_geom, tiff4326.the_geom);"
 
         records = pgConn.performSelect(sql)
-        assert len(records), "No data crawled yet"
+        if len(records)==0:
+            raise MissingCoverage("Could not find any images in the database for "+str(self.gid))
 
         decided_date = None
 

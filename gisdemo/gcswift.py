@@ -193,7 +193,7 @@ class FileCache:
                 print "Failed to create directory " +  self.directory + " and it does not exist"
         try:
             os.chmod(self.directory, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-        except OSERROR:
+        except OSError:
             print "Failed to change mode of " + self.directory + " to 777"
         self.file_whitelist = []
 
@@ -337,7 +337,7 @@ class FileManager:
         self.tmp_file_dir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
         try:
             os.chmod(self.tmp_file_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-        except OSERROR:
+        except OSError:
             print "Failed to change mode of " + self.tmp_file_dir + " to 777"
         self.shapefile_tmpDir = self.tmp_file_dir + "/tmp"
 

@@ -11,9 +11,10 @@ ZIPFILE= 'my_project.tar.gz'
 env.roledefs = {
     'brussels':brussels_cluster,
     'uvic':uvic_cluster,
+    'nw':nw_cluster,
     'emulab':emulab_cluster,
     'server':[grack06],
-    'workers':uvic_cluster + emulab_cluster + brussels_cluster,
+    'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
 
     'sebulba':[sebulba]
 }
@@ -38,7 +39,7 @@ def test():
     local("py.test "+testable_files)
 
 
-@roles('brussels')
+@roles('nw')
 def disk_space():
     with settings(warn_only=True):
         run('df -h')
@@ -77,8 +78,8 @@ def deploy():
         sudo('tar xzf /tmp/'+ZIPFILE)
     sudo('chmod -R 777 '+deploy_path)
 
-@hosts(sebulba)
-#@roles('brussels')
+    #@hosts([sebulba])
+@roles('nw')
 def test_everywhere():
     pack()
     deploy()
@@ -102,9 +103,19 @@ def clean_up_tmps():
         sudo('rm -rf *.shx')
         sudo('rm -rf green.log')
         sudo('rm -rf tmp*')
+    with cd('/mnt/'):
+        sudo('rm -rf landsat*')
+        sudo('rm -rf p*')
+        sudo('rm -rf *.tif')
+        sudo('rm -rf *.png*')
+        sudo('rm -rf *.dbf')
+        sudo('rm -rf *.shp')
+        sudo('rm -rf *.shx')
+        sudo('rm -rf green.log')
+        sudo('rm -rf tmp*')
 
 @parallel
-@roles('emulab')
+@roles('nw')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
@@ -127,8 +138,7 @@ def install_deps():
 def run_start():
     deploy()
     with cd(deploy_path):
-        run('python mq_calc.py -c 500')
-#@hosts([br01])
+        run('python mq_calc.py -c 50')
 
 @parallel
 @roles('workers')

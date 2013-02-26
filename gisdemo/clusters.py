@@ -23,13 +23,21 @@ emu3='cmatthew@pc297.emulab.net'
 emu4='cmatthew@pc303.emulab.net'
 emulab_cluster =  [emu1, emu2, emu3, emu4]
 
-all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster] 
+nw1 = "cmatthew@pc2.instageni.northwestern.edu"
+nw2 = "cmatthew@pc3.instageni.northwestern.edu"
+nw3 = "cmatthew@pc4.instageni.northwestern.edu"
+nw4 = "cmatthew@pc5.instageni.northwestern.edu"
+
+nw_cluster = [nw1, nw2, nw3, nw4]
+
+all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster, nw_cluster] 
 
 # tmp dirs are different at different clusters. 
 tmp_dirs = {"cs.UVic.CA":"/tmp/",
             "uvic.trans-cloud.net":"/tmp/",
             "emulab.net":"/mnt/",
-            ".ibbt.be":"/mnt/"}
+            ".ibbt.be":"/mnt/",
+            "northwestern.edu":"/mnt/"}
 
 def n_machines():
     """How many machines are there?"""

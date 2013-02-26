@@ -4,9 +4,9 @@ import socket
 import sys
 import time
 
-_sites={1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be"}
+_sites={1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu"}
 
-_ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3]}
+_ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3], '165.124':_sites[4]}
 
 _decided_site_name = None
 
@@ -31,8 +31,10 @@ def  get_local_site_name():
     s.close()
     front = ip.split(".")[0:2]
     front = '.'.join(front)
- 
-    site_name = _ip_to_site[front]
+    if front == '10.0':
+        site_name = "localhost"
+    else:
+        site_name = _ip_to_site[front]
 
     _decided_site_name = site_name
     
@@ -71,7 +73,7 @@ class TaskManager():
         
     def add_task(self, jobobj, site=None):
         site = self._get_site(site)
-        mq.push_job( json.dumps(jobobj), self.myqueue(site))
+        mq.push_job( json.dumps(jobobj), self.myqueue(site), 60*10)
 
     def clear(self, site):
         site = self._get_site(site)
