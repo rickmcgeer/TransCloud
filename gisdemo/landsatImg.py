@@ -405,7 +405,7 @@ class GrassLandsat:
         # we give it 1) the name of the png created from grass 
         #  and 2) the name the greenspace calc will create
         # and 3) the directory where they will be stored
-        pngimg = pngImg(allbandsPNG, str(self.gid) + ".png", self.file_manager.tmp_dir_file)
+        pngimg = pngImg(allbandsPNG, str(self.gid) + ".png", self.file_manager.tmp_file_dir)
         pngimg.bbox = self.bbox
         self.img = pngimg
             
