@@ -9,7 +9,6 @@ import tempfile
 import traceback
 import time
 
-
 sys.path.insert(0, './mq/')
 
 import taskmanager
@@ -49,7 +48,10 @@ def process_results(prefix="", testing=False):
 			passes += 1
                         submitted.append(job)
                 else:
-                        message =  new_job['result'] + " on " + new_job['name'] + "failed with " + new_job['message'] + "\n"
+			result = new_job.get('result','Failed')
+			name = new_job.get('name', "Missing Name")
+			err_msg = new_job.get('message', "There was no message passed back.")
+                        message =  str(result) + " on " + str(name) + ", failed with: " + str(err_msg) + "\n"
                         print message,
 			fails += 1
                         error_log.write(message)
@@ -60,7 +62,7 @@ def process_results(prefix="", testing=False):
                 print traceback.format_exc()
                 print type(e), str(e), "New Job:",type(new_job), new_job
             except Exception as e:
-                print type(e), str(e)
+                print type(e), str(e),traceback.format_exc()
                 if testing:
                         raise e
     finally:
