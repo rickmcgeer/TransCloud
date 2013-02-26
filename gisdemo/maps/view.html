@@ -436,25 +436,35 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    
 		    // right_bottom.innerHTML += "</table>";
                    
-		    $('#cluster_name').html("<p>" + this.site_name + "</p>");
-		    $('#cities_chart').sparkline(this.site['cities'], sparkline_options);
-		    $('#nodes_chart').sparkline(this.site['nodes'], sparkline_options);
-		    $('#workers_chart').sparkline(this.site['workers'], sparkline_options);
+		    // $('#cluster_name').html("<p>" + this.site_name + "</p>");
+		    // $('#cities_chart').sparkline(this.site['cities'], sparkline_options);
+		    // $('#nodes_chart').sparkline(this.site['nodes'], sparkline_options);
+		    // $('#workers_chart').sparkline(this.site['workers'], sparkline_options);
+		    $.get("http://grack06.uvic.trans-cloud.net/cgi-bin/get_data.py?site="+this.site_name, "",
+                          function(data) {
+			      var site_name = data["site_name"];
+                              $('#cluster_name').html("<p>" + site_name + "</p>");
+			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
+			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
+			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
+			  },
+                        "json");
 		});
 	    }
 	   
         }
-var sites =  {"University of Victoria": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
-	      "University of Tokyo": { "LonLat":new OpenLayers.LonLat(139.762359,35.714218), "cities": [6,7,8,9,10,12], "workers": [1,2,3,4,3,4], "nodes": [1,1,1,2,2,2]},
-	      "TU-Kaiserslautern": { "LonLat":new OpenLayers.LonLat(7.755167,49.424053),  "cities": [6,12,13,14,16,18], "workers": [12, 16, 18, 14, 16, 20], "nodes": [6, 8, 9, 7, 8, 10]},
-	      "University of Ghent": { "LonLat":new OpenLayers.LonLat(3.720546,51.053481), "cities": [5,7,9,13, 17, 23], "workers": [2, 4, 8, 10, 8, 10], "nodes": [1, 2, 3, 5, 4, 5]},
-	      "University of Utah": { "LonLat":new OpenLayers.LonLat(-111.830006,40.758375), "cities": [17, 23, 25, 31, 37, 46], "workers": [16, 16, 16, 14, 16, 16], "nodes": [6, 6, 4, 6, 6, 8]},
-	      "Northwestern University": { "LonLat":new OpenLayers.LonLat(-87.619379,41.895361), "cities": [153, 162, 168, 174, 180, 186], "workers": [16, 18, 20, 16, 18, 20], "nodes": [3, 4, 5, 3, 4, 5]}
+var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
+              "uvic.trans-cloud.net": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
+	      "u-tokyo.ac.jp": { "LonLat":new OpenLayers.LonLat(139.762359,35.714218), "cities": [6,7,8,9,10,12], "workers": [1,2,3,4,3,4], "nodes": [1,1,1,2,2,2]},
+	      "informatik.tu-kaiserslautern.de": { "LonLat":new OpenLayers.LonLat(7.755167,49.424053),  "cities": [6,12,13,14,16,18], "workers": [12, 16, 18, 14, 16, 20], "nodes": [6, 8, 9, 7, 8, 10]},
+	      ".ibbt.be": { "LonLat":new OpenLayers.LonLat(3.720546,51.053481), "cities": [5,7,9,13, 17, 23], "workers": [2, 4, 8, 10, 8, 10], "nodes": [1, 2, 3, 5, 4, 5]},
+	      "emulab.net": { "LonLat":new OpenLayers.LonLat(-111.830006,40.758375), "cities": [17, 23, 25, 31, 37, 46], "workers": [16, 16, 16, 14, 16, 16], "nodes": [6, 6, 4, 6, 6, 8]},
+	      "northwestern.edu": { "LonLat":new OpenLayers.LonLat(-87.619379,41.895361), "cities": [153, 162, 168, 174, 180, 186], "workers": [16, 18, 20, 16, 18, 20], "nodes": [3, 4, 5, 3, 4, 5]}
 	     };
 var sparkline_options = {'height':'40px', 'width':'400px'};
-var default_site = sites['University of Victoria'];
+var default_site = sites['cs.UVic.CA'];
 $(function() {
-    $('#cluster_name').html("<p> University of Victoria </p>");
+    $('#cluster_name').html("<p> cs.UVic.CA </p>");
     $('#cities_chart').sparkline(default_site['cities'], sparkline_options);
     $('#nodes_chart').sparkline(default_site['nodes'], sparkline_options);
     $('#workers_chart').sparkline(default_site['workers'], sparkline_options);
