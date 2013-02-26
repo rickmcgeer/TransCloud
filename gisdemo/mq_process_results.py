@@ -28,6 +28,8 @@ import traceback
 def process_results(prefix="", testing=False):
     submitted = []
     error_log = open("/tmp/error.log", 'w')
+    fails = 0
+    passes = 0
     try:
         client = taskmanager.TaskClient(queue=prefix+taskmanager.RESULT_QUEUE_NAME)
 	if not testing:
@@ -44,10 +46,12 @@ def process_results(prefix="", testing=False):
                         print job['name'], "worked with", job['greenspace_val'], "greenspace in", job['imgname']
                         if not testing:
                                 submit_result(**job)
+			passes += 1
                         submitted.append(job)
                 else:
                         message =  new_job['result'] + " on " + new_job['name'] + "failed with " + new_job['message'] + "\n"
                         print message,
+			fails += 1
                         error_log.write(message)
                         submitted.append(new_job)
 
@@ -60,6 +64,7 @@ def process_results(prefix="", testing=False):
                 if testing:
                         raise e
     finally:
+	print fails,"jobs failed of", passes+fails, "total."
         greenspace.close()
         error_log.close()
 
