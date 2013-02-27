@@ -22,6 +22,23 @@ CLUSTER_COL = "cluster"
 WSG84 = "4326"
 GEOG = WSG84
 
+#to support cgi queries on cluster status
+# create table cgi_query_values_history
+# query_time timestamp without time zone,
+# query_id serial,
+# cluster_name character varying(256),
+# nodes integer,
+# workers integer,
+# cities integer
+
+CGI_TABLE = 'cgi_query_values_history'
+CGI_TIME_COL = 'query_time'
+CGI_ID_COL = 'query_id'
+CGI_CLUSTER_COL = 'cluster_name'
+CGI_NODE_COL = 'nodes'
+CGI_WORKERS_COL = 'workers'
+CGI_CITIES_COL = 'cities'
+
 
 class pgConnection:
     """  """
@@ -169,6 +186,48 @@ class pgConnection:
             print "Failed to update database:", str(e)
             return
 
+    def get_workers_and_cities(self, cluster_name):
+        """Called by getCGIValues to get the total number of workers in a cluster and total number of cities processed.
+        Returns a pair(workers, cities).  Broken out separately for testing...
+        """
+        get_current_workers_query = "SELECT count(distinct " + SERV_NAME_COL + ") FROM " + IMG_TABLE
+        get_total_cities_query = "SELECT count(*) FROM " + IMG_TABLE + " WHERE " + SERV_NAME_COL + " IS NOT NULL "
+        if cluster_name != 'total':
+            get_current_workers_query += " WHERE " + CLUSTER_COL +"='" + cluster_name +"'"
+            get_total_cities_query += " AND " + CLUSTER_COL +"='" + cluster_name +"'"
+        workers = int(self.performSelect(get_current_workers_query)[0][0])
+        cities = int(self.performSelect(get_total_cities_query)[0][0])
+        return (workers, cities)
+
+    def update_cgi_values_table(self, cluster_name, workers, nodes, cities):
+        update_statement = "INSERT into %s (%s, %s, %s, %s) VALUES ('%s', %d, %d, %d)" % \
+        (CGI_TABLE, CGI_CLUSTER_COL, CGI_WORKERS_COL, CGI_NODE_COL, CGI_CITIES_COL, cluster_name, workers, nodes, cities)
+        print "Performing " + update_statement
+        self.performUpdate(update_statement)
+        
+
+    def getCGIValues(self, cluster_name='total'):
+        """Called by get_data in cgi_bin to get a history of the computation
+        on cluster_name; total is a special cluster which means everybody.
+        Returns a dictionary of lists suitable for json encoding: {nodes:[list_of_node_values],
+        cities:[list_of_cities_values], workers:[list_of_workers]}
+        """
+        (workers, cities) = self.get_workers_and_cities(cluster_name)
+        self.update_cgi_values_table(cluster_name, workers, workers, cities)
+        query_statement = "SELECT %s, %s, %s FROM %s WHERE  %s='%s' ORDER BY %s" % \
+        (CGI_NODE_COL, CGI_WORKERS_COL, CGI_CITIES_COL, CGI_TABLE, CGI_CLUSTER_COL, cluster_name, CGI_ID_COL)
+        result = self.performSelect(query_statement)
+        worker_results =[]
+        cities_results = []
+        nodes_results = []
+        for (node_num, worker_num, city_num) in result:
+            worker_results.append(worker_num)
+            cities_results.append(city_num)
+            nodes_results.append(node_num)
+        return {'cluster':cluster_name, 'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
+
+
+        
 
 def test_db():
     try:
