@@ -16,6 +16,7 @@ IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
 SERV_NAME_COL = "server_name"
+CLUSTER_COL = "cluster"
 
 # projection SRID
 WSG84 = "4326"
@@ -144,7 +145,8 @@ class pgConnection:
         imageTbl = "UPDATE " + IMG_TABLE +" SET " + IMG_NAME_COL + "='" + imgName+ "', "\
             +START_T_COL+"="+st_time+", "\
             +END_T_COL+"="+end_time+", "\
-            +SERV_NAME_COL+"='"+servName+"'"\
+            +SERV_NAME_COL+"='"+servName+"', "\
+            +CLUSTER_COL+"='"+region+"'"\
             +" WHERE gid" + "=" + str(gid) + ";"
 
         return greenTbl + imageTbl
