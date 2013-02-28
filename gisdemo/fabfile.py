@@ -1,6 +1,7 @@
 from fabric.api import *
 from fabric.contrib.console import confirm
 import os
+import time
 from clusters import *
 env.use_ssh_config=True
 
@@ -15,7 +16,7 @@ env.roledefs = {
     'emulab':emulab_cluster,
     'server':[grack06],
     'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
-
+    'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
 }
 
@@ -67,7 +68,7 @@ def route():
         sudo('/share/nat.sh')
 
 
-@roles('uvic')
+
 def deploy():
     pack()
     put('/tmp/'+ZIPFILE, '/tmp/')
@@ -78,8 +79,8 @@ def deploy():
         sudo('tar xzf /tmp/'+ZIPFILE)
     sudo('chmod -R 777 '+deploy_path)
 
-    #@hosts([sebulba])
-@roles('nw')
+@hosts([sebulba])
+#@roles('nw')
 def test_everywhere():
     pack()
     deploy()
@@ -91,6 +92,7 @@ def clean_up_gdal():
     with cd('gdal-1.9.1'):
         run('make clean')
 
+@parallel
 @roles('workers')
 def clean_up_tmps():
     with cd('/tmp/'):
@@ -103,6 +105,8 @@ def clean_up_tmps():
         sudo('rm -rf *.shx')
         sudo('rm -rf green.log')
         sudo('rm -rf tmp*')
+        sudo('rm -rf swift_file_cache')
+        
     with cd('/mnt/'):
         sudo('rm -rf landsat*')
         sudo('rm -rf p*')
@@ -113,9 +117,11 @@ def clean_up_tmps():
         sudo('rm -rf *.shx')
         sudo('rm -rf green.log')
         sudo('rm -rf tmp*')
+        sudo('rm -rf swift_file_cache')
 
 @parallel
-@roles('nw')
+#@roles('nw')
+@hosts(["root@pc515.emulab.net"])
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
@@ -138,29 +144,46 @@ def install_deps():
 def run_start():
     deploy()
     with cd(deploy_path):
-        run('python mq_calc.py -c 50')
-
+        run('python mq_calc.py -c 10')
+        with settings(warn_only=True):
+            sudo('rm -rf green.log')
+        run('python calc_daemon.py restart')
+        
 @parallel
 @roles('workers')
 def run_workers():
     deploy()
     with cd(deploy_path):
-        run('python mq_client.py')
+        with settings(warn_only=True):
+            run('python mq_client.py')
 
 @roles('server')
 def run_results():
-    deploy()
     with cd(deploy_path):
-        with settings(warn_only=True):
-            sudo('rm -rf green.log')
-        run('python mq_process_results.py')
-        run('echo Errors')
-        run('cat /tmp/error.log')
+        run('python calc_daemon.py restart')
+        time.sleep(10)
+        run('python calc_daemon.py stop')
+        get('/tmp/calc_daemon.log', 'calc_daemon.log')
+        
 
 @hosts('sebulba')
 def update_to_swift():
         with cd(deploy_path):
             run('python send_swift_images.py')
+
+@roles('jp-relay')
+def deploy_jp():
+    deploy()
+    with cd(deploy_path):
+            run('fab deploy_jp_node')
+
+@hosts('root@192.168.251.10')
+def deploy_jp_node():
+    deploy()
+    with cd(deploy_path):
+            run('python mq_client.py')
+    
+    
 
 def all():
     execute(run_start)

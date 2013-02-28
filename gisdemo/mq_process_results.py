@@ -24,7 +24,7 @@ def submit_result(greenspace_val, id, name, stime, etime, imgname, servername, l
         greenspace.pgConn.performUpdate(update_stmnt)
 import traceback
 
-def process_results(prefix="", testing=False):
+def process_results(prefix="", testing=False, blocking=True):
     submitted = []
     error_log = open("/tmp/error.log", 'w')
     fails = 0
@@ -37,7 +37,11 @@ def process_results(prefix="", testing=False):
         while(True):
             try:
                 print "Getting new task:"
-                new_job, jobid = client.get_task()
+                if blocking:
+                        new_job, jobid = client.blocking_get_task()
+                else:
+                        new_job, jobid = client.get_task()
+                
                 if new_job == None:
                         return submitted
                 if 'result' in new_job and new_job['result'] != u'failure':

@@ -44,7 +44,7 @@ def populate_cities(ncities, testing_prefix="", testing=False):
 
     greenspace.init()
     for cluster_nums in xrange(1,5): # these are the map clusters, not machine clusters 
-         cities.append(greenspace.get_cities(cluster_nums, ncities))
+         cities.extend(greenspace.get_cities(cluster_nums, ncities))
     if testing:
          cities = []
          for i in xrange(0,ncities):
@@ -54,27 +54,34 @@ def populate_cities(ncities, testing_prefix="", testing=False):
 
     manager = taskmanager.TaskManager(prefix=testing_prefix)
     manager.reset()
-    for i,city_batches in enumerate(cities):
-         for city in city_batches:
-              job = json.dumps(city ,separators=(',',':'))
-              
-              if testing:
-                   manager.add_task({'task':'greencities','data':job})
-              else:
-                   manager.add_task({'task':'greencities','data':job}, decide_cluster(i))
+    for i,city in enumerate(cities):
+            job = json.dumps(city ,separators=(',',':'))
+
+            if testing:
+                manager.add_task({'task':'greencities','data':job})
+            else:
+                clust = decide_cluster(i, ncities)
+                print ">> Enqueue", city[1], "on", taskmanager._sites[clust]
+                manager.add_task({'task':'greencities','data':job}, )
               
 
     return manager.get_size()
 
 
-def decide_cluster(map_cluster):
-     """Given a map cluster, get a machine cluster number.  Basically schedule map clusters to machine clusters."""
-     cluster_id = (map_cluster%len(clusters.all_clusters)) + 1
-     return cluster_id
+
+def decide_cluster(city, ncities):
+    """Given a map cluster, get a machine cluster number.  Basically schedule map clusters to machine clusters."""
+    batch = city/4
+    clus = batch % len(taskmanager._sites)
+    
+    return clus + 1
 
 def test_decide_cluster():
-     for i in xrange(1,6):
-          assert 1 <= decide_cluster(i) <= len(clusters.all_clusters) 
+    for i in xrange(0,32):
+        print i,"-->",decide_cluster(i, 8)
+        clus = decide_cluster(i, 5)
+        assert 1 <= clus <= len(taskmanager._sites) 
+        assert clus in taskmanager._sites, "Invalid site %d"%(clus) 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()

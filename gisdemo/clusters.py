@@ -30,14 +30,19 @@ nw4 = "cmatthew@pc5.instageni.northwestern.edu"
 
 nw_cluster = [nw1, nw2, nw3, nw4]
 
-all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster, nw_cluster] 
+jp1 = "root@192.168.251.10"
+
+jp_cluster = [jp1]
+
+all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster, nw_cluster, jp_cluster] 
 
 # tmp dirs are different at different clusters. 
 tmp_dirs = {"cs.UVic.CA":"/tmp/",
             "uvic.trans-cloud.net":"/tmp/",
             "emulab.net":"/mnt/",
             ".ibbt.be":"/mnt/",
-            "northwestern.edu":"/mnt/"}
+            "northwestern.edu":"/mnt/",
+            "u-tokyo.ac.jp":"/tmp/"}
 
 def n_machines():
     """How many machines are there?"""
