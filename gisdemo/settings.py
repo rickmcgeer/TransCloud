@@ -35,8 +35,7 @@ import os
 import sys
 import greencitieslog
 
-# export GISDBASE=$HOME/grassdata
-os.environ['GISDBASE'] = str(os.path.join(os.environ['HOME'], 'grassdata'))
+
 
 # export GISBASE=/usr/lib/grass64
 os.environ['GISBASE'] = "/usr/lib/grass64"
@@ -55,8 +54,15 @@ os.environ['LD_LIBRARY_PATH'] = str(os.path.join(os.environ['GISBASE'], 'lib')) 
 # export GIS_LOCK=$$
 os.environ['GIS_LOCK'] = str(os.getpid())
 
+# export GISDBASE=$HOME/grassdata
 # export GISRC=$HOME/.grassrc6
-os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
+# HOME is not defined for www-data, so catch a KeyError; then this setting is irrelevant
+try:
+    os.environ['GISDBASE'] = str(os.path.join(os.environ['HOME'], 'grassdata'))
+    os.environ['GISRC'] = str(os.path.join(os.environ['HOME'], '.grassrc6'))
+except KeyError:
+    os.environ['GISRC'] = ''
+    os.environ['GISDBASE'] = ''
 
 os.environ['LOCATION_NAME'] = "greenspace"
 
