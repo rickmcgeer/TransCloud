@@ -447,6 +447,9 @@ map.addControl(new OpenLayers.Control.Navigation());
 			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
 			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
 			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
+                              $('#cities_total_chart').sparkline(data['cities_total'], sparkline_options);
+			      $('#nodes_total_chart').sparkline(data['nodes_total'], sparkline_options);
+			      $('#workers_total_chart').sparkline(data['workers_total'], sparkline_options);
 			  },
                         "json");
 		});
@@ -464,10 +467,23 @@ var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "ci
 var sparkline_options = {'height':'40px', 'width':'400px'};
 var default_site = sites['cs.UVic.CA'];
 $(function() {
-    $('#cluster_name').html("<p> cs.UVic.CA </p>");
+/*    $('#cluster_name').html("<p> cs.UVic.CA </p>");
     $('#cities_chart').sparkline(default_site['cities'], sparkline_options);
     $('#nodes_chart').sparkline(default_site['nodes'], sparkline_options);
-    $('#workers_chart').sparkline(default_site['workers'], sparkline_options);
+    $('#workers_chart').sparkline(default_site['workers'], sparkline_options); */
+    $.get("http://grack06.uvic.trans-cloud.net/greencities-bin/get_data.py?site=uvic.trans-cloud.net", "",
+                          function(data) {
+			      var site_name = data["site_name"];
+                              $('#cluster_name').html("<p>" + site_name + "</p>");
+			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
+			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
+			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
+                              $('#cities_total_chart').sparkline(data['cities_total'], sparkline_options);
+			      $('#nodes_total_chart').sparkline(data['nodes_total'], sparkline_options);
+			      $('#workers_total_chart').sparkline(data['workers_total'], sparkline_options);
+			  },
+                        "json");
+
 
 });
 
@@ -515,8 +531,12 @@ $(function() {
         <div id="right_bottom">
 <span id="cluster_name">Cluster Name</span>
 	<p> Cities: <span id="cities_chart" class="chart">Loading...</p></span>
-<p> Workers: <span id="workers_chart" class="chart">Loading...</p></span>
+        <p> Workers: <span id="workers_chart" class="chart">Loading...</p></span>
 	<p> Nodes: <span id="nodes_chart" class="chart">Loading...</p></span>
+     <span id="Total">Total</span>
+        <p> Cities: <span id="cities_total_chart" class="chart">Loading...</p></span>
+        <p> Workers: <span id="workers_total_chart" class="chart">Loading...</p></span>
+	<p> Nodes: <span id="nodes_total_chart" class="chart">Loading...</p></span>
 </div>
         
 </div>

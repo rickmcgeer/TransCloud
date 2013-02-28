@@ -209,12 +209,7 @@ class pgConnection:
         
         
 
-    def getCGIValues(self, cluster_name='total'):
-        """Called by get_data in cgi_bin to get a history of the computation
-        on cluster_name; total is a special cluster which means everybody.
-        Returns a dictionary of lists suitable for json encoding: {nodes:[list_of_node_values],
-        cities:[list_of_cities_values], workers:[list_of_workers]}
-        """
+    def getCGIValuesInternal(self, cluster_name='total'):
         (workers, cities) = self.get_workers_and_cities(cluster_name)
         self.update_cgi_values_table(cluster_name, workers, workers, cities)
         query_statement = "SELECT %s, %s, %s FROM %s WHERE  %s='%s' ORDER BY %s" % \
@@ -227,7 +222,25 @@ class pgConnection:
             worker_results.append(worker_num)
             cities_results.append(city_num)
             nodes_results.append(node_num)
-        return {'site_name':cluster_name, 'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
+        
+        return {'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
+    
+    def getCGIValues(self, cluster_name='total'):
+        """Called by get_data in cgi_bin to get a history of the computation
+        on cluster_name; total is a special cluster which means everybody.
+        Returns a dictionary of lists suitable for json encoding: {nodes:[list_of_node_values],
+        cities:[list_of_cities_values], workers:[list_of_workers]}
+        """
+        cluster_data = self.getCGIValuesInternal(cluster_name)
+        total_data = self.getCGIValuesInternal('total')
+        return {'site_name':cluster_name,
+                'cities':cluster_data['cities'],
+                'workers':cluster_data['workers'],
+                'nodes':cluster_data['nodes'],
+                'cities_total':total_data['cities'],
+                'workers_total':total_data['workers'],
+                'nodes_total':total_data['nodes']
+                }
 
 
         
