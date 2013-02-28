@@ -202,8 +202,11 @@ class pgConnection:
     def update_cgi_values_table(self, cluster_name, workers, nodes, cities):
         update_statement = "INSERT into %s (%s, %s, %s, %s) VALUES ('%s', %d, %d, %d)" % \
         (CGI_TABLE, CGI_CLUSTER_COL, CGI_WORKERS_COL, CGI_NODE_COL, CGI_CITIES_COL, cluster_name, workers, nodes, cities)
-        print "Performing " + update_statement
+        # print "Performing " + update_statement
         self.performUpdate(update_statement)
+
+    
+        
         
 
     def getCGIValues(self, cluster_name='total'):
@@ -217,14 +220,14 @@ class pgConnection:
         query_statement = "SELECT %s, %s, %s FROM %s WHERE  %s='%s' ORDER BY %s" % \
         (CGI_NODE_COL, CGI_WORKERS_COL, CGI_CITIES_COL, CGI_TABLE, CGI_CLUSTER_COL, cluster_name, CGI_ID_COL)
         result = self.performSelect(query_statement)
-        worker_results =[]
-        cities_results = []
-        nodes_results = []
+        worker_results =[0]
+        cities_results = [0]
+        nodes_results = [0]
         for (node_num, worker_num, city_num) in result:
             worker_results.append(worker_num)
             cities_results.append(city_num)
             nodes_results.append(node_num)
-        return {'cluster':cluster_name, 'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
+        return {'site_name':cluster_name, 'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
 
 
         

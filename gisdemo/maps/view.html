@@ -440,7 +440,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    // $('#cities_chart').sparkline(this.site['cities'], sparkline_options);
 		    // $('#nodes_chart').sparkline(this.site['nodes'], sparkline_options);
 		    // $('#workers_chart').sparkline(this.site['workers'], sparkline_options);
-		    $.get("http://grack06.uvic.trans-cloud.net/cgi-bin/get_data.py?site="+this.site_name, "",
+		    $.get("http://grack06.uvic.trans-cloud.net/greencities-bin/get_data.py?site="+this.site_name, "",
                           function(data) {
 			      var site_name = data["site_name"];
                               $('#cluster_name').html("<p>" + site_name + "</p>");
