@@ -56,7 +56,6 @@ def populate_cities(ncities, testing_prefix="", testing=False):
     manager.reset()
     for i,city in enumerate(cities):
             job = json.dumps(city ,separators=(',',':'))
-
             if testing:
                 manager.add_task({'task':'greencities','data':job})
             else:
@@ -64,9 +63,7 @@ def populate_cities(ncities, testing_prefix="", testing=False):
                 print ">> Enqueue", city[1], "on", taskmanager._sites[clust]
                 manager.add_task({'task':'greencities','data':job}, )
               
-
     return manager.get_size()
-
 
 
 def decide_cluster(city, ncities):
@@ -81,8 +78,15 @@ def test_decide_cluster():
         print i,"-->",decide_cluster(i, 8)
         clus = decide_cluster(i, 5)
         assert 1 <= clus <= len(taskmanager._sites) 
-        assert clus in taskmanager._sites, "Invalid site %d"%(clus) 
+        assert clus in taskmanager._sites, "Invalid site %d"%(clus)
 
+    clusters = [0 for i in range(len(taskmanager._sites))]
+    for i in xrange(0,100*4):
+        clus = decide_cluster(i, 100)
+        clusters[clus-1] += 1
+    print str(clusters)
+    assert 0 not in clusters, "Some cluster did not get jobs"+str(clusters)
+        
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option("-c", "--num_cities", dest="num_cities", type="int", default=5, help="number of cities to run the calculation on")
