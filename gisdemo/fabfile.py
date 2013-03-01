@@ -144,7 +144,7 @@ def install_deps():
 def run_start():
     deploy()
     with cd(deploy_path):
-        run('python mq_calc.py -c 10')
+        run('python mq_calc.py -c 100')
         with settings(warn_only=True):
             sudo('rm -rf green.log')
         run('python calc_daemon.py restart')
