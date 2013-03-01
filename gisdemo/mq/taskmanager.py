@@ -22,13 +22,20 @@ def  get_local_site_name():
     # Have we dont this before?
     if _decided_site_name != None:
         return _decided_site_name
-    
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("python.org",80))
 
-    ip = s.getsockname()[0]
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("python.org",80))
+        ip = s.getsockname()[0]
+        s.close()
+    except Exception as e:
+        print "Failed to connect to python.org -- sleeping and trying again."
+        time.sleep(10)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("python.org",80))
+        ip = s.getsockname()[0]
+        s.close()
 
-    s.close()
     front = ip.split(".")[0:2]
     front = '.'.join(front)
     if front == '10.0':
