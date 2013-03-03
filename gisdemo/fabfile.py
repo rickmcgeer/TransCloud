@@ -15,6 +15,7 @@ env.roledefs = {
     'nw':nw_cluster,
     'emulab':emulab_cluster,
     'server':[grack06],
+    'db_server':[nw1],
     'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
@@ -139,6 +140,17 @@ def install_deps():
         sudo('make install')
         run('make clean')
         sudo('ldconfig')
+
+@roles('db_server')
+def server_deploy():
+    sudo('createdb ' + settings.GIS_DATABASE, user="postgres")
+    for user in ['root', 'www-data', 'gis']:
+        sudo('createuser ' + user, user='postgres')
+    sudo('psql ' + settings.GIS_DATABASE + ' < ' + deploy_path +'/clean_world.sql', user='postgres')
+    for relation in ['by_continent', 'by_continent_id_seq', 'ca', 'ca_cities', 'ca_province', 'ca_province_gid_seq', 'cgi_query_values_history','cgi_query_values_history_query_id_seq', 'geography_columns', 'geometry_columns', 'map', 'map_gid_seq', 'processed', 'spatial_ref_sys', 'tiff4326', 'tiff4326_id_seq', 'us', 'us_cities', 'us_state', 'us_state_gid_seq']:
+        sudo('echo "grant read on ' +relation + 'to public;" | psql ' + settings.GIS_DATABASE)
+    for relation in ['cgi_query_values_history', 'cgi_query_values_history_query_id_seq', 'map', 'map_gid_seq', 'processed']:
+        sudo('echo "grant all on ' +relation + 'to public;" | psql ' + settings.GIS_DATABASE)
 
 @roles('server')
 def run_start():
