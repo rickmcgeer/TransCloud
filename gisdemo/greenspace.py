@@ -13,6 +13,8 @@ from greencitieslog import log
 import greencitieslog
 import landsatImg
 import dbObj
+import json
+import taskmanager
 
 # NOTE: these should really be in dbObj.py but ahm lay z
 # these correspond to the selected column num in the SQL statement
@@ -293,6 +295,12 @@ def main(location):
     del pgConn
     return len(records)
 
+def process_city_from_json(json_string):
+    id, name, poly, bb1, bb2, bb3, bb4 = json.loads(json_string)   
+    location = taskmanager.get_local_site_name()
+    green_results = process_city(id, name, poly, (bb1, bb2, bb3, bb4), location, testing=False)
+    return green_results
+
 
 def init():
     global pgConn
@@ -307,14 +315,17 @@ def init():
 def close():
     greencitieslog.close()
 
-    # {"task": "greencities", "data": "[9554,\"BOL'SHAYA KAZINKA\",\"POLYGON((40.0881958007812 50.2370834350586,40.0603332519531 50.2511100769043,40.0602493286133 50.2524719238281,40.1050834655762 50.2676658630371,40.1071929931641 50.2677230834961,40.1189460754395 50.2620277404785,40.119026184082 50.2601928710938,40.0881958007812 50.2370834350586))\",40.0602493286133,50.2370834350586,40.119026184082,50.2677230834961]"}
-    #\"greenspace_val\": 0.68678949431595449
+    
 
 
 def test_greencity():
 
     init()
-    gdict = process_city(9554, "BOL'SHAYA KAZINKA", "POLYGON((40.0881958007812 50.2370834350586,40.0603332519531 50.2511100769043,40.0602493286133 50.2524719238281,40.1050834655762 50.2676658630371,40.1071929931641 50.2677230834961,40.1189460754395 50.2620277404785,40.119026184082 50.2601928710938,40.0881958007812 50.2370834350586))", (40.0602493286133,50.2370834350586,40.119026184082,50.2677230834961), all, False)
+
+    bolshaya = '[9554,"BOL\'SHAYA KAZINKA","POLYGON((40.0881958007812 50.2370834350586,40.0603332519531 50.2511100769043,40.0602493286133 50.2524719238281,40.1050834655762 50.2676658630371,40.1071929931641 50.2677230834961,40.1189460754395 50.2620277404785,40.119026184082 50.2601928710938,40.0881958007812 50.2370834350586))",40.0602493286133,50.2370834350586,40.119026184082,50.2677230834961]'
+
+    gdict = process_city_from_json(bolshaya)
+    
     assert gdict['greenspace_val'] ==  0.68678949431595449, "Did did not get correct greenspace. got:%s"%(str(gdict))
     
 
