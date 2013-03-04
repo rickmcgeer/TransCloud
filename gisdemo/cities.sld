@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sld:StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:sld="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" version="1.0.0">
+  <sld:NamedLayer>
+    <sld:Name>cities</sld:Name>
+    <sld:UserStyle>
+      <sld:Name>cities</sld:Name>
+      <sld:Title>Default polygon style</sld:Title>
+      <sld:Abstract>A sample style that just draws out a solid gray interior with a black 1px outline</sld:Abstract>
+      <sld:FeatureTypeStyle>
+        <sld:Name>name</sld:Name>
+        <sld:Rule>
+          <sld:Title>Polygon</sld:Title>
+          <ogc:Filter>
+            <ogc:PropertyIsGreaterThan>
+              <ogc:PropertyName>greenspace</ogc:PropertyName>
+              <ogc:Literal>0.5</ogc:Literal>
+            </ogc:PropertyIsGreaterThan>
+          </ogc:Filter>
+          <sld:PolygonSymbolizer>
+            <sld:Fill>
+              <sld:CssParameter name="fill">#259ABE</sld:CssParameter>
+            </sld:Fill>
+            <sld:Stroke>
+              <sld:CssParameter name="stroke">#259ABE</sld:CssParameter>
+            </sld:Stroke>
+          </sld:PolygonSymbolizer>
+          <sld:TextSymbolizer>
+            <sld:Label>
+              <ogc:PropertyName>greenspace</ogc:PropertyName>
+            </sld:Label>
+            <sld:LabelPlacement>
+              <sld:PointPlacement>
+                <sld:AnchorPoint>
+                  <sld:AnchorPointX>
+                    <ogc:Literal>0.0</ogc:Literal>
+                  </sld:AnchorPointX>
+                  <sld:AnchorPointY>
+                    <ogc:Literal>0.5</ogc:Literal>
+                  </sld:AnchorPointY>
+                </sld:AnchorPoint>
+                <sld:Rotation>
+                  <ogc:Literal>0</ogc:Literal>
+                </sld:Rotation>
+              </sld:PointPlacement>
+            </sld:LabelPlacement>
+          </sld:TextSymbolizer>
+        </sld:Rule>
+        <sld:Rule>
+          <sld:Title>less_green</sld:Title>
+          <ogc:Filter>
+            <ogc:And>
+              <ogc:PropertyIsLessThan>
+                <ogc:PropertyName>greenspace</ogc:PropertyName>
+                <ogc:Literal>.5</ogc:Literal>
+              </ogc:PropertyIsLessThan>
+              <ogc:PropertyIsGreaterThan>
+                <ogc:PropertyName>greenspace</ogc:PropertyName>
+                <ogc:Literal>0.0</ogc:Literal>
+              </ogc:PropertyIsGreaterThan>
+            </ogc:And>
+          </ogc:Filter>
+          <sld:PolygonSymbolizer>
+            <sld:Fill>
+              <sld:CssParameter name="fill">#F90D09</sld:CssParameter>
+            </sld:Fill>
+            <sld:Stroke>
+              <sld:CssParameter name="stroke">#F90D09</sld:CssParameter>
+            </sld:Stroke>
+          </sld:PolygonSymbolizer>
+          <sld:TextSymbolizer>
+            <sld:Label>
+              <ogc:PropertyName>greenspace</ogc:PropertyName>
+            </sld:Label>
+            <sld:LabelPlacement>
+              <sld:PointPlacement>
+                <sld:AnchorPoint>
+                  <sld:AnchorPointX>
+                    <ogc:Literal>0.0</ogc:Literal>
+                  </sld:AnchorPointX>
+                  <sld:AnchorPointY>
+                    <ogc:Literal>0.5</ogc:Literal>
+                  </sld:AnchorPointY>
+                </sld:AnchorPoint>
+                <sld:Rotation>
+                  <ogc:Literal>0</ogc:Literal>
+                </sld:Rotation>
+              </sld:PointPlacement>
+            </sld:LabelPlacement>
+          </sld:TextSymbolizer>
+        </sld:Rule>
+        <sld:Rule>
+          <sld:Title>undone</sld:Title>
+          <ogc:Filter>
+            <ogc:PropertyIsEqualTo>
+              <ogc:PropertyName>greenspace</ogc:PropertyName>
+              <ogc:Literal>0.0</ogc:Literal>
+            </ogc:PropertyIsEqualTo>
+          </ogc:Filter>
+          <sld:PolygonSymbolizer>
+            <sld:Fill>
+              <sld:CssParameter name="fill">#FF7F24</sld:CssParameter>
+            </sld:Fill>
+            <sld:Stroke>
+              <sld:CssParameter name="stroke">#FF7F24</sld:CssParameter>
+            </sld:Stroke>
+          </sld:PolygonSymbolizer>
+        </sld:Rule>
+      </sld:FeatureTypeStyle>
+    </sld:UserStyle>
+  </sld:NamedLayer>
+</sld:StyledLayerDescriptor>
