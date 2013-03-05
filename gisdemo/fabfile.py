@@ -147,9 +147,9 @@ def server_deploy():
     database = 'world'
     with settings(warn_only=True):
         sudo('createdb ' + database, user="postgres")
-        for user in [ 'www-data', 'gis']:
-            sudo('createuser -S -R -D ' + user, user='postgres')
         sudo('createuser -s -r -d root', user='postgres')
+        sudo('createuser -S -R -D www-data', user='postgres')
+        sudo('createuser -S -R -D -P uvicgis gis', user='postgres')
         sudo('psql ' + database + ' -f ' + deploy_path +'/clean_world.sql', user='postgres')
         
 @roles('web_server')
@@ -163,10 +163,12 @@ def web_server_deploy():
         sudo("mkdir " +  map_dir)
         # sudo("cp -r " + geoserver_web_dir + "openlayers/* " + map_dir)
         sudo("cp -r " + recipe_data_dir + " " + map_dir)
-        sudo("wget http://openlayers.org/api/OpenLayers.js -O " + map_dir + "/OpenLayers.js"
+        sudo("wget http://openlayers.org/api/OpenLayers.js -O " + map_dir + "/OpenLayers.js")
         sudo("cp " + deploy_path + "maps/view.html " + map_dir)
         sudo("chown www-data " + map_dir +"/view.html")
         sudo("cp " + deploy_path + "httpd.conf /etc/apache2/httpd.conf" )
+        sudo("cp /etc/apache2/mods-available/headers.load /etc/apache2/mods-enabled")
+        sudo("cp " + deploy_path + "headers.conf /etc/apache2/mods-enabled")
         sudo("apache2ctl restart")
 
 @roles('server')
