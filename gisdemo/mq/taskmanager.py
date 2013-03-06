@@ -38,8 +38,9 @@ def  get_local_site_name():
 
     front = ip.split(".")[0:2]
     front = '.'.join(front)
-    if front == '10.0':
-        site_name = "localhost"
+    if front not in _ip_to_site:
+        print "Warning: running from an undefined cluster."
+        site_name = "undefined"
     else:
         site_name = _ip_to_site[front]
 
