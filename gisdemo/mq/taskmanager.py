@@ -4,7 +4,7 @@ import socket
 import sys
 import time
 
-_sites={1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu", 5:"u-tokyo.ac.jp"}
+_sites={0:"undefined.location", 1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu", 5:"u-tokyo.ac.jp"}
 
 _ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3], '165.124':_sites[4], '192.168':_sites[5]}
 
@@ -40,7 +40,7 @@ def  get_local_site_name():
     front = '.'.join(front)
     if front not in _ip_to_site:
         print "Warning: running from an undefined cluster."
-        site_name = "undefined"
+        site_name = "undefined.location"
     else:
         site_name = _ip_to_site[front]
 
