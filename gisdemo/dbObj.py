@@ -224,6 +224,8 @@ class pgConnection:
             nodes_results.append(node_num)
         
         return {'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
+
+    # when we get the daemon running delete the calls to getCGIValuesInternal
     
     def getCGIValues(self, cluster_name='total'):
         """Called by get_data in cgi_bin to get a history of the computation
