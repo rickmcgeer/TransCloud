@@ -17,8 +17,8 @@ class UpdateDaemon(Daemon):
         while True:
             for site in mq.taskmanager._sites:
                 site_name =  mq.taskmanager._sites[site]
-                self.db.getCGIValuesInternal(site_name)
-            self.db.getCGIValuesInternal('total')
+                self.db. get_and_update_CGIValues(site_name)
+            self.db. get_and_update_CGIValues('total')
             sleep(300)
 
 if __name__ == "__main__":
