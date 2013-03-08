@@ -16,6 +16,7 @@ env.roledefs = {
     'emulab':emulab_cluster,
     'server':[grack06],
     'db_server':[nw1],
+    'web_server':[nw1],
     'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
@@ -151,10 +152,29 @@ def server_deploy():
     database = 'world'
     with settings(warn_only=True):
         sudo('createdb ' + database, user="postgres")
-        for user in [ 'www-data', 'gis']:
-            sudo('createuser -S -R -D ' + user, user='postgres')
         sudo('createuser -s -r -d root', user='postgres')
+        sudo('createuser -S -R -D www-data', user='postgres')
+        sudo('createuser -S -R -D -P uvicgis gis', user='postgres')
         sudo('psql ' + database + ' -f ' + deploy_path +'/clean_world.sql', user='postgres')
+        
+@roles('web_server')
+def web_server_deploy():
+    with settings(warn_only=True):
+        geoserver_web_dir = "/usr/share/opengeo-suite-data/geoserver_data/www/"
+        map_dir = geoserver_web_dir + "maps"
+        recipe_data_dir = "/usr/share/opengeo-suite/recipes/resources/openlayers/examples/data"
+        recipe_theme_dir = "/usr/share/opengeo-suite/recipes/resources/openlayers/theme"
+        sudo('apt-get -y --force-yes install apache2')
+        sudo("mkdir " +  map_dir)
+        # sudo("cp -r " + geoserver_web_dir + "openlayers/* " + map_dir)
+        sudo("cp -r " + recipe_data_dir + " " + map_dir)
+        sudo("wget http://openlayers.org/api/OpenLayers.js -O " + map_dir + "/OpenLayers.js")
+        sudo("cp " + deploy_path + "maps/view.html " + map_dir)
+        sudo("chown www-data " + map_dir +"/view.html")
+        sudo("cp " + deploy_path + "httpd.conf /etc/apache2/httpd.conf" )
+        sudo("cp /etc/apache2/mods-available/headers.load /etc/apache2/mods-enabled")
+        sudo("cp " + deploy_path + "headers.conf /etc/apache2/mods-enabled")
+        sudo("apache2ctl restart")
 
 @roles('server')
 def run_start():

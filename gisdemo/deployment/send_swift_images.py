@@ -54,7 +54,7 @@ def listFiles(root, patterns='*', recurse=1, return_folders=0):
     return arg.results
 
 print "Scanning Files"
-image_files = listFiles('/media/GEODATA/glc_landsat/', patterns='*.b0[743].tif.gz')
+image_files = listFiles('/mnt/nasy/Landsat7/GLS2005/WRS2/', patterns='*.b0[743].tif.gz')
 
 for i,f in enumerate(image_files):
     percent = (float(i)/len(image_files))*100
@@ -67,19 +67,8 @@ for i,f in enumerate(image_files):
     pathrow = filename.split('_')[0]
     md5file = filename + '.md5'
 
-    try:
-        gcswift.swift('delete', pathrow, f[1:])
-    except AssertionError:
-        pass
-    try:
-        gcswift.swift('delete', pathrow, md5file[1:])
-    except AssertionError:
-        pass
-    try:
-        gcswift.swift('delete', pathrow, f[1:]+'.md5')
-    except AssertionError:
-        pass
     gcswift.swift('upload', pathrow, filename)
     call('md5sum -b %s > %s'%(filename,md5file), shell=True)
     assert os.path.exists(md5file), "Output file was not created!"
     gcswift.swift('upload', pathrow, md5file)
+
