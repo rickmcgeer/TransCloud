@@ -15,6 +15,7 @@ env.roledefs = {
     'nw':nw_cluster,
     'emulab':emulab_cluster,
     'server':[grack06],
+    'db_server':[nw1],
     'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
@@ -35,6 +36,11 @@ env.passwords = {grack06:'cleb020',
 
 testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
 
+@roles(['workers', 'server'])
+def killall():
+    """stop python processes everywhere."""
+    with settings(warn_only=True):
+        sudo("killall python")
 
 def test():
     local("py.test "+testable_files)
@@ -139,6 +145,16 @@ def install_deps():
         sudo('make install')
         run('make clean')
         sudo('ldconfig')
+
+@roles('db_server')
+def server_deploy():
+    database = 'world'
+    with settings(warn_only=True):
+        sudo('createdb ' + database, user="postgres")
+        for user in [ 'www-data', 'gis']:
+            sudo('createuser -S -R -D ' + user, user='postgres')
+        sudo('createuser -s -r -d root', user='postgres')
+        sudo('psql ' + database + ' -f ' + deploy_path +'/clean_world.sql', user='postgres')
 
 @roles('server')
 def run_start():
