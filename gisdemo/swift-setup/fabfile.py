@@ -3,19 +3,26 @@ import sys
 import socket
 
 
+# Before you run:
+#  make sure all the machines are in the correct lists and the ip's 
+#  of the workers are in the correst list as well.
+#
+#  Most of the config files and the rings are built on the local
+#  machine. make sure swift is installed there!
+#
+#  Swift requires an xfs partition to use, this will set up
+#  a loopback device and mount it at /srv/node/swiftfs. 
+#  You can stop this by passing setup_device=False to
+#  swift_install
+
+# To run: fab swift_install
+# To distribute rings: fab distribute_rings
+
+
 
 # TODO:
-#  dont know how to set up with internal ip's right now
-#  make ring distribution
-#  back up swift.config and builders! (place into swift repo?)
-#  chown device for storage nodes
+#  auto back up swift.config and builders! (place into swift repo?)
 #  fails for non bash shell
-#  set up swift user as it didnt on northwestern for some reason
-
-
-# nw2 = "stredger@alpha.hdoop.vikelab.emulab.net"
-# nw3 = "stredger@beta-0.hdoop.vikelab.emulab.net"
-# nw4 = "stredger@beta-1.hdoop.vikelab.emulab.net"
 
 
 nw1 = "stredger@pc2.instageni.northwestern.edu"
@@ -106,8 +113,6 @@ def distribute_rings():
 def clean_rings():
    
     sudo('rm -f /etc/swift/*.ring.gz')
-    
-
 
 
 
@@ -291,10 +296,32 @@ def test_memcached():
 
 
 
-def swift_install():
+@parallel
+@roles('swift-cluster')
+def check_login_shell():
+    sh = run('echo $SHELL')
+    if "bash" not in sh:
+        abort("The installation will not work unless bash is our default shell!!")
+    
+
+
+def swift_install(setup_device=True):
+    
+    print "\n\n\t Beginning swift installation"
+    print "machines in cluster:", swift_cluster
+    print "proxy machines:", swift_proxies
+    print "worker machines", swift_workers
+    print "setup loopback file system: ", setup_device
+    print "\n\n"
+
+    execute(check_login_shell)
     execute(install_swift_deps)
-    #execute(setup_loop_device)
+    if (setup_device):
+        execute(setup_loop_device)
     execute(cluster_keygen)
     execute(cluster_rings)
     execute(proxy_config)
     execute(storage_config)
+
+    print "\n\n\t Finished swift installation!"
+    print "make sure to back up the *.builder files! \n\n"
