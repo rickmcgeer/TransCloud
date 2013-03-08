@@ -1,0 +1,27 @@
+#
+# Load in testbed-specific commands
+#
+source tb_compat.tcl
+
+set ns [new Simulator]
+
+set nodeimg FEDORA15-64-STD
+
+
+# Head node, for proxy server, stuff should be setup from here 
+set alpha [$ns node]
+tb-set-node-os $alpha $nodeimg
+set nodes $alpha
+
+# Storage nodes
+for {set i 0} {$i < 8} {incr i} {
+    set beta($i) [$ns node]
+    tb-set-node-os $beta($i) $nodeimg
+    append nodes " " $beta($i)
+}
+
+# make a lan between them all
+set lan0 [$ns make-lan "$nodes" 100000.0kb 0.0ms]
+
+# Begin the experiment 
+$ns run
