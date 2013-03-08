@@ -89,7 +89,7 @@ class pgConnection:
         #where = " WHERE name LIKE 'VIC%' OR name LIKE 'VAN%' OR name LIKE 'EDM%'"
         #where = " WHERE name LIKE 'HOPE'"
         #where = " WHERE gid=18529" # this is victoria
-        #where = " WHERE gid = 19094" 
+        #where = " WHERE gid = 19804" 
         #where = " WHERE gid = 25237" # boston
         #where = " WHERE gid > 19093 AND gid < 19099" # this is boston
         #where = " WHERE name LIKE 'BOSTON' OR name LIKE 'LONDON' OR name LIKE 'CANCUN'"
