@@ -204,12 +204,9 @@ class pgConnection:
         (CGI_TABLE, CGI_CLUSTER_COL, CGI_WORKERS_COL, CGI_NODE_COL, CGI_CITIES_COL, cluster_name, workers, nodes, cities)
         # print "Performing " + update_statement
         self.performUpdate(update_statement)
-
-    
-        
         
 
-    def getCGIValuesInternal(self, cluster_name='total'):
+    def get_and_update_CGIValues(self, cluster_name='total'):
         (workers, cities) = self.get_workers_and_cities(cluster_name)
         self.update_cgi_values_table(cluster_name, workers, workers, cities)
         query_statement = "SELECT %s, %s, %s FROM %s WHERE  %s='%s' ORDER BY %s" % \
@@ -224,6 +221,8 @@ class pgConnection:
             nodes_results.append(node_num)
         
         return {'cities':cities_results, 'workers':worker_results, 'nodes':nodes_results}
+
+    # when we get the daemon running delete the calls to get_and_update_CGIValues
     
     def getCGIValues(self, cluster_name='total'):
         """Called by get_data in cgi_bin to get a history of the computation
@@ -231,8 +230,8 @@ class pgConnection:
         Returns a dictionary of lists suitable for json encoding: {nodes:[list_of_node_values],
         cities:[list_of_cities_values], workers:[list_of_workers]}
         """
-        cluster_data = self.getCGIValuesInternal(cluster_name)
-        total_data = self.getCGIValuesInternal('total')
+        cluster_data = self.get_and_update_CGIValues(cluster_name)
+        total_data = self.get_and_update_CGIValues('total')
         return {'site_name':cluster_name,
                 'cities':cluster_data['cities'],
                 'workers':cluster_data['workers'],
