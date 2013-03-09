@@ -130,16 +130,20 @@ class TaskClient():
         return mq.sizeof(self.queuename())
 
 
-    def blocking_get_task(self):
-        delay = 1
+    def blocking_get_task(self, testing=False):
+        threshold = 64*10 if not testing else 60 # ~10 minutes and 6 tries or a minute for testing
+        delay = 10
         new_job = None
         jobid = None
+        
         while(True):
-            new_job, jobid = self.get_task()
+            new_job, jobid = self.get_task() if not testing else (None,None)
             if new_job == None:
                 print '.',
                 sys.stdout.flush()
-                time.sleep(delay%120)
+                if delay > threshold:
+                    return None
+                time.sleep(delay)
                 delay *= 2
                 continue
 
@@ -153,6 +157,7 @@ class TaskClient():
             assert self.queue != RESULT_QUEUE_NAME, "Putting a message on the done queue is not allowed!"
             result_str = json.dumps(result)
             mq.push_job(result_str, self.prefix+RESULT_QUEUE_NAME)
+
 
 def test_TaskManager():
     tm = TaskManager(prefix="testing_")
@@ -209,6 +214,8 @@ def test_TaskManager():
     assert new_result['result'][0] == 0.7, "Results3 missing in result message"
     result_client.report_done(resultid)
 
+    t1 = time.time()
+    result_client.blocking_get_task(testing=True)
+    t2 = time.time()
 
-    
-
+    assert 69 <= t2-t1 <= 71, "Blocking test should die after 10+20+40 seconds."
