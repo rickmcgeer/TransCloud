@@ -10,20 +10,30 @@ import socket
 #  Most of the config files and the rings are built on the local
 #  machine. make sure swift is installed there!
 #
-#  Swift requires an xfs partition to use, this will set up
+#  Swift requires an xfs partition to use, this will set up 500GB
 #  a loopback device and mount it at /srv/node/swiftfs. 
 #  You can stop this by passing setup_device=False to
-#  swift_install
+#  swift_install (note this will NOT fail if you have less than 500GB available!!)
+#
+#  Be sure to check the filesystem size, mountpoint and such!
+#  The mountpoint is used in the rsyncd.config file as well as setting up the 
+#  loopback device
 
-# To run: fab swift_install
+
+# Usefull stuff!
+#
+# To run a default full install: fab swift_install
+#
 # To distribute rings: fab distribute_rings
-
+#
+# To restart all swift processes: fab swift_restart
 
 
 # TODO:
 #  auto back up swift.config and builders! (place into swift repo?)
 #  fails for non bash shell
-
+#  generate rings and stuff on a 'boss' machine which may not be local
+#  make mountpoint global??
 
 nw1 = "stredger@pc2.instageni.northwestern.edu"
 nw2 = "stredger@pc3.instageni.northwestern.edu"
@@ -50,17 +60,22 @@ env.roledefs = {
 env.key_filename = "~/.ssh/st_rsa"
 
 
-
+# this is where all our helper scripts should be!
 swift_script_dir = "./"
 
 
 
 
+# Creates the ring files which are the heart (brain?) of the swift repo
+#  as they are the mapping of where files are to be placed!
+# The ring files: "account.ring.gz", "container.ring.gz", "object.ring.gz"
+#  must be present in all machines in /etc/swift/ with the user swift having
+#  all premissions on them
 def cluster_rings():
     execute(create_rings)
     execute(distribute_rings)
 
-# build these in /tmp somehow
+
 @roles('localhost')
 def create_rings(dev="swiftfs"):
  
@@ -116,6 +131,10 @@ def clean_rings():
 
 
 
+
+# Configures the swift proxy
+#  generates proxy-server.conf config file and distributes it to all the proxies
+#  Also sets up the memcached daemon
 def proxy_config():
     execute(local_proxy)
     execute(cluster_proxy)
@@ -124,7 +143,7 @@ def proxy_config():
 @roles('localhost')
 def local_proxy(user="gis", passwd="uvicgis"):
 
-    local('export user='+user+'; export passwd='+passwd+'; '+swift_script_dir+'/swift-pconfgen.sh')
+    local('export user='+user+' && export passwd='+passwd+' && '+swift_script_dir+'swift-pconfgen.sh')
 
 
 @parallel
@@ -145,6 +164,7 @@ def cluster_proxy(host_addr="www.google.com"):
 
 
 
+
 def storage_config():
     execute(storage_config_gen)
     execute(cluster_storage)
@@ -160,7 +180,6 @@ def storage_config_gen(fs_path="/srv/node", max_conn=6):
     local('export fspath='+fs_path+'; export maxconn='+str(max_conn)+'; '+swift_script_dir+'swift-rsync.sh')
     local(swift_script_dir+'swift-ringconfig.sh')
     local(swift_script_dir+'swift-objexpconfig.sh')
-
 
 
 @parallel
@@ -193,12 +212,12 @@ def cluster_storage(host_addr="www.google.com", swiftfs_path="/srv/node/swiftfs"
 
 
 
-
+# Creates a swift cluster key, and distributes it to each node
+#  this key must be present on all nodes in the cluster!!
 def cluster_keygen():
 
     execute(local_keygen)
     execute(distribute_key)
-
 
 
 @roles('localhost')
@@ -220,14 +239,15 @@ def distribute_key():
 
 
 
+# Sets up a 50GB loopback filesystem at /srv/node/swiftfs
+#  Makes the actual loopback file in /srv/
+#  The mountpoint and disksize can be changed, but 
 @parallel
 @roles('swift-workers')
-def setup_loop_device():
+def setup_loop_device(disksize=50*1000000, mntpt="/srv/node/swiftfs"):
 
     dev = "swiftdisk"
-    mntpt = "/srv/node/swiftfs"
     devpath = "/srv/"+dev
-    disksize=1*1000000
 
     sudo('mkdir -p /srv')
     sudo('dd if=/dev/zero of='+devpath+' bs=1024 count=0 seek='+str(disksize))
@@ -241,9 +261,9 @@ def setup_loop_device():
 
 
 
+# installs dependencies for our swift deployment
 @parallel
 @roles('swift-cluster')
-# we could separate into proxy and cluster
 def install_swift_deps():
 
     with settings(warn_only=True):
@@ -251,12 +271,14 @@ def install_swift_deps():
     sudo('apt-get -y --force-yes install swift openssh-server swift-proxy memcached swift-account swift-container swift-object curl gcc git-core python-configobj python-coverage python-dev python-nose python-setuptools python-simplejson python-xattr sqlite3 xfsprogs python-webob python-eventlet python-greenlet python-pastedeploy python-netifaces')
 
 
-@parallel
-@roles('swift-cluster')
-def swift_restart():
-    sudo('swift-init all restart')
 
-
+# This will create the users swift and memcache, 
+#  these users should be created when swift and memcached
+#  are installed. I reccomend you reinstall swift and memcached
+#  if the users are not present before running this function
+def create_users():
+    execute(create_swift_user)
+    execute(create_memcached_user)
 
 @parallel
 @roles('swift-cluster')
@@ -268,9 +290,6 @@ def create_swift_user():
 def create_memcached_user():
     sudo('useradd -r -s /bin/false memcache ')
 
-def create_users():
-    execute(create_swift_user)
-    execute(create_memcached_user)
 
 
 @parallel
@@ -286,6 +305,7 @@ def test_ips():
     put(swift_script_dir+'getmyip.py', '/tmp/')
     run('python /tmp/getmyip.py')
     
+
 
 @parallel
 @roles('swift-proxies')
@@ -305,7 +325,19 @@ def check_login_shell():
     
 
 
-def swift_install(setup_device=True):
+# restart all swift processes that have a config file
+#  in /etc/swift
+@parallel
+@roles('swift-cluster')
+def swift_restart():
+    sudo('swift-init all restart')
+
+
+
+# this is the main install function, it can be run multiple times
+#  but the device setup should only be run once (and only if we 
+#  want to use a loopback device).
+def swift_install(check_shell=True, setup_device=True):
     
     print "\n\n\t Beginning swift installation"
     print "machines in cluster:", swift_cluster
@@ -314,7 +346,8 @@ def swift_install(setup_device=True):
     print "setup loopback file system: ", setup_device
     print "\n\n"
 
-    execute(check_login_shell)
+    if (check_shell):
+        execute(check_login_shell)
     execute(install_swift_deps)
     if (setup_device):
         execute(setup_loop_device)
