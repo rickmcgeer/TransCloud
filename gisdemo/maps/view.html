@@ -28,11 +28,18 @@
         </style>
     <!-- <script src='http://maps.google.com/maps?file=api&amp;v=2&amp;key=AIzaSyDuEZ79WbTO1bJIz8lpYBKSVyTF4vu4LUs'></script> -->
     <script src="http://maps.google.com/maps/api/js?v=3&amp;sensor=false"></script>
-    <script src="./OpenLayers.debug.js"></script>
+    <script src="./OpenLayers.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
      <script src="http://omnipotent.net/jquery.sparkline/2.1.1/jquery.sparkline.js" type="text/javascript"></script>
 
     <script type="text/javascript">
+
+var boss_node = "http://pc2.instageni.northwestern.edu";
+var urls = {
+    cgi_bin_url: boss_node + "/greencities-bin",
+    geoserver_url: boss_node + ":8080/geoserver",
+};
+
 
 var styles = new OpenLayers.StyleMap({
                 "default": new OpenLayers.Style(null, {
@@ -298,7 +305,7 @@ map.addControl(new OpenLayers.Control.Navigation());
             map.setCenter(point, zoom);
  
 	   var clusters = new OpenLayers.Layer.WMS("Cluster Boundries",
-           "http://grack06.uvic.trans-cloud.net:8080/geoserver/greencities/wms", 
+            urls.geoserver_url + "/greencities/wms", 
             {'layers': 'greencities:clusters', transparent: true, version:'1.3.0'},
             {isBaseLayer: false},
 	    {singleTile: true}
@@ -308,7 +315,7 @@ map.addControl(new OpenLayers.Control.Navigation());
            map.addLayer(clusters);
 
 	   var images = new OpenLayers.Layer.WMS("Images",
-           "http://grack06.uvic.trans-cloud.net:8080/geoserver/wms", 
+            urls.geoserver_url + "/wms", 
             {'layers': 'greencities:tiff4326', transparent: true},
             {isBaseLayer: false}
         );
@@ -317,7 +324,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 	   images.setVisibility(false);
 
 	   var cities = new OpenLayers.Layer.WMS("Cities",
-           "http://grack06.uvic.trans-cloud.net:8080/geoserver/wms", 
+            urls.geoserver_url + "/wms", 
             {'layers': 'greencities:cities', transparent: true},
             {isBaseLayer: false}
         );
@@ -326,7 +333,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 	  
 
           var selectControl= new OpenLayers.Control.WMSGetFeatureInfo({
-            url: 'http://grack06.uvic.trans-cloud.net:8080/geoserver/wms',
+            url: urls.geoserver_url + "/wms",
             title: 'Identify features by clicking',
             queryVisible: true,
             eventListeners: {
@@ -440,7 +447,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    // $('#cities_chart').sparkline(this.site['cities'], sparkline_options);
 		    // $('#nodes_chart').sparkline(this.site['nodes'], sparkline_options);
 		    // $('#workers_chart').sparkline(this.site['workers'], sparkline_options);
-		    $.get("http://grack06.uvic.trans-cloud.net/greencities-bin/get_data.py?site="+this.site_name, "",
+		    $.get(urls.cgi_bin_url + "/get_data.py?site="+this.site_name, "",
                           function(data) {
 			      var site_name = data["site_name"];
                               $('#cluster_name').html("<p>" + site_name + "</p>");
@@ -467,11 +474,8 @@ var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "ci
 var sparkline_options = {'height':'40px', 'width':'400px'};
 var default_site = sites['cs.UVic.CA'];
 $(function() {
-/*    $('#cluster_name').html("<p> cs.UVic.CA </p>");
-    $('#cities_chart').sparkline(default_site['cities'], sparkline_options);
-    $('#nodes_chart').sparkline(default_site['nodes'], sparkline_options);
-    $('#workers_chart').sparkline(default_site['workers'], sparkline_options); */
-    $.get("http://grack06.uvic.trans-cloud.net/greencities-bin/get_data.py?site=uvic.trans-cloud.net", "",
+    var url = urls.cgi_bin_url + "/get_data.py?site=uvic.trans-cloud.net";
+    $.get(url, "",
                           function(data) {
 			      var site_name = data["site_name"];
                               $('#cluster_name').html("<p>" + site_name + "</p>");
