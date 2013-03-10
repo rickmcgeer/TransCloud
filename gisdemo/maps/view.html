@@ -576,34 +576,62 @@ $(function() {
         width:500px;
         height:40px;
        }
-    
+       td.tableLabel {
+        font-size:30px;
+       }
+       table.cityInfo {
+        margin-left:auto;
+        margin-right:auto;
+       }
+       #statusLabel {
+        font-size:50px;
+        /*width:1000px;*/
+        text-align:center;
+       }
+       #statusLabelWrapper{
+        width:1000px;
+        text-align:center;
+       }
+       #footer {
+        text-align:center;
+        font-size:12px;
+        color:light gray;
+        padding-top:4px;
+       }
+       a.footerLink {
+        color:#808080;
+       }
     </style>
   </head>
   <body onload="init()">
+    <!--<a href="https://github.com/rickmcgeer/TransCloud"><img style="height:125px;width:125px;position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>  Problems with changing resolution and overlapping the sat map.  Not worth it right now anyway.-->
 
   <div id = "fullWrapper">
     <div id="satmapWrapper">
       <div id="satmap"></div>
     </div>
+    <hr />
     <div id="topTen">
-      <table>
+      <table class='cityInfo'>
         <tr>
-          <td id='toptext1'>Name 1</td><td id='toptext2'>Name 2</td><td id='toptext3'>Name 3</td><td id='toptext4'>Name 4</td><td id='toptext5'>Name 5</td><td id='toptext6'>Name 6</td><td id='toptext7'>Name 7</td><td id='toptext8'>Name 8</td><td id='toptext9'>Name 9</td><td id='toptext10'>Name 10</td>
+          <td rowspan='2' class='tableLabel'>Top Ten Cities</td><td id='toptext1'>Name 1</td><td id='toptext2'>Name 2</td><td id='toptext3'>Name 3</td><td id='toptext4'>Name 4</td><td id='toptext5'>Name 5</td><td id='toptext6'>Name 6</td><td id='toptext7'>Name 7</td><td id='toptext8'>Name 8</td><td id='toptext9'>Name 9</td><td id='toptext10'>Name 10</td>
         </tr>
         <tr>
           <td id='topimg1'>Img 1</td><td id='topimg2'>Img 2</td><td id='topimg3'>Img 3</td><td id='topimg4'>Img 4</td><td id='topimg5'>Img 5</td><td id='topimg6'>Img 6</td><td id='topimg7'>Img 7</td><td id='topimg8'>Img 8</td><td id='topimg9'>Img 9</td><td id='topimg10'>Img 10</td>
         </tr>
       </table>
-      <table>
+      <table class='cityInfo'>
         <tr>
-          <td id='lasttext1'>Name 1</td><td id='lasttext2'>Name 2</td><td id='lasttext3'>Name 3</td><td id='lasttext4'>Name 4</td><td id='lasttext5'>Name 5</td><td id='lasttext6'>Name 6</td><td id='lasttext7'>Name 7</td><td id='lasttext8'>Name 8</td><td id='lasttext9'>Name 9</td><td id='lasttext10'>Name 10</td>
+          <td rowspan='2' class='tableLabel'>Last Ten Cities</td><td id='lasttext1'>Name 1</td><td id='lasttext2'>Name 2</td><td id='lasttext3'>Name 3</td><td id='lasttext4'>Name 4</td><td id='lasttext5'>Name 5</td><td id='lasttext6'>Name 6</td><td id='lasttext7'>Name 7</td><td id='lasttext8'>Name 8</td><td id='lasttext9'>Name 9</td><td id='lasttext10'>Name 10</td>
         </tr>
         <tr>
           <td id='lastimg1'>Img 1</td><td id='lastimg2'>Img 2</td><td id='lastimg3'>Img 3</td><td id='lastimg4'>Img 4</td><td id='lastimg5'>Img 5</td><td id='lastimg6'>Img 6</td><td id='lastimg7'>Img 7</td><td id='lastimg8'>Img 8</td><td id='lastimg9'>Img 9</td><td id='lastimg10'>Img 10</td>
         </tr>
       </table>
     </div>
+    <hr />
       <div id="status">
+        <!--<div id='statusLabelWrapper'><span id='statusLabel'>Node Status</span></div>-->
         <div id='sitemapWrapper'>
           <div id="sitemap"></div>
         </div>
@@ -644,6 +672,6 @@ image data in Swift repositories, and distributed Disco jobs to do the analysis
             </div>
 -->           
 
-
+    <div id='footer'><a class='footerLink' href='https://github.com/rickmcgeer/TransCloud'>Open source on GitHub.</a></div>
     </body>
 </html>
