@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./theme/default/style.css" type="text/css">
     <link rel="stylesheet" href="./theme/default/google.css" type="text/css">
  
-    <link rel="stylesheet" href="style.css" type="text/css">
+    <!--<link rel="stylesheet" href="./style.css" type="text/css">  BROKEN LINK SO COMMENTED OUT-->
 
         <style type="text/css">
             html, body, #map {
@@ -277,7 +277,7 @@ var options = {
   };
 
 
-map = new OpenLayers.Map('greencities_map', options);
+map = new OpenLayers.Map('satmap', options);
             map.addControl(new OpenLayers.Control.LayerSwitcher());
 
            map.addControl(new OpenLayers.Control.MousePosition());
@@ -405,7 +405,7 @@ map.addControl(new OpenLayers.Control.Navigation());
             control.activate(); */
             map.addControl(selectControl);
 	    selectControl.activate();
-	    var trans_geo_map = new OpenLayers.Map('right_map');
+	    var trans_geo_map = new OpenLayers.Map('sitemap');
             /* var g_hybrid =  new OpenLayers.Layer.Google(
                 "Google Hybrid",
                 // {type: G_HYBRID_MAP, numZoomLevels: 20}
@@ -493,58 +493,82 @@ $(function() {
 
     </script>
     <style type="text/css">
-       #map_panel {
+       /*#map_panel {
            width:1100px;
            height:100%;
            margin-left:auto;
            margin-right:auto;
+       }*/
+       body {
+        /*background-color: yellow;*/
        }
-       #greencities_map {
-           width:700px;
-           height:100%;
-           margin-left:0;
+       #satmapWrapper {
+        width:1000px;
+        height:700px;
+        margin-left:auto;
+        margin-right:auto;
+       }
+       #satmap {
+           width:1000px;
+           height: 700px;
+           margin-left:auto;
            margin-right:auto;
-           float:left;
        }
-       #right_map {
+       #sitemap {
            width : 400px;
-           height:30%;
-           position:absolute;
-	   top:0;
-	   right:0;
+           height:200px;
+           float:right;
+/*           position:absolute;*/
+/*	   top:0;*/
+/*	   right:0;*/
        }
-       #right_bottom {
-           width:400px;
-           height: 70%;
-           position:absolute;
-	   bottom:0;
-	   right:0
-       }  
+/*       #right_bottom {*/
+/*           width:400px;*/
+/*           height: 70%;*/
+/*           position:absolute;*/
+/*	   bottom:0;*/
+/*	   right:0*/
+/*       }  */
        span.chart {
-           width: 400px;
+           width: 200px;
            height: 40px;
+       }
+       #fullWrapper {
+        width:1000px;
+        margin-left: auto;
+        margin-right:auto;
+       }
+       #status {
+        width:1000px;
+       }
+       #clusterInfo {
+        float:left;
        }
     
     </style>
   </head>
   <body onload="init()">
 
-      <div id = "map_panel">
-        <div id="greencities_map"></div>
-        <div id="right_map"></div>
-        <div id="right_bottom">
-<span id="cluster_name">Cluster Name</span>
-	<p> Cities: <span id="cities_chart" class="chart">Loading...</p></span>
-        <p> Workers: <span id="workers_chart" class="chart">Loading...</p></span>
-	<p> Nodes: <span id="nodes_chart" class="chart">Loading...</p></span>
-     <span id="Total">Total</span>
-        <p> Cities: <span id="cities_total_chart" class="chart">Loading...</p></span>
-        <p> Workers: <span id="workers_total_chart" class="chart">Loading...</p></span>
-	<p> Nodes: <span id="nodes_total_chart" class="chart">Loading...</p></span>
-</div>
-        
-</div>
-     </div>
+  <div id = "fullWrapper">
+    <div id="satmapWrapper">
+      <div id="satmap"></div>
+    </div>
+      <div id="status">
+        <div id='clusterInfo'>
+          <span id="cluster_name">Cluster Name</span>
+          <p> Cities: <span id="cities_chart" class="chart">Loading...</p></span>
+          <p> Workers: <span id="workers_chart" class="chart">Loading...</p></span>
+          <p> Nodes: <span id="nodes_chart" class="chart">Loading...</p></span>
+          <span id="Total">Total</span>
+          <p> Cities: <span id="cities_total_chart" class="chart">Loading...</p></span>
+          <p> Workers: <span id="workers_total_chart" class="chart">Loading...</p></span>
+          <p> Nodes: <span id="nodes_total_chart" class="chart">Loading...</p></span>
+        </div>
+        <div id="sitemap"></div>
+      </div>
+      
+      <div id="right_bottom"></div>
+  </div>
 
 <!--          <div id="text">
               <h1 id="title">GreenCities Demo</h1>
