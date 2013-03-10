@@ -450,7 +450,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    $.get(urls.cgi_bin_url + "/get_data.py?site="+this.site_name, "",
                           function(data) {
 			      var site_name = data["site_name"];
-                              $('#cluster_name').html("<p>" + site_name + "</p>");
+                              $('#cluster_name').html(site_name);
 			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
 			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
 			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
@@ -478,7 +478,7 @@ $(function() {
     $.get(url, "",
                           function(data) {
 			      var site_name = data["site_name"];
-                              $('#cluster_name').html("<p>" + site_name + "</p>");
+                              $('#cluster_name').text(site_name);
 			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
 			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
 			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
@@ -513,11 +513,22 @@ $(function() {
            height: 700px;
            margin-left:auto;
            margin-right:auto;
+           border:1px solid gray;
+       }
+       #sitemapWrapper {
+        width:500px;
+        height:200px;
+        margin-left:auto;
+        margin-right:auto;
+        padding-top:10px;
+        padding-bottom:10px;
        }
        #sitemap {
-           width : 400px;
+           width : 500px;
            height:200px;
-           float:right;
+           margin-left:auto;
+        margin-right:auto;
+        border:1px solid gray;
 /*           position:absolute;*/
 /*	   top:0;*/
 /*	   right:0;*/
@@ -530,8 +541,9 @@ $(function() {
 /*	   right:0*/
 /*       }  */
        span.chart {
-           width: 200px;
+           width: 400px;
            height: 40px;
+           float:right;
        }
        #fullWrapper {
         width:1000px;
@@ -541,8 +553,26 @@ $(function() {
        #status {
         width:1000px;
        }
-       #clusterInfo {
+       #cluster_name {
+       }
+       #Total {
+       }
+       .infoTag {
+        font-size:30px;
+        text-align:center;
+        width:500px;
+       }
+       #clusterInfo{
         float:left;
+        width:500px;
+       }
+       #totalInfo {
+        float:right;
+        width:500px;
+       }
+       .infoHolder {
+        width:500px;
+        height:40px;
        }
     
     </style>
@@ -554,20 +584,22 @@ $(function() {
       <div id="satmap"></div>
     </div>
       <div id="status">
-        <div id='clusterInfo'>
-          <span id="cluster_name">Cluster Name</span>
-          <p> Cities: <span id="cities_chart" class="chart">Loading...</p></span>
-          <p> Workers: <span id="workers_chart" class="chart">Loading...</p></span>
-          <p> Nodes: <span id="nodes_chart" class="chart">Loading...</p></span>
-          <span id="Total">Total</span>
-          <p> Cities: <span id="cities_total_chart" class="chart">Loading...</p></span>
-          <p> Workers: <span id="workers_total_chart" class="chart">Loading...</p></span>
-          <p> Nodes: <span id="nodes_total_chart" class="chart">Loading...</p></span>
+        <div id='sitemapWrapper'>
+          <div id="sitemap"></div>
         </div>
-        <div id="sitemap"></div>
+        <div id='clusterInfo'>
+          <span id="cluster_name" class="infoTag">Cluster</span>
+          <div class='infoHolder'> Cities: <span id="cities_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Workers: <span id="workers_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Nodes: <span id="nodes_chart" class="chart">Loading...</span></div>
+        </div>
+        <div id='totalInfo'>
+          <span id="Total" class="infoTag">Total</span>
+          <div class='infoHolder'> Cities: <span id="cities_total_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Workers: <span id="workers_total_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Nodes: <span id="nodes_total_chart" class="chart">Loading...</span></div>
+        </div>
       </div>
-      
-      <div id="right_bottom"></div>
   </div>
 
 <!--          <div id="text">
