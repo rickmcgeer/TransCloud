@@ -170,9 +170,9 @@ def swift_transfer(dlproxy, upproxy, imglistfile=None):
     imglistlock.acquire()
     dllistlock.acquire()
     
-    for img in imgsfromdb:
+    for bucket in imgsfromdb:
         
-        if 'p' in img:
+        if 'p' in bucket:
             if bucket not in dllist and bucket not in bucketlist:
                 dllist.append(bucket)
 
