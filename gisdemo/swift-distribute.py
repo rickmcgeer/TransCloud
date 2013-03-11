@@ -6,27 +6,9 @@ import shutil
 import time
 
 
-# swift -A http://155.98.38.233:8080/auth/v1.0 -U system:gis -K uvicgis stat #emulab site 1
-# swift -A http://142.104.195.225:8080/auth/v1.0 -U system:gis -K uvicgis stat #uvic site 2
-# swift -A http://131.246.112.37:8080/auth/v1.0 -U system:gis -K uvicgis stat #glab site 3
-# swift -A http://198.55.35.2:8080/auth/v1.0 -U system:gis -K uvicgis stat #geni orig! site 4
 
-
-GENI_PROXY = "http://198.55.35.2:8080/auth/v1.0" # continent id 4, asia oceania
-LOCAL_GENI_PROXY = "http://10.0.0.3:8080/auth/v1.0" # need diff user and pass
-GENI_IMG_FILE = "swiftimages/swift-images4.txt"
-
-UVIC_PROXY = "http://142.104.195.225:8080/auth/v1.0" # continent id 3, south america
-UVIC_IMG_FILE = "swiftimages/swift-images3.txt"
-
-GLAB_PROXY = "http://131.246.112.37:8080/auth/v1.0" # continent id 2, europe
-GLAB_IMG_FILE = "swiftimages/swift-images2.txt"
-
-EMUL_PROXY = "http://155.98.38.233:8080/auth/v1.0" # continent id 1, north america
-EMUL_IMG_FILE = "swiftimages/swift-images1.txt"
-
-SWIFT_USER = "system:gis"
-SWIFT_PWD = "uvicgis"
+UVIC_PROXY = "http://142.104.195.225:8080/auth/v1.0"
+NW_PROXY = "http://165.124.51.144:8080/auth/v1.0"
 
 
 bucketlist = []
@@ -47,6 +29,7 @@ imglist = []
 imglistlock = threading.Lock()
 
 alldownloadflag = 0
+
 
 
 def download_bucket(bucket, proxy):
@@ -77,6 +60,7 @@ def download_bucket(bucket, proxy):
     return status
 
 
+
 def dl_thread():
 
     print "Download thread started"
@@ -93,6 +77,7 @@ def dl_thread():
             download_bucket(bucket, ORIG_PROXY)
 
     print "Download thread finished"
+
 
 
 def upload_bucket(bucket, proxy):
@@ -121,6 +106,7 @@ def upload_bucket(bucket, proxy):
     return status
 
 
+
 def up_thread():
 
     print "Upload thread started"
@@ -139,22 +125,35 @@ def up_thread():
     print "Upload thread finished"
 
 
-def swift_transfer(dlproxy, upproxy, imglistfile):
+def swift_transfer(dlproxy, upproxy, imglistfile=None):
 
-    f = open(imglistfile)
+    if imglistfile:
+        f = open(imglistfile)
     
-    imgsfromdb = [line.strip() for line in f.readlines()]
+        imgsfromdb = [line.strip() for line in f.readlines()]
+    else:
+        try:
+            ret = gcswift.do_swift_command(dlproxy, "list", "", 1)
+            imgsfromdb = ret.communicate()[0].split()
+        except AssertionError as e:
+            print "failed to get img list:", str(e)
+            sys.exit()
 
     # dlthreadlist = []
     # upthreadlist = []
     # global alldownloadflag
     # alldownloadflag = 0
 
+
+    print imgsfromdb
+    return
+
     try:
         ret = gcswift.do_swift_command(upproxy, "list", "", 1)
         bucketlist = ret.communicate()[0].split()
     except AssertionError:
-        print "failed to get list of existing buckets"
+        print "failed to get list of existing buckets:", str(e)
+        sys.exit()
 
     imglist = []
     dllist = []
@@ -163,13 +162,13 @@ def swift_transfer(dlproxy, upproxy, imglistfile):
     upfaillist = []
     
 
+
     imglistlock.acquire()
     dllistlock.acquire()
     
     for img in imgsfromdb:
         nameparts = img.split('_')
         
-        # dont do bad entries that dont have a 'p' in them
         if 'p' in nameparts[0]:
             img = nameparts[0]+'_'+nameparts[1]+'.'+nameparts[2]+'.'+nameparts[3]+'.tif.gz'
             imglist.append(img)
@@ -187,7 +186,7 @@ def swift_transfer(dlproxy, upproxy, imglistfile):
         print "temp swift dir already exists!"
     os.chdir('/tmp/swiftdist/')
 
-
+ 
     # screw the threading it doesnt work like i though it would
     for b in dllist:
         try:
@@ -229,7 +228,5 @@ def swift_transfer(dlproxy, upproxy, imglistfile):
 
 if __name__ == "__main__":
 
-    swift_transfer(GENI_PROXY, EMUL_PROXY, EMUL_IMG_FILE)
-    swift_transfer(GENI_PROXY, UVIC_PROXY, UVIC_IMG_FILE)
-    swift_transfer(GENI_PROXY, GLAB_PROXY, GLAB_IMG_FILE)
+    swift_transfer(UVIC_PROXY, NW_PROXY)
 
