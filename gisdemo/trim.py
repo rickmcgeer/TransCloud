@@ -43,7 +43,7 @@ def crop(shapefile_full, raster_full, raster2_full=None, raster3_full=None, pref
     command = "ogrinfo  %s %s" % (new_shapefile,layername)
     # print "Getting shape info", command
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-    p.wait()
+    # p.wait()
     out, err = p.communicate()
     #print out
     assert "Geometry: Polygon" in out, "Problem reading the shapefile"

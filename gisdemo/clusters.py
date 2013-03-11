@@ -45,6 +45,30 @@ tmp_dirs = {"cs.UVic.CA":"/tmp/",
             "u-tokyo.ac.jp":"/tmp/",
             "undefined.location":'/tmp/'}
 
+
+class Cluster(object):
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+
+    def validate(self):
+        for prop in ['lat','lon', 'shortname', 'tmpdir', 'swiftproxys','fallbackswift' 'machines', 'baseip']:
+            assert prop in self.__dict__, "Cluster is missing "+prop 
+
+uvic_swift1 = '142.104.195.225'
+uvic_swift2 = '142.104.195.226'
+nw_swift1 = 'pc5.instageni.northwestern.edu'
+
+
+uvic = Cluster(   lat="48.4633",
+                         lon="123.3118",
+                         shortname="uvic",
+                         tmpdir="/tmp/",
+                         swiftproxys=[uvic_swift1, uvic_swift2],
+                         fallbackswiftmachines=[nw_swift1],
+                         baseip="142.104")
+
+
 def n_machines():
     """How many machines are there?"""
     n = 0
@@ -69,3 +93,6 @@ def get_cluster_tmp_location():
     
 def test_gettmp():
     assert get_cluster_tmp_location() in ['/mnt','/tmp/']
+
+def test_clusters():
+    uvic.validate()
