@@ -133,8 +133,16 @@ def swift_transfer(dlproxy, upproxy, imglistfile=None):
         imgsfromdb = [line.strip() for line in f.readlines()]
     else:
         try:
-            ret = gcswift.do_swift_command(dlproxy, "list", "", 1)
+            # for some reason we cant list the whole repo, we time out 
+            #  on the command line and i have no idea why
+            ret = gcswift.do_swift_command(dlproxy, "list -p p0", "", 1)
             imgsfromdb = ret.communicate()[0].split()
+
+            ret = gcswift.do_swift_command(dlproxy, "list -p p1", "", 1)
+            imgsfromdb += ret.communicate()[0].split()
+
+            ret = gcswift.do_swift_command(dlproxy, "list -p p2", "", 1)
+            imgsfromdb += ret.communicate()[0].split()
         except AssertionError as e:
             print "failed to get img list:", str(e)
             sys.exit()
@@ -143,10 +151,6 @@ def swift_transfer(dlproxy, upproxy, imglistfile=None):
     # upthreadlist = []
     # global alldownloadflag
     # alldownloadflag = 0
-
-
-    print imgsfromdb
-    return
 
     try:
         ret = gcswift.do_swift_command(upproxy, "list", "", 1)
@@ -167,12 +171,8 @@ def swift_transfer(dlproxy, upproxy, imglistfile=None):
     dllistlock.acquire()
     
     for img in imgsfromdb:
-        nameparts = img.split('_')
         
-        if 'p' in nameparts[0]:
-            img = nameparts[0]+'_'+nameparts[1]+'.'+nameparts[2]+'.'+nameparts[3]+'.tif.gz'
-            imglist.append(img)
-            bucket = nameparts[0]
+        if 'p' in img:
             if bucket not in dllist and bucket not in bucketlist:
                 dllist.append(bucket)
 
