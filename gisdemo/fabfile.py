@@ -14,10 +14,10 @@ env.roledefs = {
     'uvic':uvic_cluster,
     'nw':nw_cluster,
     'emulab':emulab_cluster,
-    'server':[grack06],
+    'server':[sebulba],
     'db_server':[nw1],
     'web_server':[nw1],
-    'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
+    'workers':[sebulba], #uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
 }
@@ -57,6 +57,7 @@ def style():
     local('pep8 *.py ./mq/*.py')
     local('pylint *.py ./mq/*.py')
 
+@runs_once
 def pack():
     with settings(warn_only=True):
         local('find . -name "*.pyc" -exec rm -rf {} \;')
@@ -156,6 +157,7 @@ def server_deploy():
         sudo('createuser -S -R -D www-data', user='postgres')
         sudo('createuser -S -R -D -P uvicgis gis', user='postgres')
         sudo('psql ' + database + ' -f ' + deploy_path +'/clean_world.sql', user='postgres')
+
         
 @roles('web_server')
 def web_server_deploy():
@@ -176,14 +178,21 @@ def web_server_deploy():
         sudo("cp " + deploy_path + "headers.conf /etc/apache2/mods-enabled")
         sudo("apache2ctl restart")
 
+
 @roles('server')
 def run_start():
     deploy()
+    with settings(warn_only=True):
+        # the daemon pid file, to make sure it does not linger
+        # from a previous run.
+        run('rm -rf /tmp/daemon-calc.pid') 
+        run('rm -rf /tmp/calc_daemon.log')
     with cd(deploy_path):
-        run('python mq_calc.py -c 100')
+        run('python mq_calc.py -c 5')
         with settings(warn_only=True):
             sudo('rm -rf green.log')
-        run('python calc_daemon.py restart')
+        run('python calc_daemon.py start')
+
         
 @parallel
 @roles('workers')
@@ -192,6 +201,7 @@ def run_workers():
     with cd(deploy_path):
         with settings(warn_only=True):
             run('python mq_client.py')
+
 
 @roles('server')
 def run_results():
@@ -207,18 +217,19 @@ def update_to_swift():
         with cd(deploy_path):
             run('python send_swift_images.py')
 
+
 @roles('jp-relay')
 def deploy_jp():
     deploy()
     with cd(deploy_path):
             run('fab deploy_jp_node')
 
+
 @hosts('root@192.168.251.10')
 def deploy_jp_node():
     deploy()
     with cd(deploy_path):
             run('python mq_client.py')
-    
     
 
 def all():
