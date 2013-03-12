@@ -473,7 +473,9 @@ function set_city_values(get_results, image_ids, name_ids) {
 	var result = get_results[i];
 	var id = result['city_id'];
 	var name = result['city_name'];
-	image_elt.innerHTML = '<img src="' + city_image_repository_url + id + '.png"/>';
+        //console.log(name + ' ' + id);
+        console.log('TRYING TO SET ' + image_id);
+	image_elt.innerHTML = '<img class="cityImage" src="' + city_image_repository_url + id + '.png"/>';
 	name_elt.innerHTML = name;
     }
 }
@@ -635,6 +637,15 @@ $(function() {
        a.footerLink {
         color:#808080;
        }
+       .cityImage {
+        max-width:100px;
+        max-height:100px;
+       }
+       .cityName {
+        font-size:8px;
+        max-width:100px;
+        max-height:100px;
+       }
     </style>
   </head>
   <body onload="init()">
@@ -648,18 +659,18 @@ $(function() {
     <div id="topTen">
       <table class='cityInfo'>
         <tr>
-          <td rowspan='2' class='tableLabel'>Top Ten Cities</td><td id='toptext1'>Name 1</td><td id='toptext2'>Name 2</td><td id='toptext3'>Name 3</td><td id='toptext4'>Name 4</td><td id='toptext5'>Name 5</td><td id='toptext6'>Name 6</td><td id='toptext7'>Name 7</td><td id='toptext8'>Name 8</td><td id='toptext9'>Name 9</td><td id='toptext10'>Name 10</td>
+          <td rowspan='2' class='tableLabel'>Top Ten Cities</td><td class='cityName' id='toptext1'>Name 1</td><td class='cityName' id='toptext2'>Name 2</td><td class='cityName' id='toptext3'>Name 3</td><td class='cityName' id='toptext4'>Name 4</td><td class='cityName' id='toptext5'>Name 5</td><td class='cityName' id='toptext6'>Name 6</td><td class='cityName' id='toptext7'>Name 7</td><td class='cityName' id='toptext8'>Name 8</td><td class='cityName' id='toptext9'>Name 9</td><td class='cityName' id='toptext10'>Name 10</td>
         </tr>
         <tr>
-          <td id='topimg1'>Img 1</td><td id='topimg2'>Img 2</td><td id='topimg3'>Img 3</td><td id='topimg4'>Img 4</td><td id='topimg5'>Img 5</td><td id='topimg6'>Img 6</td><td id='topimg7'>Img 7</td><td id='topimg8'>Img 8</td><td id='topimg9'>Img 9</td><td id='topimg10'>Img 10</td>
+          <td class='cityImage' id='topimg1'>Img 1</td><td class='cityImage' id='topimg2'>Img 2</td><td class='cityImage' id='topimg3'>Img 3</td><td class='cityImage' id='topimg4'>Img 4</td><td class='cityImage' id='topimg5'>Img 5</td><td class='cityImage' id='topimg6'>Img 6</td><td class='cityImage' id='topimg7'>Img 7</td><td class='cityImage' id='topimg8'>Img 8</td><td class='cityImage' id='topimg9'>Img 9</td><td class='cityImage' id='topimg10'>Img 10</td>
         </tr>
       </table>
       <table class='cityInfo'>
         <tr>
-          <td rowspan='2' class='tableLabel'>Last Ten Cities</td><td id='lasttext1'>Name 1</td><td id='lasttext2'>Name 2</td><td id='lasttext3'>Name 3</td><td id='lasttext4'>Name 4</td><td id='lasttext5'>Name 5</td><td id='lasttext6'>Name 6</td><td id='lasttext7'>Name 7</td><td id='lasttext8'>Name 8</td><td id='lasttext9'>Name 9</td><td id='lasttext10'>Name 10</td>
+          <td rowspan='2' class='tableLabel'>Last Ten Cities</td><td class='cityName' id='lasttext1'>Name 1</td><td class='cityName' id='lasttext2'>Name 2</td><td class='cityName' id='lasttext3'>Name 3</td><td class='cityName' id='lasttext4'>Name 4</td><td class='cityName' id='lasttext5'>Name 5</td><td class='cityName' id='lasttext6'>Name 6</td><td class='cityName' id='lasttext7'>Name 7</td><td class='cityName' id='lasttext8'>Name 8</td><td class='cityName' id='lasttext9'>Name 9</td><td class='cityName' id='lasttext10'>Name 10</td>
         </tr>
         <tr>
-          <td id='lastimg1'>Img 1</td><td id='lastimg2'>Img 2</td><td id='lastimg3'>Img 3</td><td id='lastimg4'>Img 4</td><td id='lastimg5'>Img 5</td><td id='lastimg6'>Img 6</td><td id='lastimg7'>Img 7</td><td id='lastimg8'>Img 8</td><td id='lastimg9'>Img 9</td><td id='lastimg10'>Img 10</td>
+          <td class='cityImage' id='lastimg1'>Img 1</td><td class='cityImage' id='lastimg2'>Img 2</td><td class='cityImage' id='lastimg3'>Img 3</td><td class='cityImage' id='lastimg4'>Img 4</td><td class='cityImage' id='lastimg5'>Img 5</td><td class='cityImage' id='lastimg6'>Img 6</td><td class='cityImage' id='lastimg7'>Img 7</td><td class='cityImage' id='lastimg8'>Img 8</td><td class='cityImage' id='lastimg9'>Img 9</td><td class='cityImage' id='lastimg10'>Img 10</td>
         </tr>
       </table>
     </div>
