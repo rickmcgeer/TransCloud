@@ -54,6 +54,7 @@ env.roledefs = {
     'swift-cluster':swift_cluster,
     'swift-workers':swift_workers,
     'swift-proxies':swift_proxies,
+    'swift-object-expirer':[swift_workers[0]],
     'localhost':localhost
 }
 
@@ -119,7 +120,7 @@ def distribute_rings():
     sudo('mkdir -p /etc/swift')
     sudo('chmod a+w /etc/swift')
     for ring in rings:
-        put(ring, '/etc/swift/'+ring)
+        put(ring, '/etc/swift/'+ring, use_sudo=True)
     sudo('chown -R swift:swift /etc/swift')
 
 
@@ -168,6 +169,7 @@ def cluster_proxy(host_addr="www.google.com"):
 def storage_config():
     execute(storage_config_gen)
     execute(cluster_storage)
+    execute(cluster_object_exp)
 
 
 # we want this to be the complete path to the file system swift 
@@ -203,12 +205,20 @@ def cluster_storage(host_addr="www.google.com", swiftfs_path="/srv/node/swiftfs"
     sudo('perl -pi -e "s/0.0.0.0/`python /tmp/getmyip.py '+host_addr+'`/" /etc/rsyncd.conf')
     sudo('service rsync start')
 
-    # other config files
+    sudo('chown swift:swift '+swiftfs_path)
+    sudo('chown -R swift:swift /etc/swift')
+    sudo('swift-init all start') # starts every swift process that has a config file
+
+
+@roles('swift-object-expirer')
+def cluster_object_exp():
+
     put('/tmp/object-expirer.conf', '/etc/swift')
 
     sudo('chown swift:swift '+swiftfs_path)
     sudo('chown -R swift:swift /etc/swift')
-    sudo('swift-init all start') # starts every swift process that has a config file
+    sudo('swift-init all restart') # starts every swift process that has a config file
+
 
 
 
@@ -269,6 +279,12 @@ def install_swift_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
     sudo('apt-get -y --force-yes install swift openssh-server swift-proxy memcached swift-account swift-container swift-object curl gcc git-core python-configobj python-coverage python-dev python-nose python-setuptools python-simplejson python-xattr sqlite3 xfsprogs python-webob python-eventlet python-greenlet python-pastedeploy python-netifaces')
+
+    sudo('mkdir -p /etc/swift')
+    sudo('chown swift:swift /etc/swift')
+
+    sudo('mkdir -p /var/cache/swift')
+    sudo('chown swift:swift /var/cache/swift')
 
 
 

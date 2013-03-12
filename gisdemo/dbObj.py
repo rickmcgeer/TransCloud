@@ -12,11 +12,19 @@ GREEN_COL = "map.greenspace"
 
 
 IMG_TABLE = "processed"
+GID_COL = "gid"
 IMG_NAME_COL = "file_path"
 START_T_COL = "process_start_time"
 END_T_COL = "process_end_time"
 SERV_NAME_COL = "server_name"
 CLUSTER_COL = "cluster"
+
+IMG_GID_COL = "processed.gid"
+IMG_IMG_NAME_COL = "processed.file_path"
+IMG_START_T_COL = "processed.process_start_time"
+IMG_END_T_COL = "processed.process_end_time"
+IMG_SERV_NAME_COL = "processed.server_name"
+IMG_CLUSTER_COL = "processed.cluster"
 
 # projection SRID
 WSG84 = "4326"
@@ -240,6 +248,29 @@ class pgConnection:
                 'workers_total':total_data['workers'],
                 'nodes_total':total_data['nodes']
                 }
+
+    def getLast10Cities(self):
+        """Called by get_last_10_cities in cgi_bin to get the last 10 cities processed.
+           Returns a list of  gid: <city id>, name:<city name>
+        """
+        query_statement = "select processed.gid, map.name from processed inner join map on processed.gid = map.gid where processed.process_end_time is not null order by process_end_time desc limit(10)"
+        result = self.performSelect(query_statement)
+        webResult = []
+        for (gid, name) in result: webResult.append({'city_id': gid, 'city_name':name})
+        return webResult
+
+    def getTop10Cities(self):
+        """Called by get_last_10_cities in cgi_bin to get the last 10 cities processed.
+           Returns a list of  gid: <city id>, name:<city name>
+        """
+        query_statement = "select gid, name from map where greenspace is not null order by greenspace desc limit 10"
+        result = self.performSelect(query_statement)
+        webResult = []
+        for (gid, name) in result: webResult.append({'city_id': gid, 'city_name':name})
+        return webResult
+    
+        
+        
 
 
         

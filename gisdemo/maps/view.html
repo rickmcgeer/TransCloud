@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./theme/default/style.css" type="text/css">
     <link rel="stylesheet" href="./theme/default/google.css" type="text/css">
  
-    <link rel="stylesheet" href="style.css" type="text/css">
+    <!--<link rel="stylesheet" href="./style.css" type="text/css">  BROKEN LINK SO COMMENTED OUT-->
 
         <style type="text/css">
             html, body, #map {
@@ -40,6 +40,7 @@ var urls = {
     geoserver_url: boss_node + ":8080/geoserver",
 };
 
+var city_image_repository_url = 'http://142.104.195.225:8080/v1/AUTH_system/completed/';
 
 var styles = new OpenLayers.StyleMap({
                 "default": new OpenLayers.Style(null, {
@@ -277,7 +278,7 @@ var options = {
   };
 
 
-map = new OpenLayers.Map('greencities_map', options);
+map = new OpenLayers.Map('satmap', options);
             map.addControl(new OpenLayers.Control.LayerSwitcher());
 
            map.addControl(new OpenLayers.Control.MousePosition());
@@ -356,7 +357,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    var greenValue = Math.round(parseFloat(valueAsString) * 1000)/10; // .22573 becomes 22.6%
 
 
-		    var imgURL = '<img src="' + 'http://142.104.195.225:8080/v1/AUTH_system/completed/' + cityNumber + '.png"/>';
+		    var imgURL = '<img src="' + city_image_repository_url + cityNumber + '.png"/>';
 		    var htmlBody = '<body>'+'<h1>'+ cityName + ': ' + greenValue + '%</h1>' + imgURL+ '</body>';
 		    var htmlText = '<html><head></head>' + htmlBody + '</html>';
 	     
@@ -405,7 +406,7 @@ map.addControl(new OpenLayers.Control.Navigation());
             control.activate(); */
             map.addControl(selectControl);
 	    selectControl.activate();
-	    var trans_geo_map = new OpenLayers.Map('right_map');
+	    var trans_geo_map = new OpenLayers.Map('sitemap');
             /* var g_hybrid =  new OpenLayers.Layer.Google(
                 "Google Hybrid",
                 // {type: G_HYBRID_MAP, numZoomLevels: 20}
@@ -450,7 +451,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    $.get(urls.cgi_bin_url + "/get_data.py?site="+this.site_name, "",
                           function(data) {
 			      var site_name = data["site_name"];
-                              $('#cluster_name').html("<p>" + site_name + "</p>");
+                              $('#cluster_name').html(site_name);
 			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
 			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
 			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
@@ -463,6 +464,25 @@ map.addControl(new OpenLayers.Control.Navigation());
 	    }
 	   
         }
+function set_city_values(get_results, image_ids, name_ids) {
+    for(var i = 0; i < image_ids.length; i++) {
+	var image_id = image_ids[i];
+	var name_id = name_ids[i];
+	var image_elt = document.getElementById(image_id);
+	var name_elt = document.getElementById(name_id);
+	var result = get_results[i];
+	var id = result['city_id'];
+	var name = result['city_name'];
+	image_elt.innerHTML = '<img src="' + city_image_repository_url + id + '.png"/>';
+	name_elt.innerHTML = name;
+    }
+}
+
+var last10Images = ["lastimg1",  "lastimg2",  "lastimg3",  "lastimg4", "lastimg5", "lastimg6", "lastimg7", "lastimg8", "lastimg9",  "lastimg10"];
+var last10Names = ["lasttext1",  "lasttext2",  "lasttext3",  "lasttext4", "lasttext5", "lasttext6", "lasttext7", "lasttext8", "lasttext9",  "lasttext10"];
+var top10Images = ["topimg1",  "topimg2",  "topimg3",  "topimg4", "topimg5", "topimg6", "topimg7", "topimg8", "topimg9",  "topimg10"];
+var top10Names = ["toptext1",  "toptext2",  "toptext3",  "toptext4", "toptext5", "toptext6", "toptext7", "toptext8", "toptext9",  "toptext10"];
+
 var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
               "uvic.trans-cloud.net": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
 	      "u-tokyo.ac.jp": { "LonLat":new OpenLayers.LonLat(139.762359,35.714218), "cities": [6,7,8,9,10,12], "workers": [1,2,3,4,3,4], "nodes": [1,1,1,2,2,2]},
@@ -474,11 +494,11 @@ var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "ci
 var sparkline_options = {'height':'40px', 'width':'400px'};
 var default_site = sites['cs.UVic.CA'];
 $(function() {
-    var url = urls.cgi_bin_url + "/get_data.py?site=uvic.trans-cloud.net";
-    $.get(url, "",
+    var data_url = urls.cgi_bin_url + "/get_data.py?site=uvic.trans-cloud.net";
+    $.get(data_url, "",
                           function(data) {
 			      var site_name = data["site_name"];
-                              $('#cluster_name').html("<p>" + site_name + "</p>");
+                              $('#cluster_name').text(site_name);
 			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
 			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
 			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
@@ -487,64 +507,182 @@ $(function() {
 			      $('#workers_total_chart').sparkline(data['workers_total'], sparkline_options);
 			  },
                         "json");
+    var top_10_url = urls.cgi_bin_url + "/top_10_cities.py";
+    $.get(top_10_url, "", 
+	  function(data) {
+	      set_city_values(data, top10Images, top10Names);
+	  },
+	  "json");
+    var last_10_url = urls.cgi_bin_url + "/last_10_cities.py";
+    $.get(last_10_url, "", 
+	  function(data) {
+	      set_city_values(data, last10Images, last10Names);
+	  },
+	  "json");
+
+
 
 
 });
 
     </script>
     <style type="text/css">
-       #map_panel {
+       /*#map_panel {
            width:1100px;
            height:100%;
            margin-left:auto;
            margin-right:auto;
+       }*/
+       body {
+        /*background-color: yellow;*/
        }
-       #greencities_map {
-           width:700px;
-           height:100%;
-           margin-left:0;
+       #satmapWrapper {
+        width:1000px;
+        height:700px;
+        margin-left:auto;
+        margin-right:auto;
+       }
+       #satmap {
+           width:1000px;
+           height: 700px;
+           margin-left:auto;
            margin-right:auto;
-           float:left;
+           border:1px solid gray;
        }
-       #right_map {
-           width : 400px;
-           height:30%;
-           position:absolute;
-	   top:0;
-	   right:0;
+       #sitemapWrapper {
+        width:500px;
+        height:200px;
+        margin-left:auto;
+        margin-right:auto;
+        padding-top:10px;
+        padding-bottom:10px;
        }
-       #right_bottom {
-           width:400px;
-           height: 70%;
-           position:absolute;
-	   bottom:0;
-	   right:0
-       }  
+       #sitemap {
+           width : 500px;
+           height:200px;
+           margin-left:auto;
+        margin-right:auto;
+        border:1px solid gray;
+/*           position:absolute;*/
+/*	   top:0;*/
+/*	   right:0;*/
+       }
+/*       #right_bottom {*/
+/*           width:400px;*/
+/*           height: 70%;*/
+/*           position:absolute;*/
+/*	   bottom:0;*/
+/*	   right:0*/
+/*       }  */
        span.chart {
            width: 400px;
            height: 40px;
+           float:right;
        }
-    
+       #fullWrapper {
+        width:1000px;
+        margin-left: auto;
+        margin-right:auto;
+       }
+       #status {
+        width:1000px;
+       }
+       #cluster_name {
+       }
+       #Total {
+       }
+       .infoTag {
+        font-size:30px;
+        text-align:center;
+        width:490px;
+       }
+       #clusterInfo{
+        float:left;
+        width:490px;
+        padding-right:10px;
+       }
+       #totalInfo {
+        float:right;
+        width:490px;
+        padding-left:10px;
+       }
+       .infoHolder {
+        width:500px;
+        height:40px;
+       }
+       td.tableLabel {
+        font-size:30px;
+       }
+       table.cityInfo {
+        margin-left:auto;
+        margin-right:auto;
+       }
+       #statusLabel {
+        font-size:50px;
+        /*width:1000px;*/
+        text-align:center;
+       }
+       #statusLabelWrapper{
+        width:1000px;
+        text-align:center;
+       }
+       #footer {
+        text-align:center;
+        font-size:12px;
+        color:light gray;
+        padding-top:4px;
+       }
+       a.footerLink {
+        color:#808080;
+       }
     </style>
   </head>
   <body onload="init()">
+    <!--<a href="https://github.com/rickmcgeer/TransCloud"><img style="height:125px;width:125px;position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>  Problems with changing resolution and overlapping the sat map.  Not worth it right now anyway.-->
 
-      <div id = "map_panel">
-        <div id="greencities_map"></div>
-        <div id="right_map"></div>
-        <div id="right_bottom">
-<span id="cluster_name">Cluster Name</span>
-	<p> Cities: <span id="cities_chart" class="chart">Loading...</p></span>
-        <p> Workers: <span id="workers_chart" class="chart">Loading...</p></span>
-	<p> Nodes: <span id="nodes_chart" class="chart">Loading...</p></span>
-     <span id="Total">Total</span>
-        <p> Cities: <span id="cities_total_chart" class="chart">Loading...</p></span>
-        <p> Workers: <span id="workers_total_chart" class="chart">Loading...</p></span>
-	<p> Nodes: <span id="nodes_total_chart" class="chart">Loading...</p></span>
-</div>
-        
-</div>
-     </div>
+  <div id = "fullWrapper">
+    <div id="satmapWrapper">
+      <div id="satmap"></div>
+    </div>
+    <hr />
+    <div id="topTen">
+      <table class='cityInfo'>
+        <tr>
+          <td rowspan='2' class='tableLabel'>Top Ten Cities</td><td id='toptext1'>Name 1</td><td id='toptext2'>Name 2</td><td id='toptext3'>Name 3</td><td id='toptext4'>Name 4</td><td id='toptext5'>Name 5</td><td id='toptext6'>Name 6</td><td id='toptext7'>Name 7</td><td id='toptext8'>Name 8</td><td id='toptext9'>Name 9</td><td id='toptext10'>Name 10</td>
+        </tr>
+        <tr>
+          <td id='topimg1'>Img 1</td><td id='topimg2'>Img 2</td><td id='topimg3'>Img 3</td><td id='topimg4'>Img 4</td><td id='topimg5'>Img 5</td><td id='topimg6'>Img 6</td><td id='topimg7'>Img 7</td><td id='topimg8'>Img 8</td><td id='topimg9'>Img 9</td><td id='topimg10'>Img 10</td>
+        </tr>
+      </table>
+      <table class='cityInfo'>
+        <tr>
+          <td rowspan='2' class='tableLabel'>Last Ten Cities</td><td id='lasttext1'>Name 1</td><td id='lasttext2'>Name 2</td><td id='lasttext3'>Name 3</td><td id='lasttext4'>Name 4</td><td id='lasttext5'>Name 5</td><td id='lasttext6'>Name 6</td><td id='lasttext7'>Name 7</td><td id='lasttext8'>Name 8</td><td id='lasttext9'>Name 9</td><td id='lasttext10'>Name 10</td>
+        </tr>
+        <tr>
+          <td id='lastimg1'>Img 1</td><td id='lastimg2'>Img 2</td><td id='lastimg3'>Img 3</td><td id='lastimg4'>Img 4</td><td id='lastimg5'>Img 5</td><td id='lastimg6'>Img 6</td><td id='lastimg7'>Img 7</td><td id='lastimg8'>Img 8</td><td id='lastimg9'>Img 9</td><td id='lastimg10'>Img 10</td>
+        </tr>
+      </table>
+    </div>
+    <hr />
+      <div id="status">
+        <!--<div id='statusLabelWrapper'><span id='statusLabel'>Node Status</span></div>-->
+        <div id='sitemapWrapper'>
+          <div id="sitemap"></div>
+        </div>
+        <div id='clusterInfo'>
+          <span id="cluster_name" class="infoTag">Cluster</span>
+          <div class='infoHolder'> Cities: <span id="cities_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Workers: <span id="workers_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Nodes: <span id="nodes_chart" class="chart">Loading...</span></div>
+        </div>
+        <div id='totalInfo'>
+          <span id="Total" class="infoTag">Total</span>
+          <div class='infoHolder'> Cities: <span id="cities_total_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Workers: <span id="workers_total_chart" class="chart">Loading...</span></div>
+          <div class='infoHolder'> Nodes: <span id="nodes_total_chart" class="chart">Loading...</span></div>
+        </div>
+      </div>
+  </div>
 
 <!--          <div id="text">
               <h1 id="title">GreenCities Demo</h1>
@@ -568,6 +706,6 @@ image data in Swift repositories, and distributed Disco jobs to do the analysis
             </div>
 -->           
 
-
+    <div id='footer'><a class='footerLink' href='https://github.com/rickmcgeer/TransCloud' target="_blank">Open source on GitHub.</a></div>
     </body>
 </html>
