@@ -40,6 +40,7 @@ var urls = {
     geoserver_url: boss_node + ":8080/geoserver",
 };
 
+var city_image_repository_url = 'http://142.104.195.225:8080/v1/AUTH_system/completed/';
 
 var styles = new OpenLayers.StyleMap({
                 "default": new OpenLayers.Style(null, {
@@ -356,7 +357,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    var greenValue = Math.round(parseFloat(valueAsString) * 1000)/10; // .22573 becomes 22.6%
 
 
-		    var imgURL = '<img src="' + 'http://142.104.195.225:8080/v1/AUTH_system/completed/' + cityNumber + '.png"/>';
+		    var imgURL = '<img src="' + city_image_repository_url + cityNumber + '.png"/>';
 		    var htmlBody = '<body>'+'<h1>'+ cityName + ': ' + greenValue + '%</h1>' + imgURL+ '</body>';
 		    var htmlText = '<html><head></head>' + htmlBody + '</html>';
 	     
@@ -463,6 +464,25 @@ map.addControl(new OpenLayers.Control.Navigation());
 	    }
 	   
         }
+function set_city_values(get_results, image_ids, name_ids) {
+    for(var i = 0; i < image_ids.length; i++) {
+	var image_id = image_ids[i];
+	var name_id = name_ids[i];
+	var image_elt = document.getElementById(image_id);
+	var name_elt = document.getElementById(name_id);
+	var result = get_results[i];
+	var id = result['city_id'];
+	var name = result['city_name'];
+	image_elt.innerHTML = '<img src="' + city_image_repository_url + id + '.png"/>';
+	name_elt.innerHTML = name;
+    }
+}
+
+var last10Images = ["lastimg1",  "lastimg2",  "lastimg3",  "lastimg4", "lastimg5", "lastimg6", "lastimg7", "lastimg8", "lastimg9",  "lastimg10"];
+var last10Names = ["lasttext1",  "lasttext2",  "lasttext3",  "lasttext4", "lasttext5", "lasttext6", "lasttext7", "lasttext8", "lasttext9",  "lasttext10"];
+var top10Images = ["topimg1",  "topimg2",  "topimg3",  "topimg4", "topimg5", "topimg6", "topimg7", "topimg8", "topimg9",  "topimg10"];
+var top10Names = ["toptext1",  "toptext2",  "toptext3",  "toptext4", "toptext5", "toptext6", "toptext7", "toptext8", "toptext9",  "toptext10"];
+
 var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
               "uvic.trans-cloud.net": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "cities": [4,8,10,11,16,23], "workers": [10,8,6,7,8,10], "nodes": [5,4,4,4,5,4]},
 	      "u-tokyo.ac.jp": { "LonLat":new OpenLayers.LonLat(139.762359,35.714218), "cities": [6,7,8,9,10,12], "workers": [1,2,3,4,3,4], "nodes": [1,1,1,2,2,2]},
@@ -474,8 +494,8 @@ var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "ci
 var sparkline_options = {'height':'40px', 'width':'400px'};
 var default_site = sites['cs.UVic.CA'];
 $(function() {
-    var url = urls.cgi_bin_url + "/get_data.py?site=uvic.trans-cloud.net";
-    $.get(url, "",
+    var data_url = urls.cgi_bin_url + "/get_data.py?site=uvic.trans-cloud.net";
+    $.get(data_url, "",
                           function(data) {
 			      var site_name = data["site_name"];
                               $('#cluster_name').text(site_name);
@@ -487,6 +507,20 @@ $(function() {
 			      $('#workers_total_chart').sparkline(data['workers_total'], sparkline_options);
 			  },
                         "json");
+    var top_10_url = urls.cgi_bin_url + "/top_10_cities.py";
+    $.get(top_10_url, "", 
+	  function(data) {
+	      set_city_values(data, top10Images, top10Names);
+	  },
+	  "json");
+    var last_10_url = urls.cgi_bin_url + "/last_10_cities.py";
+    $.get(last_10_url, "", 
+	  function(data) {
+	      set_city_values(data, last10Images, last10Names);
+	  },
+	  "json");
+
+
 
 
 });
