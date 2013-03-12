@@ -295,10 +295,10 @@ def main(location):
     del pgConn
     return len(records)
 
-def process_city_from_json(json_string):
+def process_city_from_json(json_string, testing=False):
     id, name, poly, bb1, bb2, bb3, bb4 = json.loads(json_string)   
     location = taskmanager.get_local_site_name()
-    green_results = process_city(id, name, poly, (bb1, bb2, bb3, bb4), location, testing=False)
+    green_results = process_city(id, name, poly, (bb1, bb2, bb3, bb4), location, testing=testing)
     return green_results
 
 
