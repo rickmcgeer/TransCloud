@@ -1,10 +1,10 @@
 
 import clusters
 
-CLUSTERS={'UVIC':'142.104.195.225', 'UVIC2':'142.104.195.226'}
+CLUSTERS={'NW':'pc5.instageni.northwestern.edu','UVIC':'142.104.195.225', 'UVIC2':'142.104.195.226'}
 
 
-SWIFT_PROXY1 = CLUSTERS['UVIC']
+SWIFT_PROXY1 = CLUSTERS['UVIC1']
 SWIFT_PROXY2 = CLUSTERS['UVIC2']
 SWIFT_USER = "system:gis"
 SWIFT_PWD = "uvicgis"
@@ -12,10 +12,10 @@ SWIFT_PNG_BUCKET = "completed"
 
 # if the first proxy fails, fall back to this one
 # currently set to HP
-DEFAULT_SWIFT_HOST = "142.104.195.226"
+DEFAULT_SWIFT_HOST = "pc5.instageni.northwestern.edu"
 
 # Try your best to keep alive.
-PRODUCTION_MODE=True
+PRODUCTION_MODE=False
 
 IMG_TMP= clusters.get_cluster_tmp_location()
 IMG_EXT = ".png"
