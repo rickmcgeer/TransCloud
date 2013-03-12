@@ -4,7 +4,7 @@ import clusters
 CLUSTERS={'NW':'pc5.instageni.northwestern.edu','UVIC':'142.104.195.225', 'UVIC2':'142.104.195.226'}
 
 
-SWIFT_PROXY1 = CLUSTERS['UVIC1']
+SWIFT_PROXY1 = CLUSTERS['UVIC']
 SWIFT_PROXY2 = CLUSTERS['UVIC2']
 SWIFT_USER = "system:gis"
 SWIFT_PWD = "uvicgis"
