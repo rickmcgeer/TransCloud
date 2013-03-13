@@ -212,6 +212,12 @@ class pgConnection:
         (CGI_TABLE, CGI_CLUSTER_COL, CGI_WORKERS_COL, CGI_NODE_COL, CGI_CITIES_COL, cluster_name, workers, nodes, cities)
         # print "Performing " + update_statement
         self.performUpdate(update_statement)
+
+    def get_last_cgi_query(self):
+        query_statement = "select query_id from cgi_query_values_history order by query_id desc limit 1"
+        result = self.performSelect(query_statement)
+        resultTuple = result[0]
+        return resultTuple[0]
         
 
     def get_and_update_CGIValues(self, cluster_name='total'):

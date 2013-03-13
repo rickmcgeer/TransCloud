@@ -1,25 +1,42 @@
 #!/usr/bin/env python
 import dbObj
 import daemon
-import mq.taskmanager
+import taskmanager
 import sys, time
 
 #
 # Sample the state of each connection every five minutes and update the database to reflect it.
 # Uses the Daemon class to keep-on-truckin'
 #
-class UpdateDaemon(Daemon):
+class UpdateDaemon(daemon.Daemon):
     def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
-        Daemon.__init__(self, pidfile, stdin, stdout, stderr)
-        self.db = dbObj.pgConnection()
+        daemon.Daemon.__init__(self, pidfile, stdin, stdout, stderr)
+        
 
     def run(self):
         while True:
-            for site in mq.taskmanager._sites:
-                site_name =  mq.taskmanager._sites[site]
-                self.db. get_and_update_CGIValues(site_name)
-            self.db. get_and_update_CGIValues('total')
-            sleep(300)
+            db = dbObj.pgConnection()
+            for site in taskmanager._sites:
+                site_name =  taskmanager._sites[site]
+                db.get_and_update_CGIValues(site_name)
+            db.get_and_update_CGIValues('total')
+            del db
+            time.sleep(300)
+
+
+def test_updateDaemon():
+    update_daemon = UpdateDaemon('/tmp/daemon-update.pid', stdout='/tmp/update_daemon.log', stderr='/tmp/update_daemon.err')
+    db = dbObj.pgConnection()
+    firstValue = db.get_last_cgi_query()
+    update_daemon.start()
+    time.sleep(600)
+    update_daemon.stop()
+    secondValue = db.get_last_cgi_query()
+    time.sleep(600)
+    thirdValue = db.get_last_cgi_query()
+    assert secondValue > firstValue, "second value %d should be > first value %d" % (secondValue, firstValue)
+    assert secondValue == thirdValue, "second value %d should be = third value %d" % (secondValue, thirdValue)
+    
 
 if __name__ == "__main__":
     daemon = UpdateDaemon('/tmp/daemon-update.pid', stdout='/tmp/update_daemon.log')
