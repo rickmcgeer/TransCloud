@@ -1,4 +1,9 @@
-import sys;sys.path.append('..')
+import sys;
+
+sys.path.append('..')
+sys.path.append('../mq/')
+
+import taskmanager
 
 import gcswift
 
@@ -54,9 +59,9 @@ def listFiles(root, patterns='*', recurse=1, return_folders=0):
     return arg.results
 
 print "Scanning Files"
-image_files = listFiles('/mnt/nasy/Landsat7/GLS2005/WRS2/', patterns='*.b0[743].tif.gz')
+image_files = listFiles('/Users/cmatthew/tmp/WRS2/', patterns='*.b0[743].tif.gz')
 
-for i,f in enumerate(image_files):
+for i,f in enumerate(image_files[::-1]):
     percent = (float(i)/len(image_files))*100
     filename = os.path.basename(f)
     dirname = os.path.dirname(f)
@@ -68,7 +73,7 @@ for i,f in enumerate(image_files):
     md5file = filename + '.md5'
 
     gcswift.swift('upload', pathrow, filename)
-    call('md5sum -b %s > %s'%(filename,md5file), shell=True)
-    assert os.path.exists(md5file), "Output file was not created!"
-    gcswift.swift('upload', pathrow, md5file)
+    #call('md5sum -b %s > %s'%(filename,md5file), shell=True)
+    #assert os.path.exists(md5file), "Output file was not created!"
+    #gcswift.swift('upload', pathrow, md5file)
 

@@ -56,7 +56,7 @@ def process_results(prefix="", testing=False, blocking=True):
 			name = new_job.get('name', "Missing Name")
 			err_msg = new_job.get('message', "There was no message passed back.")
                         message =  str(result) + " on " + str(name) + ", failed with: " + str(err_msg) + "\n"
-                        print message,
+                        print message,pwd
 			fails += 1
                         error_log.write(message)
                         submitted.append(new_job)

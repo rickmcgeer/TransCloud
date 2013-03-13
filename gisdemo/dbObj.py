@@ -114,7 +114,7 @@ class pgConnection:
     def createCoordQuery(self, a, b):
         """ Returns an sql query to get the distance in m between 
         2 lat long points """
-
+        assert False, "Maybe this is not used?"
         if len(a) != len(b) or len(a) != 2:
             print "Can't form sql to get distance between points:", a, b
             return 

@@ -20,19 +20,20 @@ def process_cities(testing_prefix="", testing=False):
     print "Processing:", client.queue, "queue."
     ndone = 0
     while(True):
-        new_job, jobid = client.get_task()
+        results = client.get_task()
 
-        if new_job == None:
+        if results == None:
             return ndone
 
+        new_job, jobid = results
         os.chdir(settings.TEMP_FILE_DIR)
         greencitieslog.start()
-        id, name, poly, bb1, bb2, bb3, bb4 = json.loads(new_job['data'])   
+        print new_job, jobid
         try:
             if not testing:
                 greenspace.init()
-                location = taskmanager.get_local_site_name()
-                green_results = greenspace.process_city(id,name,poly,(bb1,bb2,bb3,bb4),location, testing=testing)
+            
+                green_results = greenspace.process_city_from_json(new_job['data'], testing=testing)
             else:
                 green_results = mq_calc.FAKE_RESULT
         except IOError as e:
@@ -40,13 +41,13 @@ def process_cities(testing_prefix="", testing=False):
             sys.exit(1)
             raise e
         except gcswift.MissingSwiftFile as e:
-            client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+            client.report_done(jobid, {'task':'greencity', 'name':"fixme", 'result':'failure','message':e.message.translate(None,"\n\\/'")})
         except landsatImg.MissingCoverage as e:
-            client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+            client.report_done(jobid, {'task':'greencity', 'name':"fixme", 'result':'failure','message':e.message.translate(None,"\n\\/'")})
 
         except Exception as e:
             if settings.PRODUCTION_MODE:
-                client.report_done(jobid, {'task':'greencity', 'name':name, 'result':'failure','message':e.message.translate(None,"\n\\/'")})
+                client.report_done(jobid, {'task':'greencity', 'name':"fixme", 'result':'failure','message':e.message.translate(None,"\n\\/'")})
             else:
                 raise e
         else:

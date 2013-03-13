@@ -130,14 +130,14 @@ class TaskClient():
         return mq.sizeof(self.queuename())
 
 
-    def blocking_get_task(self, testing=False):
-        threshold = 64*10 if not testing else 60 # ~10 minutes and 6 tries or a minute for testing
+    def blocking_get_task(self, testing=False, threshold=640):
         delay = 10
         new_job = None
         jobid = None
         
         while(True):
             new_job, jobid = self.get_task() if not testing else (None,None)
+            print testing, new_job
             if new_job == None:
                 print '.',
                 sys.stdout.flush()
@@ -215,7 +215,8 @@ def test_TaskManager():
     result_client.report_done(resultid)
 
     t1 = time.time()
-    result_client.blocking_get_task(testing=True)
+    r = result_client.blocking_get_task(testing=True)
     t2 = time.time()
 
     assert 69 <= t2-t1 <= 71, "Blocking test should die after 10+20+40 seconds."
+    assert r == None, "Was not expecting something back."

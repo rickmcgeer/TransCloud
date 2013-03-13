@@ -345,10 +345,10 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    var endOfString = cityString.indexOf('<');
 	            var cityNumber = cityString.substr(0, endOfString);
 		    var restOfString = event.text.substr(cityIndex + 7);
-		    var startOfCityName = restOfString.indexOf("<td>");
-		    var cityNameString = restOfString.substr(startOfCityName + 4);
-		    var endOfName = cityNameString.indexOf('<');
-		    var cityName = cityNameString.substr(0, endOfName);
+		    var startOfCity= restOfString.indexOf("<td>");
+		    var cityNameString = restOfString.substr(startOfCity+ 4);
+		    var endOf= cityNameString.indexOf('<');
+		    var city= cityNameString.substr(0, endOfName);
 		    var greenValueString = cityNameString.substr(endOfName);
 		    var startOfValueIndex = greenValueString.indexOf("<td>");
 		    var valueString = greenValueString.substr(startOfValueIndex + 4);
@@ -358,7 +358,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 
 
 		    var imgURL = '<img src="' + city_image_repository_url + cityNumber + '.png"/>';
-		    var htmlBody = '<body>'+'<h1>'+ cityName + ': ' + greenValue + '%</h1>' + imgURL+ '</body>';
+		    var htmlBody = '<body>'+'<h1>'+ city+ ': ' + greenValue + '%</h1>' + imgURL+ '</body>';
 		    var htmlText = '<html><head></head>' + htmlBody + '</html>';
 	     
                     map.addPopup(new OpenLayers.Popup.FramedCloud(
@@ -436,6 +436,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		marker.site_name = site;
 		trans_geo_site_markers.addMarker(marker);
 		marker.events.register('mousedown', marker, function(evt) {
+                  currSite = this.site_name;
 		    // right_bottom.innerHTML = "<table><tr><td>" + this.site_name + "</td></tr>";
 		    // for (var i  in keys) {
 		    //	var key = keys[i];
@@ -448,7 +449,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    // $('#cities_chart').sparkline(this.site['cities'], sparkline_options);
 		    // $('#nodes_chart').sparkline(this.site['nodes'], sparkline_options);
 		    // $('#workers_chart').sparkline(this.site['workers'], sparkline_options);
-		    $.get(urls.cgi_bin_url + "/get_data.py?site="+this.site_name, "",
+		    $.get(urls.cgi_bin_url + "/get_data.py?site="+currSite, "",
                           function(data) {
 			      var site_name = data["site_name"];
                               $('#cluster_name').html(site_name);
@@ -473,7 +474,7 @@ function set_city_values(get_results, image_ids, name_ids) {
 	var result = get_results[i];
 	var id = result['city_id'];
 	var name = result['city_name'];
-	image_elt.innerHTML = '<img src="' + city_image_repository_url + id + '.png"/>';
+	image_elt.innerHTML = '<img class="cityImage" src="' + city_image_repository_url + id + '.png"/>';
 	name_elt.innerHTML = name;
     }
 }
@@ -493,6 +494,7 @@ var sites =  {"cs.UVic.CA": {"LonLat":new OpenLayers.LonLat(-123.31, 48.46), "ci
 	     };
 var sparkline_options = {'height':'40px', 'width':'400px'};
 var default_site = sites['cs.UVic.CA'];
+var currSite = 'uvic.trans-cloud.net';
 $(function() {
     var data_url = urls.cgi_bin_url + "/get_data.py?site=uvic.trans-cloud.net";
     $.get(data_url, "",
@@ -519,6 +521,34 @@ $(function() {
 	      set_city_values(data, last10Images, last10Names);
 	  },
 	  "json");
+    window.setInterval(function() {
+      $.get(last_10_url, "", 
+	  function(data) {
+	      set_city_values(data, last10Images, last10Names);
+	  },
+	  "json");
+      $.get(top_10_url, "", 
+	  function(data) {
+	      set_city_values(data, top10Images, top10Names);
+	  },
+	  "json");
+      
+      $.get(urls.cgi_bin_url + "/get_data.py?site="+currSite, "",
+                          function(data) {
+			      var site_name = data["site_name"];
+                              $('#cluster_name').html(site_name);
+			      $('#cities_chart').sparkline(data['cities'], sparkline_options);
+			      $('#nodes_chart').sparkline(data['nodes'], sparkline_options);
+			      $('#workers_chart').sparkline(data['workers'], sparkline_options);
+                              $('#cities_total_chart').sparkline(data['cities_total'], sparkline_options);
+			      $('#nodes_total_chart').sparkline(data['nodes_total'], sparkline_options);
+			      $('#workers_total_chart').sparkline(data['workers_total'], sparkline_options);
+			  },
+                        "json");
+    
+    console.log('fetching');
+      
+    }, 20000);
 
 
 
@@ -630,10 +660,18 @@ $(function() {
         text-align:center;
         font-size:12px;
         color:light gray;
-        padding-top:4px;
        }
        a.footerLink {
         color:#808080;
+       }
+       .cityImage {
+        max-width:100px;
+        max-height:100px;
+       }
+       .cityName{
+        font-size:8px;
+        max-width:100px;
+        max-height:100px;
        }
     </style>
   </head>
@@ -648,18 +686,18 @@ $(function() {
     <div id="topTen">
       <table class='cityInfo'>
         <tr>
-          <td rowspan='2' class='tableLabel'>Top Ten Cities</td><td id='toptext1'>Name 1</td><td id='toptext2'>Name 2</td><td id='toptext3'>Name 3</td><td id='toptext4'>Name 4</td><td id='toptext5'>Name 5</td><td id='toptext6'>Name 6</td><td id='toptext7'>Name 7</td><td id='toptext8'>Name 8</td><td id='toptext9'>Name 9</td><td id='toptext10'>Name 10</td>
+          <td rowspan='2' class='tableLabel'>Top Ten Cities</td><td class='cityName' id='toptext1'>Loading...</td><td class='cityName' id='toptext2'>Loading...</td><td class='cityName' id='toptext3'>Loading...</td><td class='cityName' id='toptext4'>Loading...</td><td class='cityName' id='toptext5'>Loading...</td><td class='cityName' id='toptext6'>Loading...</td><td class='cityName' id='toptext7'>Loading...</td><td class='cityName' id='toptext8'>Loading...</td><td class='cityName' id='toptext9'>Loading...</td><td class='cityName' id='toptext10'>Loading...</td>
         </tr>
         <tr>
-          <td id='topimg1'>Img 1</td><td id='topimg2'>Img 2</td><td id='topimg3'>Img 3</td><td id='topimg4'>Img 4</td><td id='topimg5'>Img 5</td><td id='topimg6'>Img 6</td><td id='topimg7'>Img 7</td><td id='topimg8'>Img 8</td><td id='topimg9'>Img 9</td><td id='topimg10'>Img 10</td>
+          <td class='cityImage' id='topimg1'>Loading...</td><td class='cityImage' id='topimg2'>Loading...</td><td class='cityImage' id='topimg3'>Loading...</td><td class='cityImage' id='topimg4'>Loading...</td><td class='cityImage' id='topimg5'>Loading...</td><td class='cityImage' id='topimg6'>Loading...</td><td class='cityImage' id='topimg7'>Loading...</td><td class='cityImage' id='topimg8'>Loading...</td><td class='cityImage' id='topimg9'>Loading...</td><td class='cityImage' id='topimg10'>Loading...</td>
         </tr>
       </table>
       <table class='cityInfo'>
         <tr>
-          <td rowspan='2' class='tableLabel'>Last Ten Cities</td><td id='lasttext1'>Name 1</td><td id='lasttext2'>Name 2</td><td id='lasttext3'>Name 3</td><td id='lasttext4'>Name 4</td><td id='lasttext5'>Name 5</td><td id='lasttext6'>Name 6</td><td id='lasttext7'>Name 7</td><td id='lasttext8'>Name 8</td><td id='lasttext9'>Name 9</td><td id='lasttext10'>Name 10</td>
+          <td rowspan='2' class='tableLabel'>Last Ten Cities</td><td class='cityName' id='lasttext1'>Loading...</td><td class='cityName' id='lasttext2'>Loading...</td><td class='cityName' id='lasttext3'>Loading...</td><td class='cityName' id='lasttext4'>Loading...</td><td class='cityName' id='lasttext5'>Loading...</td><td class='cityName' id='lasttext6'>Loading...</td><td class='cityName' id='lasttext7'>Loading...</td><td class='cityName' id='lasttext8'>Loading...</td><td class='cityName' id='lasttext9'>Loading...</td><td class='cityName' id='lasttext10'>Loading...</td>
         </tr>
         <tr>
-          <td id='lastimg1'>Img 1</td><td id='lastimg2'>Img 2</td><td id='lastimg3'>Img 3</td><td id='lastimg4'>Img 4</td><td id='lastimg5'>Img 5</td><td id='lastimg6'>Img 6</td><td id='lastimg7'>Img 7</td><td id='lastimg8'>Img 8</td><td id='lastimg9'>Img 9</td><td id='lastimg10'>Img 10</td>
+          <td class='cityImage' id='lastimg1'>Loading...</td><td class='cityImage' id='lastimg2'>Loading...</td><td class='cityImage' id='lastimg3'>Loading...</td><td class='cityImage' id='lastimg4'>Loading...</td><td class='cityImage' id='lastimg5'>Loading...</td><td class='cityImage' id='lastimg6'>Loading...</td><td class='cityImage' id='lastimg7'>Loading...</td><td class='cityImage' id='lastimg8'>Loading...</td><td class='cityImage' id='lastimg9'>Loading...</td><td class='cityImage' id='lastimg10'>Loading...</td>
         </tr>
       </table>
     </div>
@@ -704,8 +742,7 @@ database as a repository for meta-data, and landsat (or other) satellite
 image data in Swift repositories, and distributed Disco jobs to do the analysis
  
             </div>
--->           
-
+-->
     <div id='footer'><a class='footerLink' href='https://github.com/rickmcgeer/TransCloud' target="_blank">Open source on GitHub.</a></div>
     </body>
 </html>

@@ -9,7 +9,7 @@ def test_mq_calculation():
     assert size == ncities, "There were not messages in the queue: %d"%(size)
 
     ndone = mq_client.process_cities(testing_prefix=PREFIX, testing=True)
-    assert ndone == ncities, "Did not process fake cities"
+    assert ndone == ncities, "Did not process fake cities" + str(ndone)
 
     results = mq_process_results.process_results(prefix=PREFIX, testing=True)
     assert len(results) == ncities, "ncities results not processed"
