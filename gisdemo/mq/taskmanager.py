@@ -4,9 +4,9 @@ import socket
 import sys
 import time
 
-_sites={0:"undefined.location", 1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu", 5:"u-tokyo.ac.jp"}
+_sites={0:"undefined.location", 1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu", 5:"u-tokyo.ac.jp", 6:"usb.br"}
 
-_ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3], '165.124':_sites[4], '192.168':_sites[5]}
+_ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3], '165.124':_sites[4], '192.168':_sites[5], '200.144':_sites[6]}
 
 _decided_site_name = None
 
