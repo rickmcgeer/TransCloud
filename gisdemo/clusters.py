@@ -54,6 +54,15 @@ tmp_dirs = {"cs.UVic.CA":"/tmp/",
             "usp.br":"/tmp",
             "undefined.location":'/tmp/'}
 
+user_ids = {"cs.UVic.CA":"gis",
+            "uvic.trans-cloud.net":"gis6",
+            "emulab.net":"gis1",
+            ".ibbt.be":"gis",
+            "northwestern.edu":"gis",
+            "u-tokyo.ac.jp":"gis4",
+            "usp.br":"gis2",
+            "undefined.location":'gis'}
+
 
 class Cluster(object):
     def __init__(self, **kwds):
@@ -102,6 +111,18 @@ def get_cluster_tmp_location():
     
 def test_gettmp():
     assert get_cluster_tmp_location() in ['/mnt','/tmp/']
+
+def get_cluster_user_id():
+    cluster_name = taskmanager.get_local_site_name()
+    assert cluster_name in tmp_dirs
+    return 'system:' + user_ids[cluster_name]
+
+    
+def test_getuserid():
+    assert get_cluster_user_id() in ['system:gis', 'system:gis1', 'system:gis2', 'system:gis3', 'system:gis4',
+                                     'system:gis6']
+
+
 
 def test_clusters():
     uvic.validate()
