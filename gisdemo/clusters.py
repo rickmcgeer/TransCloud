@@ -63,6 +63,15 @@ user_ids = {"cs.UVic.CA":"gis",
             "usp.br":"gis2",
             "undefined.location":'gis'}
 
+swift_proxies = {"cs.UVic.CA":"165.124.51.144",
+            "uvic.trans-cloud.net":"10.10.6.3",
+            "emulab.net":"10.10.1.3",
+            ".ibbt.be":"165.124.51.144",
+            "northwestern.edu":"10.10.1.3",
+            "u-tokyo.ac.jp":"10.10.4.3",
+            "usp.br":"10.10.2.3",
+            "undefined.location":'165.124.51.144'}
+
 
 class Cluster(object):
     def __init__(self, **kwds):
@@ -122,6 +131,14 @@ def test_getuserid():
     assert get_cluster_user_id() in ['system:gis', 'system:gis1', 'system:gis2', 'system:gis3', 'system:gis4',
                                      'system:gis6']
 
+def get_swift_proxy():
+    cluster_name = taskmanager.get_local_site_name()
+    assert cluster_name in swift_proxies
+    return 'system:' + swift_proxies[cluster_name]
+
+    
+def test_swift_proxy():
+    assert get_cluster_swift_proxy() in ['165.124.51.144', '10.10.1.3', '10.10.2.3', '10.10.3.3', '10.10.4.3', '10.10.5.3', '10.10.6.3']
 
 
 def test_clusters():
