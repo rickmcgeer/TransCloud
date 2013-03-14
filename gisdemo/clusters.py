@@ -30,11 +30,19 @@ nw4 = "cmatthew@pc5.instageni.northwestern.edu"
 
 nw_cluster = [nw1, nw2, nw3, nw4]
 
+usp1 = "cmatthew@pc23.emulab.larc.usp.br"
+#usp2 = "cmatthew@pc22.emulab.larc.usp.br"
+usp3 = "cmatthew@pc21.emulab.larc.usp.br"
+usp4 = "cmatthew@pc20.emulab.larc.usp.br"
+usp5 = "cmatthew@pc24.emulab.larc.usp.br"
+
+usp_cluster = [usp1,  usp3, usp4, usp5]
+
 jp1 = "root@192.168.251.10"
 
 jp_cluster = [jp1]
 
-all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster, nw_cluster, jp_cluster] 
+all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster, nw_cluster, jp_cluster, usp_cluster] 
 
 # tmp dirs are different at different clusters. 
 tmp_dirs = {"cs.UVic.CA":"/tmp/",
@@ -43,6 +51,7 @@ tmp_dirs = {"cs.UVic.CA":"/tmp/",
             ".ibbt.be":"/mnt/",
             "northwestern.edu":"/mnt/",
             "u-tokyo.ac.jp":"/tmp/",
+            "usp.br":"/tmp",
             "undefined.location":'/tmp/'}
 
 
