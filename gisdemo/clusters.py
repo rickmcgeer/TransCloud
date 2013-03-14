@@ -131,10 +131,10 @@ def test_getuserid():
     assert get_cluster_user_id() in ['system:gis', 'system:gis1', 'system:gis2', 'system:gis3', 'system:gis4',
                                      'system:gis6']
 
-def get_swift_proxy():
+def get_cluster_swift_proxy():
     cluster_name = taskmanager.get_local_site_name()
     assert cluster_name in swift_proxies
-    return 'system:' + swift_proxies[cluster_name]
+    return  swift_proxies[cluster_name]
 
     
 def test_swift_proxy():
