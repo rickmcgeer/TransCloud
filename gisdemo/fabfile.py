@@ -13,11 +13,12 @@ env.roledefs = {
     'brussels':brussels_cluster,
     'uvic':uvic_cluster,
     'nw':nw_cluster,
+    'usp':usp_cluster,
     'emulab':emulab_cluster,
     'server':[sebulba],
     'db_server':[nw1],
     'web_server':[nw1],
-    'workers':[sebulba], #uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster,
+    'workers':[sebulba], #uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
 }
