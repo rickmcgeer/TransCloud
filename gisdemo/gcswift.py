@@ -59,7 +59,7 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
       signal.signal(signal.SIGALRM, alarm_handler)
       signal.alarm(3*60)  # we will timeout after 3 minutes 
 
-      p.wait()
+      (out, err) = p.communicate()
       signal.alarm(0)  # reset the alarm
     except Alarm:
       os.killpg(p.pid, signal.SIGTERM)
@@ -67,7 +67,7 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
       #  (should really have our own exception but fk it)
       raise SwiftFailure("Timeout "+operation+"ing swift images", command)
   else:
-      p.wait()
+      (out, err) = p.communicate()
 
   return p
 
@@ -353,8 +353,3 @@ class FileManager:
         self.file_cache.cleanup_cache()
         shutil.rmtree(self.tmp_file_dir, onerror=errorhandler)
  
-
-    
-        
-        
-        
