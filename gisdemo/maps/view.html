@@ -40,7 +40,7 @@ var urls = {
     geoserver_url: boss_node + ":8080/geoserver",
 };
 
-var city_image_repository_url = 'http://142.104.195.225:8080/v1/AUTH_system/completed/';
+var city_image_repository_url = 'http://165.124.51.144:8080/v1/AUTH_system/completed/';
 
 var styles = new OpenLayers.StyleMap({
                 "default": new OpenLayers.Style(null, {
@@ -347,7 +347,7 @@ map.addControl(new OpenLayers.Control.Navigation());
 		    var restOfString = event.text.substr(cityIndex + 7);
 		    var startOfCity= restOfString.indexOf("<td>");
 		    var cityNameString = restOfString.substr(startOfCity+ 4);
-		    var endOf= cityNameString.indexOf('<');
+		    var endOfName= cityNameString.indexOf('<');
 		    var city= cityNameString.substr(0, endOfName);
 		    var greenValueString = cityNameString.substr(endOfName);
 		    var startOfValueIndex = greenValueString.indexOf("<td>");
