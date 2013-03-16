@@ -3,7 +3,7 @@ from fabric.contrib.console import confirm
 import os
 import time
 from clusters import *
-env.use_ssh_config=True
+env.use_ssh_config=False
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -11,6 +11,7 @@ ZIPFILE= 'my_project.tar.gz'
 
 env.roledefs = {
     'brussels':brussels_cluster,
+    'ks':ks_cluster,
     'uvic':uvic_cluster,
     'nw':nw_cluster,
     'usp':usp_cluster,
@@ -34,7 +35,10 @@ env.passwords = {grack06:'cleb020',
                  sebulba:'enec869',
                  br01:'',
                  br02:'',
-                 br03:''}
+                 br03:'',
+                 ks1:'gr33nc!ty',
+                 ks2:'gr33nc!ty',
+                 ks3:'gr33nc!ty'}
 
 testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
 
@@ -88,13 +92,13 @@ def deploy():
         sudo('tar xzf /tmp/'+ZIPFILE)
     sudo('chmod -R 777 '+deploy_path)
 
-@hosts([sebulba])
-#@roles('nw')
+#@hosts([ks])
+@roles('nw')
 def test_everywhere():
     pack()
     deploy()
     with cd(deploy_path):
-        run('py.test '+ testable_files)
+        run('py.test -s '+ testable_files)
 
 @roles('workers')
 def clean_up_gdal():
@@ -129,8 +133,7 @@ def clean_up_tmps():
         sudo('rm -rf swift_file_cache')
 
 @parallel
-#@roles('nw')
-@hosts(["root@pc515.emulab.net"])
+@roles('ks')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
