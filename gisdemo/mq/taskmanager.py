@@ -50,6 +50,7 @@ def  get_local_site_name():
 
 
 def test_getsitename():
+    print "get sitename"
     site = get_local_site_name()
     assert site != "", "sitename missing: %s"%(site)
     assert len(site) > 4, "site name very short!"
@@ -131,6 +132,7 @@ class TaskClient():
 
 
     def blocking_get_task(self, testing=False, threshold=640):
+        assert False, "This is buggy. Ut shoud not be used."
         delay = 10
         new_job = None
         jobid = None
@@ -214,9 +216,9 @@ def test_TaskManager():
     assert new_result['result'][0] == 0.7, "Results3 missing in result message"
     result_client.report_done(resultid)
 
-    t1 = time.time()
-    r = result_client.blocking_get_task(testing=True)
-    t2 = time.time()
+    # t1 = time.time()
+    # #r = result_client.blocking_get_task(testing=True)
+    # t2 = time.time()
 
-    assert 69 <= t2-t1 <= 71, "Blocking test should die after 10+20+40 seconds."
-    assert r == None, "Was not expecting something back."
+    # assert 69 <= t2-t1 <= 71, "Blocking test should die after 10+20+40 seconds."
+    # assert r == None, "Was not expecting something back."
