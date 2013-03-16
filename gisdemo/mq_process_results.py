@@ -37,10 +37,8 @@ def process_results(prefix="", testing=False, blocking=True):
         while(True):
             try:
                 print "Getting new task:"
-                if blocking:
-                        new_job, jobid = client.blocking_get_task()
-                else:
-                        new_job, jobid = client.get_task()
+
+		new_job, jobid = client.get_task()
                 
                 if new_job == None:
                         return submitted

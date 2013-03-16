@@ -22,7 +22,7 @@ def process_cities(testing_prefix="", testing=False):
     while(True):
         results = client.get_task()
 
-        if results == None:
+        if results == None or results == (None,None):
             return ndone
 
         new_job, jobid = results
