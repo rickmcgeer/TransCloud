@@ -61,7 +61,7 @@ def populate_cities(ncities, testing_prefix="", testing=False):
             else:
                 clust = decide_cluster(i, ncities)
                 print ">> Enqueue", city[1], "on", taskmanager._sites[clust]
-                manager.add_task({'task':'greencities','data':job}, )
+                manager.add_task({'task':'greencities','data':job}, clust )
               
     return manager.get_size()
 
@@ -69,7 +69,7 @@ def populate_cities(ncities, testing_prefix="", testing=False):
 def decide_cluster(city, ncities):
     """Given a map cluster, get a machine cluster number.  Basically schedule map clusters to machine clusters."""
     batch = city/4
-    clus = batch % len(taskmanager._sites)
+    clus = batch % (len(taskmanager._sites) -1)
     
     return clus + 1
 
