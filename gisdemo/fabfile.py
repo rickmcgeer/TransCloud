@@ -133,7 +133,7 @@ def clean_up_tmps():
         sudo('rm -rf swift_file_cache')
 
 @parallel
-@roles('emulab')
+@roles('usp')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
