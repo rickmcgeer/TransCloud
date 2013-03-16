@@ -59,15 +59,15 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
       signal.signal(signal.SIGALRM, alarm_handler)
       signal.alarm(3*60)  # we will timeout after 3 minutes 
 
-      (out, err) = p.communicate()
+      #(out, err) = p.communicate()
       signal.alarm(0)  # reset the alarm
     except Alarm:
       os.killpg(p.pid, signal.SIGTERM)
       # raise an assertion so we can continue execution after 
       #  (should really have our own exception but fk it)
       raise SwiftFailure("Timeout "+operation+"ing swift images", command)
-  else:
-      (out, err) = p.communicate()
+  #else:
+      #(out, err) = p.communicate()
 
   return p
 
