@@ -391,8 +391,9 @@ class GrassLandsat:
         log("creating... " + allbandsTIF +  " with "+ mergeCmd)
 
         p = Popen(mergeCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        p.wait()
-        output = p.stdout.read()
+        ## p.wait()
+        ## output = p.stdout.read()
+        output, err = p.communicate()
         assert p.returncode == 0, "Creation of merged bands Failed"
         log(output)
 
@@ -404,8 +405,9 @@ class GrassLandsat:
         log("creating... " +  allbandsPNG + " with " + translateCmd)
 
         p = Popen(translateCmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        p.wait()
-        output = p.stdout.read()
+        ## p.wait()
+        ## output = p.stdout.read()
+        output, err = p.communicate()
         assert p.returncode == 0, "Creation of png  Failed"
         log(output)
 
@@ -422,9 +424,9 @@ class GrassLandsat:
         cwd = os.getcwd()
         os.chdir(self.file_manager.tmp_file_dir)
         # print "Current working directory is " + os.getcwd()
-        p = gcswift.do_swift_command(settings.SWIFT_PROXY2, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
+        p, out, err = gcswift.do_swift_command(settings.SWIFT_PROXY2, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         log("Swift finished with ", p.returncode)
-        assert p.returncode == 0, "Failed with %s"%(p.communicate()[1])
+        assert p.returncode == 0, "Failed with %s"%(err)
         log("Complete!")
         os.chdir(cwd)
         

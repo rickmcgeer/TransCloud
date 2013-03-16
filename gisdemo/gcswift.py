@@ -69,7 +69,7 @@ def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
   #else:
       #(out, err) = p.communicate()
 
-  return p
+  return p, out, err
 
 
 
@@ -80,19 +80,19 @@ def swift(operation, bucket, *args):
   """
   # if the image is migging, upload it
   cache = False
-  process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), \
+  process, out, err = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), \
                                  operation, bucket, True, *args)
   if process.returncode != 0:
-    message = process.communicate()[1]
+    message = err
     print "Warning: Failed on swift host %s with %s, trying on %s" % \
         (settings.SWIFT_PROXY1, message, settings.SWIFT_PROXY2)
     if operation == "download" and "Object" in message and "not found" in message:
         cache = True
 
 
-    process = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), operation, bucket, True, *args)
+    process, out, err = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), operation, bucket, True, *args)
     if process.returncode != 0:
-        message = process.communicate()[1]
+        message = err
         if operation == "download" and "Object" in message and "not found" in message:
             raise MissingSwiftFile(message, _to_proxy_url(settings.SWIFT_PROXY2))
         else:
