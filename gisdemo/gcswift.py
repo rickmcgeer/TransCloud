@@ -99,7 +99,7 @@ def swift(operation, bucket, *args):
             raise SwiftFailure(message, _to_proxy_url(settings.SWIFT_PROXY2))
 
 def test_gcswift():
-    os.chdir("/tmp/")
+    os.chdir(settings.IMG_TMP)
     fn = 'p104r015_5dt20070726.SR.b03.tif.gz'
     try:
         swift("download", "p104r015", fn, fn)
@@ -116,6 +116,18 @@ def test_gcswift():
     finally:
         os.unlink(fn)
         os.unlink(fn+'.md5')
+
+
+def test_diskspace():
+    """Check that we have about the right amount of free disk space"""
+    os.chdir(settings.IMG_TMP)
+    fil = open("big_tmp_file", 'w')
+
+    for i in xrange(0, 1024*1024*1024*10, 4096):
+        fil.write('x'*4096)
+    fil.close()
+    os.unlink("big_tmp_file")
+    
 
 def test_all_images():
     """Check that every path has at least one row bucket"""
