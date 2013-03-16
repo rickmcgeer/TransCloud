@@ -19,7 +19,7 @@ env.roledefs = {
     'server':[sebulba],
     'db_server':[nw1],
     'web_server':[nw1],
-    'workers':[sebulba], #uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster,
+    'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
 }
@@ -69,7 +69,7 @@ def pack():
         local('find . -name "__pycache__" -exec rm -rf {} \;')
         local('rm -rf green.log')
     local('rm -rf /tmp/'+ZIPFILE)
-    local('tar czf /tmp/'+ZIPFILE+' .')
+    local('tar czf /tmp/'+ZIPFILE+' \'--exclude=clean_world.sql.bz2\'  .')
 
 # where to install on the remote machine
 deploy_path='/usr/local/src/greencities/'
@@ -133,7 +133,7 @@ def clean_up_tmps():
         sudo('rm -rf swift_file_cache')
 
 @parallel
-@roles('ks')
+@roles('emulab')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
@@ -192,10 +192,10 @@ def run_start():
         run('rm -rf /tmp/daemon-calc.pid') 
         run('rm -rf /tmp/calc_daemon.log')
     with cd(deploy_path):
-        run('python mq_calc.py -c 5')
-        with settings(warn_only=True):
-            sudo('rm -rf green.log')
-        run('python calc_daemon.py start')
+        run('python mq_calc.py -c 1')
+	# with settings(warn_only=True):
+		#sudo('rm -rf green.log')
+	    #run('python calc_daemon.py start')
 
         
 @parallel
@@ -209,10 +209,9 @@ def run_workers():
 
 @roles('server')
 def run_results():
+    deploy()
     with cd(deploy_path):
-        run('python calc_daemon.py restart')
-        time.sleep(10)
-        run('python calc_daemon.py stop')
+        run('python mq_process_results.py')
         get('/tmp/calc_daemon.log', 'calc_daemon.log')
         
 
