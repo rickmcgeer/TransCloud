@@ -1,5 +1,8 @@
 from fabric.api import *
 from fabric.contrib.console import confirm
+from fabric.contrib.files import exists
+from fabric.utils import abort
+
 import os
 import time
 from clusters import *
@@ -16,10 +19,10 @@ env.roledefs = {
     'nw':nw_cluster,
     'usp':usp_cluster,
     'emulab':emulab_cluster,
-    'server':[sebulba],
+    'server':[grack06],
     'db_server':[nw1],
     'web_server':[nw1],
-    'workers':[sebulba], #uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster,
+    'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
 }
@@ -69,7 +72,7 @@ def pack():
         local('find . -name "__pycache__" -exec rm -rf {} \;')
         local('rm -rf green.log')
     local('rm -rf /tmp/'+ZIPFILE)
-    local('tar czf /tmp/'+ZIPFILE+' .')
+    local('tar czf /tmp/'+ZIPFILE+' \'--exclude=clean_world.sql.bz2\'  .')
 
 # where to install on the remote machine
 deploy_path='/usr/local/src/greencities/'
@@ -95,10 +98,12 @@ def deploy():
 #@hosts([ks])
 @roles('nw')
 def test_everywhere():
+    execute(check_lock)
     pack()
     deploy()
     with cd(deploy_path):
         run('py.test -s '+ testable_files)
+    execute(remove_lock)
 
 @roles('workers')
 def clean_up_gdal():
@@ -133,7 +138,7 @@ def clean_up_tmps():
         sudo('rm -rf swift_file_cache')
 
 @parallel
-@roles('ks')
+@roles('usp')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
@@ -162,6 +167,25 @@ def server_deploy():
         sudo('createuser -S -R -D -P uvicgis gis', user='postgres')
         sudo('psql ' + database + ' -f ' + deploy_path +'/clean_world.sql', user='postgres')
 
+@runs_once
+def make_lockfile():
+	local("hostname > lockfile")
+	local("date >> lockfile")
+	local("cat lockfile")
+
+
+@roles('server')
+def check_lock():
+	make_lockfile()
+	if exists("/tmp/lockfile", use_sudo=False, verbose=True):
+		run("cat /tmp/lockfile")
+		abort("The experiment is locked, talk to the locker or delete the lockfile")
+		
+	else:
+		put("lockfile", "/tmp/lockfile")
+@roles('server')
+def remove_lock():
+	run("rm -rf /tmp/lockfile")
         
 @roles('web_server')
 def web_server_deploy():
@@ -184,23 +208,28 @@ def web_server_deploy():
 
 
 @roles('server')
-def run_start():
-    deploy()
-    with settings(warn_only=True):
-        # the daemon pid file, to make sure it does not linger
-        # from a previous run.
-        run('rm -rf /tmp/daemon-calc.pid') 
-        run('rm -rf /tmp/calc_daemon.log')
-    with cd(deploy_path):
-        run('python mq_calc.py -c 5')
-        with settings(warn_only=True):
-            sudo('rm -rf green.log')
-        run('python calc_daemon.py start')
+def run_start(ncities='10'):
+    """Run the calculation on ncities*clusters cities.
+    Lock the calculation, then load the cities from database and
+    put them in the message queues.
 
+    Should only need to be run once per run.
+
+    """
+    execute(check_lock)
+    deploy()
+
+    with cd(deploy_path):
+        run('python mq_calc.py -c '+ncities)
+
+    
         
-@parallel
+
 @roles('workers')
+@parallel
 def run_workers():
+    with settings(warn_only=True):
+	    sudo('chmod 777 /mnt/') # These seem to be set wrong once and a while. Set it back
     deploy()
     with cd(deploy_path):
         with settings(warn_only=True):
@@ -209,21 +238,25 @@ def run_workers():
 
 @roles('server')
 def run_results():
+    deploy()
     with cd(deploy_path):
-        run('python calc_daemon.py restart')
-        time.sleep(10)
-        run('python calc_daemon.py stop')
-        get('/tmp/calc_daemon.log', 'calc_daemon.log')
+	print "Having a quick nap while we wait for messages to arrive in the queues"
+	time.sleep(60) # It seems results are not always in the queue when we start right after
+        run('python mq_process_results.py')
         
+    execute(remove_lock)
+
 
 @hosts('sebulba')
 def update_to_swift():
+	assert False, "Not used."
         with cd(deploy_path):
             run('python send_swift_images.py')
 
 
 @roles('jp-relay')
 def deploy_jp():
+    """Japan is a special case which needs a relay."""
     deploy()
     with cd(deploy_path):
             run('fab deploy_jp_node')
@@ -231,12 +264,15 @@ def deploy_jp():
 
 @hosts('root@192.168.251.10')
 def deploy_jp_node():
+    """this script gets copied to relay, then this function gets executed there."""
     deploy()
     with cd(deploy_path):
             run('python mq_client.py')
     
 
-def all():
+def all(ncities=10):
+
     execute(run_start)
-    execute(run_workers)
+    execute(run_workers)(ncities=10)
     execute(run_results)
+

@@ -63,7 +63,7 @@ tmp_dirs = {"cs.UVic.CA":"/tmp/",
             ".ibbt.be":"/mnt/",
             "northwestern.edu":"/mnt/",
             "u-tokyo.ac.jp":"/tmp/",
-            "usp.br":"/tmp/",
+            "usp.br":"/mnt/",
             "german-lab.de":"/tmp/",
             "undefined.location":'/tmp/'}
 

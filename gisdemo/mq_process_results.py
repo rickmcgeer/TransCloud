@@ -29,6 +29,7 @@ def process_results(prefix="", testing=False, blocking=True):
     error_log = open("/tmp/error.log", 'w')
     fails = 0
     passes = 0
+
     try:
         client = taskmanager.TaskClient(queue=prefix+taskmanager.RESULT_QUEUE_NAME)
 	if not testing:
@@ -37,10 +38,8 @@ def process_results(prefix="", testing=False, blocking=True):
         while(True):
             try:
                 print "Getting new task:"
-                if blocking:
-                        new_job, jobid = client.blocking_get_task()
-                else:
-                        new_job, jobid = client.get_task()
+
+		new_job, jobid = client.get_task()
                 
                 if new_job == None:
                         return submitted
@@ -56,7 +55,7 @@ def process_results(prefix="", testing=False, blocking=True):
 			name = new_job.get('name', "Missing Name")
 			err_msg = new_job.get('message', "There was no message passed back.")
                         message =  str(result) + " on " + str(name) + ", failed with: " + str(err_msg) + "\n"
-                        print message,pwd
+                        print message
 			fails += 1
                         error_log.write(message)
                         submitted.append(new_job)

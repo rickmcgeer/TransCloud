@@ -4,7 +4,7 @@ import socket
 import sys
 import time
 
-_sites={0:"undefined.location", 1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu", 5:"u-tokyo.ac.jp", 6:"usb.br", 7:"german-lab.de"}
+_sites={0:"undefined.location", 1:"cs.UVic.CA", 2:"emulab.net", 3:".ibbt.be",4:"northwestern.edu", 5:"u-tokyo.ac.jp", 6:"usp.br", 7:"german-lab.de"}
 
 _ip_to_site={'142.104':_sites[1], '155.98':_sites[2], '10.2':_sites[3], '165.124':_sites[4], '192.168':_sites[5], '200.144':_sites[6],'131.246':_sites[7] }
 
@@ -82,7 +82,7 @@ class TaskManager():
         
     def add_task(self, jobobj, site=None):
         site = self._get_site(site)
-        mq.push_job( json.dumps(jobobj), self.myqueue(site), 60*10)
+        mq.push_job( json.dumps(jobobj), self.myqueue(site), 60*25)
 
     def clear(self, site):
         site = self._get_site(site)
@@ -158,7 +158,7 @@ class TaskClient():
         if result != None:
             assert self.queue != RESULT_QUEUE_NAME, "Putting a message on the done queue is not allowed!"
             result_str = json.dumps(result)
-            mq.push_job(result_str, self.prefix+RESULT_QUEUE_NAME)
+            mq.push_job(result_str, self.prefix+RESULT_QUEUE_NAME, timeout=60)
 
 
 def test_TaskManager():
