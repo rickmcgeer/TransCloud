@@ -25,6 +25,7 @@ emu1='cmatthew@pc324.emulab.net'
 emu2='cmatthew@pc280.emulab.net'
 emu3='cmatthew@pc288.emulab.net'
 emu4='cmatthew@pc311.emulab.net'
+
 emulab_cluster =  [emu1, emu2, emu3, emu4]
 
 nw1 = "cmatthew@pc2.instageni.northwestern.edu"
@@ -32,7 +33,7 @@ nw2 = "cmatthew@pc3.instageni.northwestern.edu"
 nw3 = "cmatthew@pc4.instageni.northwestern.edu"
 nw4 = "cmatthew@pc5.instageni.northwestern.edu"
 
-nw_cluster = [nw1, nw2, nw3, nw4]
+nw_cluster = [nw2, nw3, nw4]
 
 usp1 = "cmatthew@pc23.emulab.larc.usp.br"
 #usp2 = "cmatthew@pc22.emulab.larc.usp.br"
