@@ -17,10 +17,14 @@ sebulba = 'cmatthew@sebulba.cs.uvic.ca'
 uvic_cluster =  [sebulba,grack06,grack05,grack04,grack03,grack02,grack01]
 
 
-emu1='cmatthew@pc283.emulab.net'
-emu2='cmatthew@pc320.emulab.net'
-emu3='cmatthew@pc297.emulab.net'
-emu4='cmatthew@pc303.emulab.net'
+# emu1='cmatthew@pc283.emulab.net'
+# emu2='cmatthew@pc320.emulab.net'
+# emu3='cmatthew@pc297.emulab.net'
+# emu4='cmatthew@pc303.emulab.net'
+emu1='cmatthew@pc324.emulab.net'
+emu2='cmatthew@pc280.emulab.net'
+emu3='cmatthew@pc288.emulab.net'
+emu4='cmatthew@pc311.emulab.net'
 emulab_cluster =  [emu1, emu2, emu3, emu4]
 
 nw1 = "cmatthew@pc2.instageni.northwestern.edu"
