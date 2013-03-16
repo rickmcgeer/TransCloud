@@ -47,6 +47,13 @@ jp1 = "root@192.168.251.10"
 
 jp_cluster = [jp1]
 
+ks1 = "toor@glab035.e4.ukl.german-lab.de"
+ks2 = "toor@glab037.e4.ukl.german-lab.de"
+ks3 = "toor@glab038.e4.ukl.german-lab.de"
+
+ks_cluster = [ks1, ks2, ks3]
+
+
 all_clusters = [brussels_cluster, uvic_cluster, emulab_cluster, nw_cluster, jp_cluster, usp_cluster] 
 
 # tmp dirs are different at different clusters. 
@@ -56,7 +63,8 @@ tmp_dirs = {"cs.UVic.CA":"/tmp/",
             ".ibbt.be":"/mnt/",
             "northwestern.edu":"/mnt/",
             "u-tokyo.ac.jp":"/tmp/",
-            "usp.br":"/tmp",
+            "usp.br":"/tmp/",
+            "german-lab.de":"/tmp/",
             "undefined.location":'/tmp/'}
 
 user_ids = {"cs.UVic.CA":"gis",
@@ -66,6 +74,7 @@ user_ids = {"cs.UVic.CA":"gis",
             "northwestern.edu":"gis",
             "u-tokyo.ac.jp":"gis4",
             "usp.br":"gis2",
+            "german-lab.de":"gis",
             "undefined.location":'gis'}
 
 swift_proxies = {"cs.UVic.CA":"165.124.51.144",
@@ -75,6 +84,7 @@ swift_proxies = {"cs.UVic.CA":"165.124.51.144",
             "northwestern.edu":"10.10.1.3",
             "u-tokyo.ac.jp":"10.10.4.3",
             "usp.br":"10.10.2.3",
+            "german-lab.de":"165.124.51.144",
             "undefined.location":'165.124.51.144'}
 
 
