@@ -129,7 +129,7 @@ sys.path.insert(0, './mq/')
 import taskmanager
 def get_cluster_tmp_location():
     cluster_name = taskmanager.get_local_site_name()
-    assert cluster_name in tmp_dirs
+    assert cluster_name in tmp_dirs, "%s not in tmp_dirs" % cluster_name
     return tmp_dirs[cluster_name]
 
     
@@ -138,7 +138,7 @@ def test_gettmp():
 
 def get_cluster_user_id():
     cluster_name = taskmanager.get_local_site_name()
-    assert cluster_name in tmp_dirs
+    assert cluster_name in user_ids, "%s not in user_ids" % cluster_name
     return 'system:' + user_ids[cluster_name]
 
     
@@ -148,7 +148,7 @@ def test_getuserid():
 
 def get_cluster_swift_proxy():
     cluster_name = taskmanager.get_local_site_name()
-    assert cluster_name in swift_proxies
+    assert cluster_name in swift_proxies, "%s not in swift_proxies" % cluster_name
     return  swift_proxies[cluster_name]
 
     
