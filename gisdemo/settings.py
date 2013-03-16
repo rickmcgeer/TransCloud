@@ -15,7 +15,7 @@ SWIFT_PNG_BUCKET = "completed"
 DEFAULT_SWIFT_HOST = "pc5.instageni.northwestern.edu"
 
 # Try your best to keep alive.
-PRODUCTION_MODE=False
+PRODUCTION_MODE=True
 
 IMG_TMP= clusters.get_cluster_tmp_location()
 IMG_EXT = ".png"

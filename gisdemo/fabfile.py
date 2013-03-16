@@ -19,7 +19,7 @@ env.roledefs = {
     'nw':nw_cluster,
     'usp':usp_cluster,
     'emulab':emulab_cluster,
-    'server':[sebulba],
+    'server':[grack06],
     'db_server':[nw1],
     'web_server':[nw1],
     'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
@@ -208,26 +208,28 @@ def web_server_deploy():
 
 
 @roles('server')
-def run_start():
+def run_start(ncities='10'):
+    """Run the calculation on ncities*clusters cities.
+    Lock the calculation, then load the cities from database and
+    put them in the message queues.
+
+    Should only need to be run once per run.
+
+    """
     execute(check_lock)
     deploy()
-    with settings(warn_only=True):
-        # the daemon pid file, to make sure it does not linger
-        # from a previous run.
-        run('rm -rf /tmp/daemon-calc.pid') 
-        run('rm -rf /tmp/calc_daemon.log')
+
     with cd(deploy_path):
-        run('python mq_calc.py -c 100')
-	# with settings(warn_only=True):
-		#sudo('rm -rf green.log')
-	    #run('python calc_daemon.py start')
+        run('python mq_calc.py -c '+ncities)
+
     
         
+
+@roles('workers')
 @parallel
-@roles('uvic')
 def run_workers():
     with settings(warn_only=True):
-	sudo('chmod 777 /mnt/')
+	    sudo('chmod 777 /mnt/') # These seem to be set wrong once and a while. Set it back
     deploy()
     with cd(deploy_path):
         with settings(warn_only=True):
@@ -238,18 +240,23 @@ def run_workers():
 def run_results():
     deploy()
     with cd(deploy_path):
+	print "Having a quick nap while we wait for messages to arrive in the queues"
+	time.sleep(60) # It seems results are not always in the queue when we start right after
         run('python mq_process_results.py')
-        get('/tmp/calc_daemon.log', 'calc_daemon.log')
+        
     execute(remove_lock)
+
 
 @hosts('sebulba')
 def update_to_swift():
+	assert False, "Not used."
         with cd(deploy_path):
             run('python send_swift_images.py')
 
 
 @roles('jp-relay')
 def deploy_jp():
+    """Japan is a special case which needs a relay."""
     deploy()
     with cd(deploy_path):
             run('fab deploy_jp_node')
@@ -257,14 +264,15 @@ def deploy_jp():
 
 @hosts('root@192.168.251.10')
 def deploy_jp_node():
+    """this script gets copied to relay, then this function gets executed there."""
     deploy()
     with cd(deploy_path):
             run('python mq_client.py')
     
 
-def all():
+def all(ncities=10):
 
     execute(run_start)
-    execute(run_workers)
+    execute(run_workers)(ncities=10)
     execute(run_results)
 

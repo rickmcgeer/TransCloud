@@ -29,6 +29,7 @@ def process_results(prefix="", testing=False, blocking=True):
     error_log = open("/tmp/error.log", 'w')
     fails = 0
     passes = 0
+
     try:
         client = taskmanager.TaskClient(queue=prefix+taskmanager.RESULT_QUEUE_NAME)
 	if not testing:

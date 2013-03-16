@@ -82,7 +82,7 @@ class TaskManager():
         
     def add_task(self, jobobj, site=None):
         site = self._get_site(site)
-        mq.push_job( json.dumps(jobobj), self.myqueue(site), 60*10)
+        mq.push_job( json.dumps(jobobj), self.myqueue(site), 60*25)
 
     def clear(self, site):
         site = self._get_site(site)
