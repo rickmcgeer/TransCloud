@@ -1,5 +1,8 @@
 from fabric.api import *
 from fabric.contrib.console import confirm
+from fabric.contrib.files import exists
+from fabric.utils import abort
+
 import os
 import time
 from clusters import *
@@ -95,10 +98,12 @@ def deploy():
 #@hosts([ks])
 @roles('nw')
 def test_everywhere():
+    execute(check_lock)
     pack()
     deploy()
     with cd(deploy_path):
         run('py.test -s '+ testable_files)
+    execute(remove_lock)
 
 @roles('workers')
 def clean_up_gdal():
@@ -162,6 +167,25 @@ def server_deploy():
         sudo('createuser -S -R -D -P uvicgis gis', user='postgres')
         sudo('psql ' + database + ' -f ' + deploy_path +'/clean_world.sql', user='postgres')
 
+@runs_once
+def make_lockfile():
+	local("hostname > lockfile")
+	local("date >> lockfile")
+	local("cat lockfile")
+
+
+@roles('server')
+def check_lock():
+	make_lockfile()
+	if exists("/tmp/lockfile", use_sudo=False, verbose=True):
+		run("cat /tmp/lockfile")
+		abort("The experiment is locked, talk to the locker or delete the lockfile")
+		
+	else:
+		put("lockfile", "/tmp/lockfile")
+@roles('server')
+def remove_lock():
+	run("rm -rf /tmp/lockfile")
         
 @roles('web_server')
 def web_server_deploy():
@@ -185,6 +209,7 @@ def web_server_deploy():
 
 @roles('server')
 def run_start():
+    execute(check_lock)
     deploy()
     with settings(warn_only=True):
         # the daemon pid file, to make sure it does not linger
@@ -192,15 +217,17 @@ def run_start():
         run('rm -rf /tmp/daemon-calc.pid') 
         run('rm -rf /tmp/calc_daemon.log')
     with cd(deploy_path):
-        run('python mq_calc.py -c 1')
+        run('python mq_calc.py -c 100')
 	# with settings(warn_only=True):
 		#sudo('rm -rf green.log')
 	    #run('python calc_daemon.py start')
-
+    
         
 @parallel
-@roles('workers')
+@roles('uvic')
 def run_workers():
+    with settings(warn_only=True):
+	sudo('chmod 777 /mnt/')
     deploy()
     with cd(deploy_path):
         with settings(warn_only=True):
@@ -213,7 +240,7 @@ def run_results():
     with cd(deploy_path):
         run('python mq_process_results.py')
         get('/tmp/calc_daemon.log', 'calc_daemon.log')
-        
+    execute(remove_lock)
 
 @hosts('sebulba')
 def update_to_swift():
@@ -236,6 +263,8 @@ def deploy_jp_node():
     
 
 def all():
+
     execute(run_start)
     execute(run_workers)
     execute(run_results)
+
