@@ -134,7 +134,7 @@ def get_cluster_tmp_location():
 
     
 def test_gettmp():
-    assert get_cluster_tmp_location() in ['/mnt','/tmp/']
+    assert get_cluster_tmp_location() in ['/mnt/','/tmp/']
 
 def get_cluster_user_id():
     cluster_name = taskmanager.get_local_site_name()
