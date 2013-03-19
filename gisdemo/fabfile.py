@@ -23,8 +23,9 @@ env.roledefs = {
     'db_server':[nw1],
     'web_server':[nw1],
     #'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
-    'workers':uvic_cluster + emulab_cluster + nw_cluster + usp_cluster + ks_cluster,
-    'jp-relay':["root@pc515.emulab.net"],
+    'workers':uvic_cluster + emulab_cluster + nw_cluster + usp_cluster + ks_cluster
+    'jp-relay':["shu@pc229.emulab.net"],
+
     'sebulba':[sebulba]
 }
 
@@ -44,7 +45,9 @@ env.passwords = {grack06:'cleb020',
                  br03:'',
                  ks1:'gr33nc!ty',
                  ks2:'gr33nc!ty',
-                 ks3:'gr33nc!ty'}
+                 ks3:'gr33nc!ty',
+                 "shu@pc229.emulab.net":'nakaolab22664'
+}
 
 #testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
 testable_files = "greenspace.py"
@@ -263,7 +266,7 @@ def deploy_jp():
     """Japan is a special case which needs a relay."""
     deploy()
     with cd(deploy_path):
-            run('fab deploy_jp_node')
+            run('scp /tmp/my_project.tar.gz some_user@some_ip:/tmp/my_project.tar.gz')
 
 
 @hosts('root@192.168.251.10')

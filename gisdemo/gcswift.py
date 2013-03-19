@@ -10,6 +10,7 @@ from subprocess import check_call
 import tempfile
 import stat
 
+
 class SwiftFailure(Exception):
     def __init__(self, message, swift_url):
         # Call the base class constructor with the parameters it needs
@@ -209,6 +210,13 @@ class FileCache:
             print "Failed to change mode of " + self.directory + " to 777"
         self.file_whitelist = []
 
+    def download_special_case_tokyo(self, bucket, file_name):
+        special_tokyo_command = ""
+        p = subprocess.Popen(special_tokyo_command,  shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (out, err) = p.communicate()
+        return self.directory + "/" + file_name
+        
+
     #
     # get and cache a file, and return the file descriptor to the open file, suitable for reading
     # returns None if the directory doesn't exist, or we couldn't download the file, or we couldn't
@@ -220,6 +228,8 @@ class FileCache:
         if(not os.path.exists(self.directory)):
             print "Directory ", self.directory, " does not exist"
             return None
+        if taskmanager._get_local_site_name() == 'u-tokyo.ac.jp':
+            return self.download_special_case_tokyo(bucket, file_name)
         if os.path.exists(self.directory + "/" + file_name):
             # set the path's utime so LRU's don't get it
             os.utime(file_path, None)
@@ -242,6 +252,14 @@ class FileCache:
     #
 
     def cleanup_cache(self, respect_file_whitelist = False):
+        if taskmanager._get_local_site_name() == 'u-tokyo.ac.jp':
+            os.unlink(self.directory)
+            os.mkdir(self.directory)
+            try:
+                os.chmod(self.directory, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            except OSError:
+                print "Failed to change mode of " + self.directory + " to 777"
+            return
         files_by_atime = files_by_access_time(self.directory)
         max_size_in_bytes = self.max_size_in_kbytes << 10 # convert from kbytes to bytes
         total_size = get_dir_size(self.directory, files_by_atime)
