@@ -22,12 +22,15 @@ env.roledefs = {
     'server':[grack06],
     'db_server':[nw1],
     'web_server':[nw1],
-    'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
+    #'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
+    'workers':uvic_cluster + emulab_cluster + nw_cluster + usp_cluster + ks_cluster,
     'jp-relay':["root@pc515.emulab.net"],
     'sebulba':[sebulba]
 }
 
 env.key_filename = here+'/transgeo'
+
+env.disable_known_hosts = True
 
 env.passwords = {grack06:'cleb020',
                  grack05:'cleb020',
@@ -43,7 +46,8 @@ env.passwords = {grack06:'cleb020',
                  ks2:'gr33nc!ty',
                  ks3:'gr33nc!ty'}
 
-testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
+#testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
+testable_files = "greenspace.py"
 
 @roles(['workers', 'server'])
 def killall():
@@ -96,7 +100,7 @@ def deploy():
     sudo('chmod -R 777 '+deploy_path)
 
 #@hosts([ks])
-@roles('nw')
+@roles('brussels')
 def test_everywhere():
     execute(check_lock)
     pack()
@@ -218,7 +222,7 @@ def run_start(ncities='10'):
     """
     execute(check_lock)
     deploy()
-
+    #ncities = '10'
     with cd(deploy_path):
         run('python mq_calc.py -c '+ncities)
 
@@ -273,6 +277,6 @@ def deploy_jp_node():
 def all(ncities=10):
 
     execute(run_start)
-    execute(run_workers)(ncities=10)
+    execute(run_workers)#(ncities=10)
     execute(run_results)
 
