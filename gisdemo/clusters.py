@@ -62,7 +62,7 @@ tmp_dirs = {"cs.UVic.CA":"/tmp/",
             "emulab.net":"/mnt/",
             ".ibbt.be":"/mnt/",
             "northwestern.edu":"/mnt/",
-            "u-tokyo.ac.jp":"/tmp/",
+            "u-tokyo.ac.jp":"/data/",
             "usp.br":"/mnt/",
             "german-lab.de":"/tmp/",
             "undefined.location":'/tmp/'}
