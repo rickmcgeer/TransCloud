@@ -212,7 +212,7 @@ class FileCache:
         self.file_whitelist = []
 
     def download_special_case_tokyo(self, bucket, file_name):
-        special_tokyo_command = ""
+        special_tokyo_command = "/usr/bin/imq_req2 " + bucket + file_name
         p = subprocess.Popen(special_tokyo_command,  shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (out, err) = p.communicate()
         return self.directory + "/" + file_name
