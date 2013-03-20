@@ -83,6 +83,12 @@ def clear_queue(queue):
 def sizeof(queue):
     return _ironmq.getQueueDetails(queue_name=queue)['size']
 
+def all_queues():
+    global _ironmq
+    if _ironmq == None:
+        _ironmq = IronMQ(token = "WhLXpdmOTjeihOiR27rzmSqy3Gw", project_id = "5112b9efd4297935a900204a")
+    return _ironmq.getQueues()
+    
 
 def test_jobqueue():
     """Hook for the unit tests"""
