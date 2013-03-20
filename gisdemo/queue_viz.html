@@ -1,6 +1,6 @@
 <html>
 <head>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
 <script src="http://omnipotent.net/jquery.sparkline/2.1.1/jquery.sparkline.js" type="text/javascript"></script>
 <script type='text/javascript'>
 
@@ -17,31 +17,34 @@ for (var i = 0; i < queue_names.length; i++) {
 }
 var sparkline_options = {'height':'40px', 'width':'400px'};
 
-$(function() {
-    $("#doit").click(function() {
-	$.get(cgi_bin_call, "",
-	      function(raw_data) {
-		  var data = eval("(" + raw_data +  ")");
-		  for (var i = 0; i < queue_names.length; i++) {
-		      var queue = queue_names[i];
-		      var this_queue = queue_data[queue];
-		      var this_data = parseInt(data[queue]);
-		      this_queue.push(this_data);
-		  }
-		  $('#german-lab.de_chart').sparkline(queue_data['german-lab.de'], sparkline_options);
-		  $('#uvic.trans-cloud.net_chart').sparkline(queue_data['uvic.trans-cloud.net'], sparkline_options);
-		  $('#northwestern.edu_chart').sparkline(queue_data['northwestern.edu'], sparkline_options);
-		  $('#usp.br_chart').sparkline(queue_data['usp.br'], sparkline_options);
-		  $('#cs.UVic.CA_chart').sparkline(queue_data['cs.UVic.CA'], sparkline_options);
-		  $('#u-tokyo.ac.jp_chart').sparkline(queue_data['u-tokyo.ac.jp'], sparkline_options);
-		  $('#global_results_queue_chart').sparkline(queue_data['global_results_queue'], sparkline_options);
-		  $('#utah_chart').sparkline(queue_data['utah'], sparkline_options);
-		  // $('#.ibbt.be_chart').sparkline(queue_data[queue_data['.ibbt.be'], sparkline_options);
-		  $('#emulab.net_chart').sparkline(queue_data['emulab.net'], sparkline_options);
+function fetchData() {
+    console.log('Fetching...');
+    $.get(cgi_bin_call, "",
+	  function(raw_data) {
+	      var data = eval("(" + raw_data +  ")");
+	      for (var i = 0; i < queue_names.length; i++) {
+		  var queue = queue_names[i];
+		  var this_queue = queue_data[queue];
+		  var this_data = parseInt(data[queue]);
+		  this_queue.push(this_data);
+	      }
+	      
+	      $('#german-lab-de_chart').sparkline(queue_data['german-lab.de'], sparkline_options);
+	      $('#uvic-trans-cloud-net_chart').sparkline(queue_data['uvic.trans-cloud.net'], sparkline_options);
+	      $('#northwester-edu_chart').sparkline(queue_data['northwestern.edu'], sparkline_options);
+	      $('#usp-br_chart').sparkline(queue_data['usp.br'], sparkline_options);
+	      $('#cs-UVic-CA_chart').sparkline(queue_data['cs.UVic.CA'], sparkline_options);
+	      $('#u-tokyo-ac-jp_chart').sparkline(queue_data['u-tokyo.ac.jp'], sparkline_options);
+	      $('#global_results_queue_chart').sparkline(queue_data['global_results_queue'], sparkline_options);
+	      $('#utah_chart').sparkline(queue_data['utah'], sparkline_options);
+	      $('#-ibbt-be_chart').sparkline(queue_data['.ibbt.be'], sparkline_options);
+	      $('#emulab-net_chart').sparkline(queue_data['emulab.net'], sparkline_options);
 
-	      });
-    });
-});
+	  });
+};
+
+fetchData();
+window.setInterval(function(){fetchData();},20000);
 
 </script>
  <style type="text/css">
@@ -125,8 +128,9 @@ $(function() {
         padding-left:10px;
        }
        .infoHolder {
-        width:500px;
+        width:750px;
         height:40px;
+	font-size:30px;
        }
        td.tableLabel {
         font-size:30px;
@@ -164,19 +168,18 @@ $(function() {
     </style>
 </head>
 <body>
-<div class="infoHolder">german-lab.de:<span id="german-lab.de_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">uvic.trans-cloud.net:<span id="uvic.trans-cloud.net_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">northwestern.edu:<span id="northwestern.edu_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">usp.br:<span id="usp.br_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">cs.UVic.CA:<span id="cs.UVic.CA_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">u-tokyo.ac.jp:<span id="u-tokyo.ac.jp_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">global_results_queue:<span id="global_results_queue_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">utah:<span id="utah_chart" class="chart">Loading...</span></div>
-<div class="infoHolder">.ibbt.be:<span id=".ibbt.be_chart" class="chart">Loading...</span></div>
-<div class="infoHolder"> emulab.net:<span id="emulab.net_chart" class="chart">Loading...</span></div>
-<button id="doit">Doit!</button>
+    <div class="infoHolder">german-lab.de:<span id="german-lab-de_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">uvic.trans-cloud.net:<span id="uvic-trans-cloud-net_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">northwestern.edu:<span id="northwester-edu_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">usp.br:<span id="usp-br_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">cs.UVic.CA:<span id="cs-UVic-CA_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">u-tokyo.ac.jp:<span id="u-tokyo-ac-jp_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">global_results_queue:<span id="global_results_queue_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">utah:<span id="utah_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder">.ibbt.be:<span id="-ibbt-be_chart" class="chart">Loading...</span></div>
+    <div class="infoHolder"> emulab.net:<span id="emulab-net_chart" class="chart">Loading...</span></div>
+<!--<button id="doit" onclick='doIt();'>Doit!</button>-->
 
 
 </body>
 </html>
-
