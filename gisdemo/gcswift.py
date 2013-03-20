@@ -38,14 +38,14 @@ def alarm_handler(signum, frame):
 def _to_proxy_url(ip):
     return "http://" + ip + ":8080/auth/v1.0"
 
-def do_swift_command(swift_proxy, operation, bucket, timeout, *args):
+def do_swift_command(swift_proxy, swift_user, operation, bucket, timeout, *args):
 
   if type(args) == list or type(args)==tuple:
       args = ' '.join(args)
   if "http://" not in swift_proxy:
       swift_proxy = _to_proxy_url(swift_proxy)
 
-  command = "swift -A " + swift_proxy + " -U " + settings.SWIFT_USER + \
+  command = "swift -A " + swift_proxy + " -U " + swift_user + \
     " -K " + settings.SWIFT_PWD + " " + \
     operation + " " + \
     bucket + " " + \
@@ -83,7 +83,7 @@ def swift(operation, bucket, *args):
   # if the image is migging, upload it
   cache = False
   process, out, err = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY1), \
-                                 operation, bucket, True, *args)
+                                 settings.SWIFT_USER, operation, bucket, True, *args)
   if process.returncode != 0:
     message = err
     print "Warning: Failed on swift host %s with %s, trying on %s" % \
@@ -92,7 +92,7 @@ def swift(operation, bucket, *args):
         cache = True
 
 
-    process, out, err = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), operation, bucket, True, *args)
+    process, out, err = do_swift_command(_to_proxy_url(settings.SWIFT_PROXY2), settings.SWIFT_BACKUP_USER, operation, bucket, True, *args)
     if process.returncode != 0:
         message = err
         if operation == "download" and "Object" in message and "not found" in message:
@@ -120,15 +120,15 @@ def test_gcswift():
         os.unlink(fn+'.md5')
 
 
-def test_diskspace():
-    """Check that we have about the right amount of free disk space"""
-    os.chdir(settings.IMG_TMP)
-    fil = open("big_tmp_file", 'w')
+# def test_diskspace():
+#     """Check that we have about the right amount of free disk space"""
+#     os.chdir(settings.IMG_TMP)
+#     fil = open("big_tmp_file", 'w')
 
-    for i in xrange(0, 1024*1024*1024*10, 4096):
-        fil.write('x'*4096)
-    fil.close()
-    os.unlink("big_tmp_file")
+#     for i in xrange(0, 1024*1024*1024*10, 4096):
+#         fil.write('x'*4096)
+#     fil.close()
+#     os.unlink("big_tmp_file")
     
 
 def test_all_images():
