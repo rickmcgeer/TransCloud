@@ -240,6 +240,9 @@ class FileCache:
             if (not os.path.exists(file_path)):
                 print "File " + file_name + " was not downloaded from swift from bucket " + bucket
                 return None
+            else:
+                os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+                
         self.file_whitelist.append(file_path)
         return file_path
         ## file_handle = open(file_path, "rb")
