@@ -9,6 +9,7 @@ import time
 from subprocess import check_call
 import tempfile
 import stat
+import taskmanager
 
 
 class SwiftFailure(Exception):
@@ -228,7 +229,7 @@ class FileCache:
         if(not os.path.exists(self.directory)):
             print "Directory ", self.directory, " does not exist"
             return None
-        if taskmanager._get_local_site_name() == 'u-tokyo.ac.jp':
+        if taskmanager.get_local_site_name() == 'u-tokyo.ac.jp':
             return self.download_special_case_tokyo(bucket, file_name)
         if os.path.exists(self.directory + "/" + file_name):
             # set the path's utime so LRU's don't get it
@@ -252,7 +253,7 @@ class FileCache:
     #
 
     def cleanup_cache(self, respect_file_whitelist = False):
-        if taskmanager._get_local_site_name() == 'u-tokyo.ac.jp':
+        if taskmanager.get_local_site_name() == 'u-tokyo.ac.jp':
             os.unlink(self.directory)
             os.mkdir(self.directory)
             try:
