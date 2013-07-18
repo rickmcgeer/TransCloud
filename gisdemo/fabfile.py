@@ -13,20 +13,17 @@ here = os.path.dirname(os.path.realpath(__file__))
 ZIPFILE= 'my_project.tar.gz'
 
 env.roledefs = {
-    'brussels':brussels_cluster,
-    'ks':ks_cluster,
+    #'brussels':brussels_cluster,
+    #'ks':ks_cluster,
     'uvic':uvic_cluster,
-    'nw':nw_cluster,
-    'usp':usp_cluster,
-    'emulab':emulab_cluster,
+    #'nw':nw_cluster,
+    #'usp':usp_cluster,
+    #'emulab':emulab_cluster,
     'server':[grack06],
-    'db_server':[nw1],
-    'web_server':[nw1],
-    #'workers':uvic_cluster + emulab_cluster + brussels_cluster + nw_cluster + usp_cluster + ks_cluster,
-    'workers':uvic_cluster + emulab_cluster + nw_cluster + usp_cluster + ks_cluster
-    'jp-relay':["shu@pc229.emulab.net"],
-
-    'sebulba':[sebulba]
+    'db_server':[grack06],
+    'web_server':[grack06],
+    'workers':uvic_cluster,
+    #'jp-relay':["shu@pc229.emulab.net"],
 }
 
 env.key_filename = here+'/transgeo'
@@ -34,23 +31,14 @@ env.key_filename = here+'/transgeo'
 env.disable_known_hosts = True
 
 env.passwords = {grack06:'cleb020',
-                 grack05:'cleb020',
                  grack04:'cleb020',
                  grack03:'cleb020',
                  grack02:'cleb020',
                  grack01:'cleb020',
-                 sebulba:'enec869',
-                 br01:'',
-                 br02:'',
-                 br03:'',
-                 ks1:'gr33nc!ty',
-                 ks2:'gr33nc!ty',
-                 ks3:'gr33nc!ty',
-                 "shu@pc229.emulab.net":'nakaolab22664'
 }
 
-#testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
-testable_files = "greenspace.py"
+testable_files = "clusters.py combine.py mq/mq.py mq/taskmanager.py mq_test.py dbObj.py gcswift.py greenspace.py "
+#testable_files = "greenspace.py"
 
 @roles(['workers', 'server'])
 def killall():
@@ -62,11 +50,11 @@ def test():
     local("py.test "+testable_files)
 
 
-@roles('nw')
-def disk_space():
-    with settings(warn_only=True):
-        run('df -h')
-    sudo('chmod -R 777 /mnt/')
+# @roles('nw')
+# def disk_space():
+#     with settings(warn_only=True):
+#         run('df -h')
+#     sudo('chmod -R 777 /mnt/')
 
 def style():
     local('pep8 *.py ./mq/*.py')
@@ -81,9 +69,6 @@ def pack():
     local('rm -rf /tmp/'+ZIPFILE)
     local('tar czf /tmp/'+ZIPFILE+' \'--exclude=clean_world.sql.bz2\'  .')
 
-# where to install on the remote machine
-deploy_path='/usr/local/src/greencities/'
-
 
 @roles('brussels')
 def route():
@@ -91,6 +76,8 @@ def route():
         sudo('/share/nat.sh')
 
 
+# where to install on the remote machine
+deploy_path='/usr/local/src/greencities/'
 
 def deploy():
     pack()
@@ -102,8 +89,8 @@ def deploy():
         sudo('tar xzf /tmp/'+ZIPFILE)
     sudo('chmod -R 777 '+deploy_path)
 
-#@hosts([ks])
-@roles('brussels')
+
+@roles('uvic')
 def test_everywhere():
     execute(check_lock)
     pack()
@@ -145,7 +132,7 @@ def clean_up_tmps():
         sudo('rm -rf swift_file_cache')
 
 @parallel
-@roles('usp')
+@roles('workers')
 def install_deps():
     with settings(warn_only=True):
         sudo('apt-get update')
@@ -186,10 +173,10 @@ def check_lock():
 	make_lockfile()
 	if exists("/tmp/lockfile", use_sudo=False, verbose=True):
 		run("cat /tmp/lockfile")
-		abort("The experiment is locked, talk to the locker or delete the lockfile")
-		
+		abort("The experiment is locked, talk to the locker or delete the lockfile")	
 	else:
 		put("lockfile", "/tmp/lockfile")
+
 @roles('server')
 def remove_lock():
 	run("rm -rf /tmp/lockfile")
@@ -221,16 +208,13 @@ def run_start(ncities='10'):
     put them in the message queues.
 
     Should only need to be run once per run.
-
     """
     execute(check_lock)
     deploy()
-    #ncities = '10'
     with cd(deploy_path):
         run('python mq_calc.py -c '+ncities)
 
-    
-        
+            
 
 @roles('workers')
 @parallel
@@ -254,32 +238,33 @@ def run_results():
     execute(remove_lock)
 
 
-@hosts('sebulba')
-def update_to_swift():
-	assert False, "Not used."
-        with cd(deploy_path):
-            run('python send_swift_images.py')
+# @hosts('sebulba')
+# def update_to_swift():
+# 	assert False, "Not used."
+#         with cd(deploy_path):
+#             run('python send_swift_images.py')
 
 
-@roles('jp-relay')
-def deploy_jp():
-    """Japan is a special case which needs a relay."""
-    deploy()
-    with cd(deploy_path):
-            run('scp /tmp/my_project.tar.gz some_user@some_ip:/tmp/my_project.tar.gz')
+# @roles('jp-relay')
+# def deploy_jp():
+#     """Japan is a special case which needs a relay."""
+#     deploy()
+#     with cd(deploy_path):
+#         #root@192.168.251.10
+#         run('scp -vv /tmp/my_project.tar.gz root@192.168.251.10:/tmp/my_project.tar.gz')
 
 
-@hosts('root@192.168.251.10')
-def deploy_jp_node():
-    """this script gets copied to relay, then this function gets executed there."""
-    deploy()
-    with cd(deploy_path):
-            run('python mq_client.py')
+# @hosts('root@192.168.251.10')
+# def deploy_jp_node():
+#     """this script gets copied to relay, then this function gets executed there."""
+#     deploy()
+#     with cd(deploy_path):
+#             run('python mq_client.py')
     
 
 def all(ncities=10):
 
-    execute(run_start)
-    execute(run_workers)#(ncities=10)
+    execute(run_start, ncities)
+    execute(run_workers)
     execute(run_results)
 

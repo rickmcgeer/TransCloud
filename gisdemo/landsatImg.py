@@ -24,7 +24,12 @@ import combine
 from greencitieslog import log
 import tempfile
 
-
+import gcswift
+import re
+import datetime
+                        
+from operator import itemgetter, attrgetter        
+  
 
 class MissingCoverage(Exception):
     pass
@@ -42,11 +47,9 @@ def getBand(fname):
     assert False
 
 
-import gcswift
-
 
 class BoundBox:
-    """  """
+    """ container class for a box as x/y coords """
 
     def __init__(self, box):
         self.xmin = box[0]
@@ -58,13 +61,12 @@ class BoundBox:
         return [self.xmin, self.ymin, self.xmax, self.ymax]
 
 
-import re
-
 def checkValidImageSpec(identifierAsList):
     geomSpecOK = re.match("p[0-9][0-9][0-9]r[0-9][0-9][0-9]", identifierAsList[0])
     dateSpecOK = re.match("[5-7]dt[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]", identifierAsList[1])
     bandSpecOK = re.match("b[0-9][0-9]", identifierAsList[3])
     return geomSpecOK and dateSpecOK and bandSpecOK
+
 
 def diagnoseBadSpec(identifierAsList, rawSpec):
     log("bad specifier: " + rawSpec)
@@ -88,8 +90,6 @@ def diagnoseBadSpec(identifierAsList, rawSpec):
 # form
 # s = pieces[0]+"_"+pieces[1]+"."+pieces[2]+"."+pieces[3]+".tif.gz"
 # caller has checked this...
-
-import datetime
 
 class imageID:
     def __init__(self, identifierAsList):
@@ -115,9 +115,7 @@ class imageID:
         if self.bucket == otherImageID.bucket: return False
         return (abs(self.path - otherImageID.path) <= 1) and (abs(self.row - otherImageID.row) <= 1)
     
-                        
-from operator import itemgetter, attrgetter        
-        
+      
 
 class GrassLandsat:
     """ """
@@ -138,17 +136,6 @@ class GrassLandsat:
         # self.shapefile_tmpDir=tempfile.mkdtemp(dir=settings.TEMP_FILE_DIR)
         self.file_manager = gcswift.FileManager()
 
-
-    ## def __del__(self):
-    ##     # this is where we should remove all the temp stuff
-    ##     toremove = os.path.join(os.environ['GISDBASE'], str(self.gid))+" "
-
-    ##     for (b, f) in self.buckets:
-    ##         toremove += "*"+b+"* "
-    ##     if self.img:
-    ##         toremove += self.img.fname+" "+self.img.imgname+" "
-    ##     toremove += str(self.gid)+"* "+ self.shapefile_tmpDir + "/"+str(self.gid)+"* "
-
     def __del__(self):
         self.file_manager.cleanup()
 
@@ -156,6 +143,7 @@ class GrassLandsat:
 
     def check_bad_record(self, obj):
         """Does this record have the world wrap around bug? if so, discount"""
+
         b1 = obj['coordinates'][0][0]
         b2 = obj['coordinates'][0][1]
         b3 = obj['coordinates'][0][2]
@@ -199,55 +187,34 @@ class GrassLandsat:
                 log("Warning: Skipping " +  r[0] + " because of wraparound bug. Coords: " + str(bb))
                 continue
             else:
-                log("Info: Proccessing " + r[0])
+                log("Info: Checking " + r[0])
 
 
             pieces = r[0].split('_')
             if len(pieces) == 4:
-                # we only want 5dt or 7dt for landsat 7 (7),decade set (d) and triband (t)
+                # we only want 5dt or 7dt. Landsat 7 (7),decade set (d) and triband (t)
                 if 'dt' in pieces[1] and checkValidImageSpec(pieces):
                     images.append(imageID(pieces))
                 else:
                     diagnoseBadSpec(pieces, r[0])
 
-        # images1 = []
-
         for image in images:
             subsumed = reduce(lambda x,y: x or y, [otherImage.subsumes(image) for otherImage in images])
             if subsumed: continue
             self.images.append(image)
-            # images1.append(image)
-
-
-        # Make sure each image has a neighbor
-
-        ## for image in images1:
-        ##     hasNeighbor = reduce(lambda x, y: x or y, [otherImage.overlaps(image) for otherImage in images1])
-        ##     if hasNeighbor: self.images.append(image)
-
-        ## # If there are no connected images, just pick the one with the least path, least
-        ## # row; any choice will do, we just need it to be consistent across bands
-
-        ## if len(self.images) == 0:
-        ##     images1 = sorted(images1, key=attrgetter('path', 'row'))
-        ##     self.images = [images1[0]]
-        
-        
-
-        # print "total images", len(images), "total unsubsumed images", len(images1), "total connected images", len(self.images)
+ 
         log("total images %s total subsumed images %s"%(len(images), len(self.images)))
 
         for image in self.images:
             self.files.append(image.fileName)
             self.buckets.append((image.bucket, image.fileName))
            
-
-        
         log( "%s images intersect the city %s" % (len(self.files),self.city))
-
-        log( "At the end of  getImgs, files are " + " ".join(self.files))
+        log( "At the end of getImgList, files are " + " ".join(self.files))
 
         return len(self.files)
+
+
 
     def checkImages(self):
         if len(self.images) == 0:
@@ -261,6 +228,7 @@ class GrassLandsat:
             for myImage in self.images: log("(%d, %d)" % (myImage.path, myImage.row))
             return
 
+
     
     def getSwiftImgs(self):
         """ pull required buckets from swift into local dir """
@@ -272,32 +240,25 @@ class GrassLandsat:
 
         havebucket = False
         local_files = []
+
         for b, f in self.buckets:
-            ## if os.path.exists(f):
-            ##     # Skipping file "+f+" as we already have it!
-            ##     continue
-            
-            ## gcswift.swift("download", b, f)
             local_files.append(self.file_manager.get_file(b, f))
         self.files = local_files
             
 
         log(" At the end of getSwiftImgs, files are "  + " ".join(self.files))
-        log("Complete!")
         self.havefiles = True
 
 
-    # TODO: Stitch together all prefixes. Fk it, do it live
+
     def combineIntoPng(self):
         """ """
-
-        
 
         def getMostRecentSet(fnames):
             """ """
             dates = []
             for f in fnames:
-                # we are always encounter 'dt' before the date
+                # we are always encounter 'dt' before the date, this's gud gramur
                 fdate = f.split('t')[1].split('.')[0]
                 if fdate not in dates:
                     dates.append(int(fdate))
@@ -366,13 +327,11 @@ class GrassLandsat:
 
         shpname = trim.getShapefile(self.file_manager.tmp_file_dir, self.gid)
         log("Shapefile is " + shpname)
-        #try:
         trim.crop(shpname, fnames[0], fnames[1], fnames[2], prefix="trim_", shapefile_tmpDir = self.file_manager.shapefile_tmpDir)
         dir_name = gcswift.get_dir_name(fnames[0])
         fnames = [dir_name + "/trim_"+gcswift.get_raw_file_name(name) for name in fnames]
         log("New fnames are: " + " ".join(fnames))
-        #except AssertionError as e:
-        #    print e
+
 
         namesAndBands = [(fname, getBand(fname)) for fname in fnames]
         namesAndBands = sorted(namesAndBands, key=itemgetter(1), reverse=True)
@@ -424,7 +383,7 @@ class GrassLandsat:
         cwd = os.getcwd()
         os.chdir(self.file_manager.tmp_file_dir)
         # print "Current working directory is " + os.getcwd()
-        p, out, err = gcswift.do_swift_command(settings.SWIFT_PROXY2, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
+        p, out, err = gcswift.do_swift_command(settings.SWIFT_PROXY2, settings.SWIFT_BACKUP_USER, "upload", settings.SWIFT_PNG_BUCKET, False, self.img.imgname)
         log("Swift finished with ", p.returncode)
         assert p.returncode == 0, "Failed with %s"%(err)
         log("Complete!")

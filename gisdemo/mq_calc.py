@@ -43,8 +43,10 @@ def populate_cities(ncities, testing_prefix="", testing=False):
     
 
     greenspace.init()
-    for cluster_nums in xrange(1,5): # these are the map clusters, not machine clusters 
-         cities.extend(greenspace.get_cities(cluster_nums, ncities))
+    # we break the world into 4 'regions' so we select ncities from each region
+    #for region_num in xrange(1,5):
+    region_num = 1
+    cities.extend(greenspace.get_cities(region_num, ncities))
     if testing:
          cities = []
          for i in xrange(0,ncities):

@@ -7,6 +7,7 @@ CLUSTERS={'NW':'pc5.instageni.northwestern.edu','UVIC':'142.104.195.225', 'UVIC2
 SWIFT_PROXY1 = clusters.get_cluster_swift_proxy()
 SWIFT_PROXY2 = CLUSTERS['UVIC']
 SWIFT_USER = clusters.get_cluster_user_id()
+SWIFT_BACKUP_USER = 'system:gis'
 SWIFT_PWD = "uvicgis"
 SWIFT_PNG_BUCKET = "completed"
 

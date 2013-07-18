@@ -22,6 +22,7 @@ def submit_result(greenspace_val, id, name, stime, etime, imgname, servername, l
                                                 servername, location)
 
         greenspace.pgConn.performUpdate(update_stmnt)
+
 import traceback
 
 def process_results(prefix="", testing=False, blocking=True):
